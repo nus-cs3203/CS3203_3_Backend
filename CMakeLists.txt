@@ -19,3 +19,4 @@ find_package(Boost REQUIRED)
 find_package(Threads REQUIRED)
 
 add_subdirectory(services/data_collection/src)
+add_subdirectory(services/db_manager/src)
