@@ -18,11 +18,6 @@ public:
     Database(const std::string& uri, const std::string& db_name)
         : instance_{}, client_{mongocxx::uri{uri}}, db_{client_[db_name]} {}
 
-    void create_collection(const std::string& collection_name) {
-        db_.create_collection(collection_name);
-        std::cout << "Collection '" << collection_name << "' created successfully." << std::endl;
-    }
-
     void insert_document(const std::string& collection_name, const bsoncxx::document::view_or_value& doc) {
         auto collection = db_[collection_name];
         collection.insert_one(doc);
@@ -39,7 +34,7 @@ public:
         }
     }
 
-    void find_document(const std::string& collection_name, const bsoncxx::document::view_or_value& filter) {
+    void find_one_document(const std::string& collection_name, const bsoncxx::document::view_or_value& filter) {
         auto collection = db_[collection_name];
         auto result = collection.find_one(filter);
         if (result) {
@@ -47,6 +42,26 @@ public:
         } else {
             std::cout << "No matching document found." << std::endl;
         }
+    }
+
+    std::vector<std::string> find_documents(const std::string& collection_name, const bsoncxx::document::view_or_value& filter, int limit) {
+        std::vector<std::string> results;
+        auto collection = db_[collection_name];
+
+        mongocxx::options::find find_options;
+        find_options.limit(limit);  // Set limit on number of documents
+
+        auto cursor = collection.find(filter, find_options);
+
+        for (auto&& doc : cursor) {
+            results.push_back(bsoncxx::to_json(doc));  // Convert BSON to JSON string
+        }
+
+        if (results.empty()) {
+            std::cout << "No matching documents found." << std::endl;
+        }
+
+        return results;
     }
 
 private:
