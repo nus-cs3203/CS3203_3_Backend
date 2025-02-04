@@ -5,24 +5,29 @@
 - Boost 1.8x
 - CrowCpp v.1.0+
 - Cmake 3.10+
+- Mongo-cxx-driver
 
 ## Local Environment
 
 ### How to Setup?
 
-1. Use `brew` to install `boost` and `cmake`:
+1. Use `brew` to install `boost`, `cmake` and `mongo-cxx-driver`:
     ```bash
-    brew install boost cmake
+    brew install boost cmake mongo-cxx-driver
     ```
-2. Create a directory for libraries:
+1. Change `set CMAKE_PREFIX_PATH` in `services/db_manager/src/CMakeLists.txt` to where mongo-cxx-driver is located. Use the command below to find where it is:
+   ```bash
+   brew --prefix mongo-cxx-driver
+   ```
+1. Create a directory for libraries:
    ```bash
    mkdir libs && cd libs
    ```
-3. Clone the CrowCpp repository:
+1. Clone the CrowCpp repository:
    ```bash
    git clone https://github.com/CrowCpp/Crow.git
    ```
-4. Return to the root directory:
+1. Return to the root directory:
    ```bash
    cd ..
    ```
