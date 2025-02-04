@@ -16,90 +16,71 @@ using bsoncxx::builder::basic::make_document;
 class Database {
 public:
     Database(const std::string& uri, const std::string& db_name)
-        : instance_{}, client_{mongocxx::uri{uri}}, db_{client_[db_name]} {}
+        : instance{}, client{mongocxx::uri{uri}}, db{client[db_name]} {}
 
-    void insert_document(const std::string& collection_name, const bsoncxx::document::view_or_value& doc) {
-        auto collection = db_[collection_name];
-        collection.insert_one(doc);
-        std::cout << "Document inserted into '" << collection_name << "'." << std::endl;
+    std::string insert_one(const std::string& collection_name, const bsoncxx::document::view& document) {
+        auto collection = db[collection_name];
+        auto result = collection.insert_one(document);
+        if (result && result->inserted_id().type() == bsoncxx::type::k_oid) {
+            std::string id = result->inserted_id().get_oid().value.to_string();
+            std::cout << "Inserted to collection " << collection_name << ": " << bsoncxx::to_json(document) << " with id " << id << std::endl;
+            return id;
+        }
+        return "";
     }
 
-    void delete_document(const std::string& collection_name, const bsoncxx::document::view_or_value& filter) {
-        auto collection = db_[collection_name];
-        auto result = collection.delete_one(filter);
-        if (result && result->deleted_count() > 0) {
-            std::cout << "Document deleted from '" << collection_name << "'." << std::endl;
-        } else {
-            std::cout << "No matching document found to delete." << std::endl;
-        }
-    }
+    // void delete_document(const std::string& collection_name, const bsoncxx::document::view_or_value& filter) {
+    //     auto collection = db_[collection_name];
+    //     auto result = collection.delete_one(filter);
+    //     if (result && result->deleted_count() > 0) {
+    //         std::cout << "Document deleted from '" << collection_name << "'." << std::endl;
+    //     } else {
+    //         std::cout << "No matching document found to delete." << std::endl;
+    //     }
+    // }
 
-    void find_one_document(const std::string& collection_name, const bsoncxx::document::view_or_value& filter) {
-        auto collection = db_[collection_name];
-        auto result = collection.find_one(filter);
-        if (result) {
-            std::cout << "Found document: " << bsoncxx::to_json(*result) << std::endl;
-        } else {
-            std::cout << "No matching document found." << std::endl;
-        }
-    }
+    // void find_one_document(const std::string& collection_name, const bsoncxx::document::view_or_value& filter) {
+    //     auto collection = db_[collection_name];
+    //     auto result = collection.find_one(filter);
+    //     if (result) {
+    //         std::cout << "Found document: " << bsoncxx::to_json(*result) << std::endl;
+    //     } else {
+    //         std::cout << "No matching document found." << std::endl;
+    //     }
+    // }
 
-    std::vector<std::string> find_documents(const std::string& collection_name, const bsoncxx::document::view_or_value& filter, int limit) {
-        std::vector<std::string> results;
-        auto collection = db_[collection_name];
+    // std::vector<std::string> find_documents(const std::string& collection_name, const bsoncxx::document::view_or_value& filter, int limit) {
+    //     std::vector<std::string> results;
+    //     auto collection = db_[collection_name];
 
-        mongocxx::options::find find_options;
-        find_options.limit(limit);  // Set limit on number of documents
+    //     mongocxx::options::find find_options;
+    //     find_options.limit(limit);  // Set limit on number of documents
 
-        auto cursor = collection.find(filter, find_options);
+    //     auto cursor = collection.find(filter, find_options);
 
-        for (auto&& doc : cursor) {
-            results.push_back(bsoncxx::to_json(doc));  // Convert BSON to JSON string
-        }
+    //     for (auto&& doc : cursor) {
+    //         results.push_back(bsoncxx::to_json(doc));  // Convert BSON to JSON string
+    //     }
 
-        if (results.empty()) {
-            std::cout << "No matching documents found." << std::endl;
-        }
+    //     if (results.empty()) {
+    //         std::cout << "No matching documents found." << std::endl;
+    //     }
 
-        return results;
-    }
+    //     return results;
+    // }
 
 private:
-    mongocxx::instance instance_;
-    mongocxx::client client_;
-    mongocxx::database db_;
+    mongocxx::instance instance;
+    mongocxx::client client;
+    mongocxx::database db;
 };
 
 //json to bson converter
-bsoncxx::document::value json_to_bson(const crow::json::rvalue& json_doc) {
-    bsoncxx::builder::basic::document bson_doc;
-    for (const auto& element : json_doc) {
-        std::string key = element.key();
-        const crow::json::rvalue& value = element;
-
-        if (value.t() == crow::json::type::String) {
-            bson_doc.append(kvp(key, value.s()));
-        } else if (value.t() == crow::json::type::Number) {
-            bson_doc.append(kvp(key, value.d()));  
-        } else if (value.t() == crow::json::type::True or value.t() == crow::json::type::False) {  
-            bson_doc.append(kvp(key, value.b()));
-        } else if (value.t() == crow::json::type::List) {
-            bsoncxx::builder::basic::array bson_array;
-            for (const auto& list_element : value) {
-                if (list_element.t() == crow::json::type::String) {
-                    bson_array.append(list_element.s());
-                } else if (list_element.t() == crow::json::type::Number) {
-                    bson_array.append(list_element.d());
-                } else if (list_element.t() == crow::json::type::True or list_element.t() == crow::json::type::False) {  
-                    bson_array.append(list_element.b());
-                }
-            }
-            bson_doc.append(kvp(key, bson_array));
-        } else if (value.t() == crow::json::type::Object) {
-            bson_doc.append(kvp(key, json_to_bson(value).view()));  // Recursively handle nested objects
-        }
-    }
-    return bson_doc.extract();
+bsoncxx::document::value json_to_bson(const crow::json::rvalue& json_document) {
+    std::ostringstream oss;
+    oss << json_document;
+    std::string json_str = oss.str();
+    return bsoncxx::from_json(json_str);
 }
 
 int main() {
@@ -110,8 +91,8 @@ int main() {
 
     app.loglevel(crow::LogLevel::Warning);
 
-    // POST /insert Endpoint
-    CROW_ROUTE(app, "/insert").methods(crow::HTTPMethod::Post)
+    // POST /insert_one Endpoint
+    CROW_ROUTE(app, "/insert_one").methods(crow::HTTPMethod::Post)
     ([&db](const crow::request& req) {
         try {
             auto body = crow::json::load(req.body);  // Parse JSON request body
@@ -120,24 +101,67 @@ int main() {
                 return crow::response(400, R"({"success": false, "message": "Invalid request format"})");
             }
 
-            std::string collection = body["collection"].s();
-            auto json_doc = body["document"];
+            std::string collection_name = body["collection"].s();
+            auto json_document = body["document"];
+            bsoncxx::document::value bson_document = json_to_bson(json_document);
 
-            // Convert Crow JSON to BSON
-            bsoncxx::document::value bson_doc = json_to_bson(json_doc);
+            db.insert_one(collection_name, bson_document.view());
 
-            // Insert into MongoDB
-            db.insert_document(collection, bson_doc.view());
-
-            // Return success response
             crow::json::wvalue res;
             res["success"] = true;
             res["message"] = "Document inserted successfully";
+
             return crow::response(200, res);
         } catch (const std::exception& e) {
             return crow::response(500, R"({"success": false, "message": ")" + std::string(e.what()) + R"("})");
         }
     });
+
+    // GET /find_one_document Endpoint
+
+    // CROW_ROUTE(app, "/find_one_document").methods(crow::HTTPMethod::Post)
+    // ([&db](const crow::request& req) {
+    //     auto body = crow::json::load(req.body);
+
+    //     if (!body || !body.has("collection") || !body.has("filter")) {
+    //         return crow::response(400, R"({"success": false, "message": "Invalid request format"})");
+    //     }
+
+    //     std::string collection = body["collection"].s();
+    //     auto json_filter = body["filter"];
+
+    //     bsoncxx::document::value filter_bson = json_to_bson(json_filter);
+    //     std::string document = db.find_one_document(collection, filter_bson.view());
+
+    //     crow::json::wvalue res;
+    //     res["success"] = true;
+    //     res["document"] = document;
+    //     return crow::response(200, res);
+    // });
+
+    // // GET /find_documents Endpoint
+    // CROW_ROUTE(app, "/find_documents").methods(crow::HTTPMethod::Post)
+    // ([&db](const crow::request& req) {
+    //     auto body = crow::json::load(req.body);
+
+    //     if (!body || !body.has("collection") || !body.has("filter") || !body.has("limit")) {
+    //         return crow::response(400, R"({"success": false, "message": "Invalid request format"})");
+    //     }
+
+    //     std::string collection = body["collection"].s();
+    //     int limit = body["limit"].i();
+    //     auto json_filter = body["filter"];
+
+    //     bsoncxx::document::value filter_bson = json_to_bson(json_filter);
+    //     std::vector<std::string> documents = db.find_documents(collection, filter_bson.view(), limit);
+
+    //     crow::json::wvalue res;
+    //     res["success"] = true;
+    //     res["documents"] = crow::json::wvalue::list(documents.begin(), documents.end());
+    //     return crow::response(200, res);
+    // });
+
+
 
     app.port(8081).multithreaded().run();
     return 0;
