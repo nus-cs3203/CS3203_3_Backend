@@ -1,5 +1,7 @@
 set(DB_MANAGER_EXECUTABLE_NAME "db_manager")
 
+set(CMAKE_PREFIX_PATH "/opt/homebrew/opt/mongo-cxx-driver" ${CMAKE_PREFIX_PATH})
+
 set(SRC_FILES
     main.cpp
 )
@@ -12,6 +14,8 @@ include_directories(${HEADER_DIR})
 
 find_package(Boost REQUIRED) 
 find_package(Threads REQUIRED)  
+find_package(mongocxx REQUIRED)
+find_package(bsoncxx REQUIRED)
 
 add_executable(${DB_MANAGER_EXECUTABLE_NAME} ${SRC_FILES})
 
@@ -25,6 +29,8 @@ target_link_libraries(${DB_MANAGER_EXECUTABLE_NAME}
                       ${CROW_LIBRARY} 
                       Threads::Threads 
                       ${Boost_LIBRARIES}
+                      mongo::mongocxx_shared
+                      mongo::bsoncxx_shared
 )
 
 install(TARGETS ${DB_MANAGER_EXECUTABLE_NAME} DESTINATION bin)
