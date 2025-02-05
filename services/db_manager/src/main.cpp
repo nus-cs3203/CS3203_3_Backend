@@ -18,15 +18,10 @@ public:
     Database(const std::string& uri, const std::string& db_name)
         : instance{}, client{mongocxx::uri{uri}}, db{client[db_name]} {}
 
-    std::string insert_one(const std::string& collection_name, const bsoncxx::document::view& document) {
+    bsoncxx::stdx::optional<mongocxx::result::insert_one>insert_one(const std::string& collection_name, const bsoncxx::document::view& document) {
         auto collection = db[collection_name];
         auto result = collection.insert_one(document);
-        if (result && result->inserted_id().type() == bsoncxx::type::k_oid) {
-            std::string id = result->inserted_id().get_oid().value.to_string();
-            std::cout << "Inserted to collection " << collection_name << ": " << bsoncxx::to_json(document) << " with id " << id << "." << std::endl;
-            return id;
-        }
-        return "";
+        return result;
     }
 
     // void delete_document(const std::string& collection_name, const bsoncxx::document::view_or_value& filter) {
@@ -101,10 +96,18 @@ int main() {
             auto json_document = body["document"];
             bsoncxx::document::value bson_document = json_to_bson(json_document);
 
-            db.insert_one(collection_name, bson_document.view());
+            bsoncxx::stdx::optional<mongocxx::result::insert_one> result = db.insert_one(collection_name, bson_document.view());
+
+            if (!result) {
+                return crow::response(500, R"({"success": false, "message": "Failed to insert document: no result was returned from the database operation"})");
+            }
+
+            std::string id = result->inserted_id().get_oid().value.to_string();
+            std::cout << "Inserted to collection " << collection_name << ": " << json_document << " with id " << id << "." << std::endl;
 
             crow::json::wvalue res;
             res["success"] = true;
+            res["_id"] = id;
             res["message"] = "Document inserted successfully";
 
             return crow::response(200, res);
@@ -129,7 +132,7 @@ int main() {
         bsoncxx::stdx::optional<bsoncxx::document::value> result = db.find_one(collection_name, bson_filter.view());
 
         if (!result.has_value()) {
-            return crow::response(200, R"({"success": false, "message": "No matching documents found."})");
+            return crow::response(200, R"({"success": false, "message": "No matching documents found"})");
         }
 
         std::cout << "Found document: " << bsoncxx::to_json(result.value()) << std::endl;
@@ -143,7 +146,7 @@ int main() {
         crow::json::wvalue res;
         res["success"] = true;
         res["document"] = document_wvalue;
-        res["message"] = "Document was found successfully.";
+        res["message"] = "Document was found successfully";
         return crow::response(200, res);
     });
 
