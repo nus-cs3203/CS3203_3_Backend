@@ -48,6 +48,12 @@ public:
         return result;
     }
 
+    auto delete_many(const std::string& collection_name, const bsoncxx::document::view& filter) -> bsoncxx::stdx::optional<mongocxx::result::delete_result> {
+        auto collection = db[collection_name];
+        auto result = collection.delete_many(filter);
+        return result;
+    }
+
     // std::vector<std::string> find_documents(const std::string& collection_name, const bsoncxx::document::view_or_value& filter, int limit) {
     //     std::vector<std::string> results;
     //     auto collection = db_[collection_name];
@@ -253,6 +259,39 @@ int main() {
             crow::json::wvalue res;
             res["success"] = true;
             res["message"] = "Document inserted successfully";
+
+            return crow::response(200, res);
+        } catch (const std::exception& e) {
+            return crow::response(500, R"({"success": false, "message": ")" + std::string(e.what()) + R"("})");
+        }
+    });
+
+    CROW_ROUTE(app, "/delete_many").methods(crow::HTTPMethod::Post)
+    ([&db](const crow::request& req) {
+        try {
+            auto body = crow::json::load(req.body);
+
+            if (!body || !body.has("collection") || !body.has("filter")) {
+                return crow::response(400, R"({"success": false, "message": "Invalid request format"})");
+            }
+
+            std::string collection_name = body["collection"].s();
+            auto json_filter = body["filter"];
+
+            bsoncxx::document::value bson_filter = json_to_bson(json_filter);
+            bsoncxx::stdx::optional<mongocxx::result::delete_result> result = db.delete_many(collection_name, bson_filter.view());
+
+            if (!result) {
+                return crow::response(500, R"({"success": false, "message": "Failed to delete document: no result was returned from the database operation"})");
+            }
+
+            int delete_count = result->deleted_count();
+            std::cout << "Deleted " << delete_count << " documents from collection " << collection_name << std::endl;
+
+            crow::json::wvalue res;
+            res["success"] = true;
+            res["count"] = delete_count;
+            res["message"] = "Document deleted successfully";
 
             return crow::response(200, res);
         } catch (const std::exception& e) {
