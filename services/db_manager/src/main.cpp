@@ -36,6 +36,12 @@ public:
         return result;
     }
 
+    auto find(const std::string& collection_name, const bsoncxx::document::view& filter) -> mongocxx::cursor {
+        auto collection = db[collection_name];
+        auto cursor = collection.find(filter);
+        return cursor;
+    }
+
     // std::vector<std::string> find_documents(const std::string& collection_name, const bsoncxx::document::view_or_value& filter, int limit) {
     //     std::vector<std::string> results;
     //     auto collection = db_[collection_name];
@@ -175,6 +181,37 @@ int main() {
             res["success"] = true;
             res["count"] = delete_count;
             res["message"] = "Document deleted successfully";
+
+            return crow::response(200, res);
+        } catch (const std::exception& e) {
+            return crow::response(500, R"({"success": false, "message": ")" + std::string(e.what()) + R"("})");
+        }
+    });
+
+    CROW_ROUTE(app, "/find").methods(crow::HTTPMethod::Post)
+    ([&db](const crow::request& req) {
+        try {
+            auto body = crow::json::load(req.body);
+
+            if (!body || !body.has("collection") || !body.has("filter")) {
+                return crow::response(400, R"({"success": false, "message": "Invalid request format"})");
+            }
+
+            std::string collection_name = body["collection"].s();
+            auto json_filter = body["filter"];
+
+            bsoncxx::document::value bson_filter = json_to_bson(json_filter);
+            mongocxx::cursor cursor = db.find(collection_name, bson_filter.view());
+
+            crow::json::wvalue res;
+            res["status"] = true;
+            res["message"] = "Documents retrieved successfully";
+
+            std::vector<crow::json::wvalue> documents;
+            for (auto&& document : cursor) {
+                documents.push_back(crow::json::load(bsoncxx::to_json(document)));
+            }
+            res["documents"] = std::move(documents);
 
             return crow::response(200, res);
         } catch (const std::exception& e) {
