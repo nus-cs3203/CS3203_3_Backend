@@ -62,25 +62,13 @@ public:
         return result;
     }
 
-    // std::vector<std::string> find_documents(const std::string& collection_name, const bsoncxx::document::view_or_value& filter, int limit) {
-    //     std::vector<std::string> results;
-    //     auto collection = db_[collection_name];
-
-    //     mongocxx::options::find find_options;
-    //     find_options.limit(limit);  // Set limit on number of documents
-
-    //     auto cursor = collection.find(filter, find_options);
-
-    //     for (auto&& doc : cursor) {
-    //         results.push_back(bsoncxx::to_json(doc));  // Convert BSON to JSON string
-    //     }
-
-    //     if (results.empty()) {
-    //         std::cout << "No matching documents found." << std::endl;
-    //     }
-
-    //     return results;
-    // }
+    auto update_many(const std::string& collection_name, const bsoncxx::document::view& filter, const bsoncxx::document::view& update_document, const bool& upsert = false) -> bsoncxx::stdx::optional<mongocxx::result::update> {
+        mongocxx::options::update options;
+        options.upsert(upsert);
+        auto collection = db[collection_name];
+        auto result = collection.update_many(filter, update_document, options);
+        return result;
+    }
 
 private:
     mongocxx::instance instance;
@@ -347,6 +335,45 @@ int main() {
         }
     });
 
+    CROW_ROUTE(app, "/update_many").methods(crow::HTTPMethod::Post)
+    ([&db](const crow::request& req) {
+        try {
+            auto body = crow::json::load(req.body);  // Parse JSON request body
+
+            if (!body || !body.has("collection") || !body.has("filter") || !body.has("update_document")) {
+                return crow::response(400, R"({"success": false, "message": "Invalid request format"})");
+            }
+
+            std::string collection_name = body["collection"].s();
+            auto json_filter = body["filter"];
+            bsoncxx::document::value bson_filter = json_to_bson(json_filter);
+            auto json_update_document = body["update_document"];
+            bsoncxx::document::value bson_update_document = json_to_bson(json_update_document);
+            bool upsert = false;
+            if (body.has("upsert") && body["upsert"]) {
+                upsert = true;
+            }
+
+            bsoncxx::stdx::optional<mongocxx::result::update> result = db.update_many(collection_name, bson_filter.view(), bson_update_document.view(), upsert);
+
+            if (!result) {
+                return crow::response(500, R"({"success": false, "message": "Failed to insert document: no result was returned from the database operation"})");
+            }
+
+            std::cout << "Updated collection " << collection_name << ": (matched_count, modified_count, upserted_count) is (" << result->matched_count() << ", " << result->modified_count() <<", " << result->upserted_count() << ")" << std::endl;
+
+            crow::json::wvalue res;
+            res["success"] = true;
+            res["matched_count"] = result->matched_count();
+            res["modified_count"] = result->modified_count();
+            res["upserted_count"] = result->upserted_count();
+            res["message"] = "Update successful";
+
+            return crow::response(200, res);
+        } catch (const std::exception& e) {
+            return crow::response(500, R"({"success": false, "message": ")" + std::string(e.what()) + R"("})");
+        }
+    });
 
     // // GET /find_documents Endpoint
     // CROW_ROUTE(app, "/find_documents").methods(crow::HTTPMethod::Post)
