@@ -83,9 +83,10 @@ auto json_to_bson(const crow::json::rvalue& json_document) -> bsoncxx::document:
     return bsoncxx::from_json(json_str);
 }
 
-int main() {
-    const std::string uri = "mongodb://127.0.0.1:27017";
-    Database db(uri, "CS3203");
+int main(int argc, char* argv[]) {
+    const std::string uri = argc > 1 ? argv[1] : "mongodb://127.0.0.1:27017";
+    const std::string db_name = argc > 2 ? argv[2] : "CS3203";
+    Database db(uri, db_name);
     
     crow::SimpleApp app;
 
@@ -374,30 +375,6 @@ int main() {
             return crow::response(500, R"({"success": false, "message": ")" + std::string(e.what()) + R"("})");
         }
     });
-
-    // // GET /find_documents Endpoint
-    // CROW_ROUTE(app, "/find_documents").methods(crow::HTTPMethod::Post)
-    // ([&db](const crow::request& req) {
-    //     auto body = crow::json::load(req.body);
-
-    //     if (!body || !body.has("collection") || !body.has("filter") || !body.has("limit")) {
-    //         return crow::response(400, R"({"success": false, "message": "Invalid request format"})");
-    //     }
-
-    //     std::string collection = body["collection"].s();
-    //     int limit = body["limit"].i();
-    //     auto json_filter = body["filter"];
-
-    //     bsoncxx::document::value filter_bson = json_to_bson(json_filter);
-    //     std::vector<std::string> documents = db.find_documents(collection, filter_bson.view(), limit);
-
-    //     crow::json::wvalue res;
-    //     res["success"] = true;
-    //     res["documents"] = crow::json::wvalue::list(documents.begin(), documents.end());
-    //     return crow::response(200, res);
-    // });
-
-
 
     app.port(8081).multithreaded().run();
     return 0;
