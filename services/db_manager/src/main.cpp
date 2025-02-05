@@ -23,7 +23,7 @@ public:
         auto result = collection.insert_one(document);
         if (result && result->inserted_id().type() == bsoncxx::type::k_oid) {
             std::string id = result->inserted_id().get_oid().value.to_string();
-            std::cout << "Inserted to collection " << collection_name << ": " << bsoncxx::to_json(document) << " with id " << id << std::endl;
+            std::cout << "Inserted to collection " << collection_name << ": " << bsoncxx::to_json(document) << " with id " << id << "." << std::endl;
             return id;
         }
         return "";
@@ -39,15 +39,11 @@ public:
     //     }
     // }
 
-    // void find_one_document(const std::string& collection_name, const bsoncxx::document::view_or_value& filter) {
-    //     auto collection = db_[collection_name];
-    //     auto result = collection.find_one(filter);
-    //     if (result) {
-    //         std::cout << "Found document: " << bsoncxx::to_json(*result) << std::endl;
-    //     } else {
-    //         std::cout << "No matching document found." << std::endl;
-    //     }
-    // }
+    bsoncxx::stdx::optional<bsoncxx::document::value> find_one(const std::string& collection_name, const bsoncxx::document::view& filter) {
+        auto collection = db[collection_name];
+        auto result = collection.find_one(filter);
+        return result;
+    }
 
     // std::vector<std::string> find_documents(const std::string& collection_name, const bsoncxx::document::view_or_value& filter, int limit) {
     //     std::vector<std::string> results;
@@ -91,7 +87,7 @@ int main() {
 
     app.loglevel(crow::LogLevel::Warning);
 
-    // POST /insert_one Endpoint
+    // POST /insert_one
     CROW_ROUTE(app, "/insert_one").methods(crow::HTTPMethod::Post)
     ([&db](const crow::request& req) {
         try {
@@ -117,27 +113,39 @@ int main() {
         }
     });
 
-    // GET /find_one_document Endpoint
+    // GET /find_one
+    CROW_ROUTE(app, "/find_one").methods(crow::HTTPMethod::Post)
+    ([&db](const crow::request& req) {
+        auto body = crow::json::load(req.body);
 
-    // CROW_ROUTE(app, "/find_one_document").methods(crow::HTTPMethod::Post)
-    // ([&db](const crow::request& req) {
-    //     auto body = crow::json::load(req.body);
+        if (!body || !body.has("collection") || !body.has("filter")) {
+            return crow::response(400, R"({"success": false, "message": "Invalid request format"})");
+        }
 
-    //     if (!body || !body.has("collection") || !body.has("filter")) {
-    //         return crow::response(400, R"({"success": false, "message": "Invalid request format"})");
-    //     }
+        std::string collection_name = body["collection"].s();
+        auto json_filter = body["filter"];
 
-    //     std::string collection = body["collection"].s();
-    //     auto json_filter = body["filter"];
+        bsoncxx::document::value bson_filter = json_to_bson(json_filter);
+        bsoncxx::stdx::optional<bsoncxx::document::value> result = db.find_one(collection_name, bson_filter.view());
 
-    //     bsoncxx::document::value filter_bson = json_to_bson(json_filter);
-    //     std::string document = db.find_one_document(collection, filter_bson.view());
+        if (!result.has_value()) {
+            return crow::response(200, R"({"success": false, "message": "No matching documents found."})");
+        }
 
-    //     crow::json::wvalue res;
-    //     res["success"] = true;
-    //     res["document"] = document;
-    //     return crow::response(200, res);
-    // });
+        std::cout << "Found document: " << bsoncxx::to_json(result.value()) << std::endl;
+
+        std::string document_json = bsoncxx::to_json(result.value());
+        auto document_wvalue = crow::json::load(document_json);
+        if (!document_wvalue) {
+            return crow::response(500, R"({"success": false, "message": "Error converting document"})");
+        }
+
+        crow::json::wvalue res;
+        res["success"] = true;
+        res["document"] = document_wvalue;
+        res["message"] = "Document was found successfully.";
+        return crow::response(200, res);
+    });
 
     // // GET /find_documents Endpoint
     // CROW_ROUTE(app, "/find_documents").methods(crow::HTTPMethod::Post)
