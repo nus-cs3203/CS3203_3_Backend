@@ -42,6 +42,12 @@ public:
         return cursor;
     }
 
+    auto insert_many(const std::string& collection_name, const std::vector<bsoncxx::document::value>& documents) -> bsoncxx::stdx::optional<mongocxx::result::insert_many> {
+        auto collection = db[collection_name];
+        auto result = collection.insert_many(documents);
+        return result;
+    }
+
     // std::vector<std::string> find_documents(const std::string& collection_name, const bsoncxx::document::view_or_value& filter, int limit) {
     //     std::vector<std::string> results;
     //     auto collection = db_[collection_name];
@@ -212,6 +218,41 @@ int main() {
                 documents.push_back(crow::json::load(bsoncxx::to_json(document)));
             }
             res["documents"] = std::move(documents);
+
+            return crow::response(200, res);
+        } catch (const std::exception& e) {
+            return crow::response(500, R"({"success": false, "message": ")" + std::string(e.what()) + R"("})");
+        }
+    });
+
+    CROW_ROUTE(app, "/insert_many").methods(crow::HTTPMethod::Post)
+    ([&db](const crow::request& req) {
+        try {
+            auto body = crow::json::load(req.body);  // Parse JSON request body
+
+            if (!body || !body.has("collection") || !body.has("documents")) {
+                return crow::response(400, R"({"success": false, "message": "Invalid request format"})");
+            }
+
+            std::string collection_name = body["collection"].s();
+            auto json_documents = body["documents"];
+
+            std::vector<bsoncxx::document::value> bson_documents;
+            for (auto &document: json_documents) {
+                bson_documents.push_back(json_to_bson(document));
+            }
+
+            bsoncxx::stdx::optional<mongocxx::result::insert_many> result = db.insert_many(collection_name, bson_documents);
+
+            if (!result) {
+                return crow::response(500, R"({"success": false, "message": "Failed to insert document: no result was returned from the database operation"})");
+            }
+
+            std::cout << "Inserted to collection " << collection_name << ": " << result->inserted_count() << " documents" << std::endl;
+
+            crow::json::wvalue res;
+            res["success"] = true;
+            res["message"] = "Document inserted successfully";
 
             return crow::response(200, res);
         } catch (const std::exception& e) {
