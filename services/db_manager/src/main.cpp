@@ -18,21 +18,21 @@ public:
     Database(const std::string& uri, const std::string& db_name)
         : instance{}, client{mongocxx::uri{uri}}, db{client[db_name]} {}
 
-    bsoncxx::stdx::optional<mongocxx::result::insert_one> insert_one(const std::string& collection_name, const bsoncxx::document::view& document) {
+    auto find_one(const std::string& collection_name, const bsoncxx::document::view& filter) -> bsoncxx::stdx::optional<bsoncxx::document::value> {
+        auto collection = db[collection_name];
+        auto result = collection.find_one(filter);
+        return result;
+    }
+
+    auto insert_one(const std::string& collection_name, const bsoncxx::document::view& document) -> bsoncxx::stdx::optional<mongocxx::result::insert_one> {
         auto collection = db[collection_name];
         auto result = collection.insert_one(document);
         return result;
     }
 
-    bsoncxx::stdx::optional<mongocxx::result::delete_result> delete_one(const std::string& collection_name, const bsoncxx::document::view& filter) {
+    auto delete_one(const std::string& collection_name, const bsoncxx::document::view& filter) -> bsoncxx::stdx::optional<mongocxx::result::delete_result> {
         auto collection = db[collection_name];
         auto result = collection.delete_one(filter);
-        return result;
-    }
-
-    bsoncxx::stdx::optional<bsoncxx::document::value> find_one(const std::string& collection_name, const bsoncxx::document::view& filter) {
-        auto collection = db[collection_name];
-        auto result = collection.find_one(filter);
         return result;
     }
 
@@ -62,8 +62,7 @@ private:
     mongocxx::database db;
 };
 
-//json to bson converter
-bsoncxx::document::value json_to_bson(const crow::json::rvalue& json_document) {
+auto json_to_bson(const crow::json::rvalue& json_document) -> bsoncxx::document::value {
     std::ostringstream oss;
     oss << json_document;
     std::string json_str = oss.str();
@@ -77,6 +76,44 @@ int main() {
     crow::SimpleApp app;
 
     app.loglevel(crow::LogLevel::Warning);
+
+    // GET /find_one
+    CROW_ROUTE(app, "/find_one").methods(crow::HTTPMethod::Post)
+    ([&db](const crow::request& req) {
+        try {
+            auto body = crow::json::load(req.body);
+
+            if (!body || !body.has("collection") || !body.has("filter")) {
+                return crow::response(400, R"({"success": false, "message": "Invalid request format"})");
+            }
+
+            std::string collection_name = body["collection"].s();
+            auto json_filter = body["filter"];
+
+            bsoncxx::document::value bson_filter = json_to_bson(json_filter);
+            bsoncxx::stdx::optional<bsoncxx::document::value> result = db.find_one(collection_name, bson_filter.view());
+
+            if (!result.has_value()) {
+                return crow::response(200, R"({"success": true, "document": null, "message": "No matching documents found"})");
+            }
+
+            std::cout << "Found document: " << bsoncxx::to_json(result.value()) << std::endl;
+
+            std::string document_json = bsoncxx::to_json(result.value());
+            auto document_wvalue = crow::json::load(document_json);
+            if (!document_wvalue) {
+                return crow::response(500, R"({"success": false, "message": "Error converting document"})");
+            }
+
+            crow::json::wvalue res;
+            res["success"] = true;
+            res["document"] = document_wvalue;
+            res["message"] = "Document was found successfully";
+            return crow::response(200, res);
+        } catch (const std::exception& e) {
+            return crow::response(500, R"({"success": false, "message": ")" + std::string(e.what()) + R"("})");
+        }
+    });
 
     // POST /insert_one
     CROW_ROUTE(app, "/insert_one").methods(crow::HTTPMethod::Post)
@@ -112,67 +149,37 @@ int main() {
         }
     });
 
-    // GET /find_one
-    CROW_ROUTE(app, "/find_one").methods(crow::HTTPMethod::Post)
-    ([&db](const crow::request& req) {
-        auto body = crow::json::load(req.body);
-
-        if (!body || !body.has("collection") || !body.has("filter")) {
-            return crow::response(400, R"({"success": false, "message": "Invalid request format"})");
-        }
-
-        std::string collection_name = body["collection"].s();
-        auto json_filter = body["filter"];
-
-        bsoncxx::document::value bson_filter = json_to_bson(json_filter);
-        bsoncxx::stdx::optional<bsoncxx::document::value> result = db.find_one(collection_name, bson_filter.view());
-
-        if (!result.has_value()) {
-            return crow::response(200, R"({"success": true, "message": "No matching documents found"})");
-        }
-
-        std::cout << "Found document: " << bsoncxx::to_json(result.value()) << std::endl;
-
-        std::string document_json = bsoncxx::to_json(result.value());
-        auto document_wvalue = crow::json::load(document_json);
-        if (!document_wvalue) {
-            return crow::response(500, R"({"success": false, "message": "Error converting document"})");
-        }
-
-        crow::json::wvalue res;
-        res["success"] = true;
-        res["document"] = document_wvalue;
-        res["message"] = "Document was found successfully";
-        return crow::response(200, res);
-    });
-
     CROW_ROUTE(app, "/delete_one").methods(crow::HTTPMethod::Post)
     ([&db](const crow::request& req) {
-        auto body = crow::json::load(req.body);
+        try {
+            auto body = crow::json::load(req.body);
 
-        if (!body || !body.has("collection") || !body.has("filter")) {
-            return crow::response(400, R"({"success": false, "message": "Invalid request format"})");
+            if (!body || !body.has("collection") || !body.has("filter")) {
+                return crow::response(400, R"({"success": false, "message": "Invalid request format"})");
+            }
+
+            std::string collection_name = body["collection"].s();
+            auto json_filter = body["filter"];
+
+            bsoncxx::document::value bson_filter = json_to_bson(json_filter);
+            bsoncxx::stdx::optional<mongocxx::result::delete_result> result = db.delete_one(collection_name, bson_filter.view());
+
+            if (!result) {
+                return crow::response(500, R"({"success": false, "message": "Failed to delete document: no result was returned from the database operation"})");
+            }
+
+            int delete_count = result->deleted_count();
+            std::cout << "Deleted " << delete_count << " documents from collection " << collection_name << std::endl;
+
+            crow::json::wvalue res;
+            res["success"] = true;
+            res["count"] = delete_count;
+            res["message"] = "Document deleted successfully";
+
+            return crow::response(200, res);
+        } catch (const std::exception& e) {
+            return crow::response(500, R"({"success": false, "message": ")" + std::string(e.what()) + R"("})");
         }
-
-        std::string collection_name = body["collection"].s();
-        auto json_filter = body["filter"];
-
-        bsoncxx::document::value bson_filter = json_to_bson(json_filter);
-        bsoncxx::stdx::optional<mongocxx::result::delete_result> result = db.delete_one(collection_name, bson_filter.view());
-
-        if (!result) {
-            return crow::response(500, R"({"success": false, "message": "Failed to delete document: no result was returned from the database operation"})");
-        }
-
-        int delete_count = result->deleted_count();
-        std::cout << "Deleted " << delete_count << " documents from collection " << collection_name << std::endl;
-
-        crow::json::wvalue res;
-        res["success"] = true;
-        res["count"] = delete_count;
-        res["message"] = "Document deleted successfully";
-
-        return crow::response(200, res);
     });
 
 
