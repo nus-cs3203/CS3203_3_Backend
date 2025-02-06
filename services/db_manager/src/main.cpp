@@ -10,73 +10,11 @@
 
 #include "crow.h"
 
+#include "database.hpp"
 #include "utils.hpp"
 
 using bsoncxx::builder::basic::kvp;
 using bsoncxx::builder::basic::make_document;
-
-class Database {
-public:
-    Database(const std::string& uri, const std::string& db_name)
-        : instance{}, client{mongocxx::uri{uri}}, db{client[db_name]} {}
-
-    auto find_one(const std::string& collection_name, const bsoncxx::document::view& filter) -> bsoncxx::stdx::optional<bsoncxx::document::value> {
-        auto collection = db[collection_name];
-        auto result = collection.find_one(filter);
-        return result;
-    }
-
-    auto insert_one(const std::string& collection_name, const bsoncxx::document::view& document) -> bsoncxx::stdx::optional<mongocxx::result::insert_one> {
-        auto collection = db[collection_name];
-        auto result = collection.insert_one(document);
-        return result;
-    }
-
-    auto delete_one(const std::string& collection_name, const bsoncxx::document::view& filter) -> bsoncxx::stdx::optional<mongocxx::result::delete_result> {
-        auto collection = db[collection_name];
-        auto result = collection.delete_one(filter);
-        return result;
-    }
-
-    auto update_one(const std::string& collection_name, const bsoncxx::document::view& filter, const bsoncxx::document::view& update_document, const bool& upsert = false) -> bsoncxx::stdx::optional<mongocxx::result::update> {
-        mongocxx::options::update options;
-        options.upsert(upsert);
-        auto collection = db[collection_name];
-        auto result = collection.update_one(filter, update_document, options);
-        return result;
-    }
-
-    auto find(const std::string& collection_name, const bsoncxx::document::view& filter) -> mongocxx::cursor {
-        auto collection = db[collection_name];
-        auto cursor = collection.find(filter);
-        return cursor;
-    }
-
-    auto insert_many(const std::string& collection_name, const std::vector<bsoncxx::document::value>& documents) -> bsoncxx::stdx::optional<mongocxx::result::insert_many> {
-        auto collection = db[collection_name];
-        auto result = collection.insert_many(documents);
-        return result;
-    }
-
-    auto delete_many(const std::string& collection_name, const bsoncxx::document::view& filter) -> bsoncxx::stdx::optional<mongocxx::result::delete_result> {
-        auto collection = db[collection_name];
-        auto result = collection.delete_many(filter);
-        return result;
-    }
-
-    auto update_many(const std::string& collection_name, const bsoncxx::document::view& filter, const bsoncxx::document::view& update_document, const bool& upsert = false) -> bsoncxx::stdx::optional<mongocxx::result::update> {
-        mongocxx::options::update options;
-        options.upsert(upsert);
-        auto collection = db[collection_name];
-        auto result = collection.update_many(filter, update_document, options);
-        return result;
-    }
-
-private:
-    mongocxx::instance instance;
-    mongocxx::client client;
-    mongocxx::database db;
-};
 
 int main(int argc, char* argv[]) {
     const std::string uri = argc > 1 ? argv[1] : "mongodb://127.0.0.1:27017";

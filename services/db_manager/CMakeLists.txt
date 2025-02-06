@@ -4,6 +4,7 @@ set(CMAKE_PREFIX_PATH "/opt/homebrew/opt/mongo-cxx-driver" ${CMAKE_PREFIX_PATH})
 
 set(SRC_FILES
     src/main.cpp
+    src/database.cpp
     src/utils.cpp
 )
 
@@ -21,7 +22,6 @@ target_include_directories(${DB_MANAGER_EXECUTABLE_NAME}
                            PRIVATE 
                            ${CROW_INCLUDE_DIR}
                            ${Boost_INCLUDE_DIRS}
-
 )
 
 target_link_libraries(${DB_MANAGER_EXECUTABLE_NAME} 
