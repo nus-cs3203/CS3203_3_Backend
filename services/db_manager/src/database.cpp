@@ -1,19 +1,12 @@
 #include "database.hpp"
 
-#include <cstdint>
-#include <iostream>
-#include <vector>
-
 #include <bsoncxx/builder/basic/document.hpp>
 #include <bsoncxx/json.hpp>
+#include "crow.h"
 #include <mongocxx/client.hpp>
 #include <mongocxx/instance.hpp>
-#include <mongocxx/uri.hpp>
 
-#include "crow.h"
-
-using bsoncxx::builder::basic::kvp;
-using bsoncxx::builder::basic::make_document;
+#include <vector>
 
 Database::Database(const std::string& uri, const std::string& db_name)
     : instance{}, client{mongocxx::uri{uri}}, db{client[db_name]} {}

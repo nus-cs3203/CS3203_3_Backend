@@ -1,20 +1,15 @@
-#include <cstdint>
-#include <iostream>
-#include <vector>
+#include "database.hpp"
+#include "utils.hpp"
 
 #include <bsoncxx/builder/basic/document.hpp>
 #include <bsoncxx/json.hpp>
+#include "crow.h"
 #include <mongocxx/client.hpp>
 #include <mongocxx/instance.hpp>
 #include <mongocxx/uri.hpp>
 
-#include "crow.h"
-
-#include "database.hpp"
-#include "utils.hpp"
-
-using bsoncxx::builder::basic::kvp;
-using bsoncxx::builder::basic::make_document;
+#include <iostream>
+#include <vector>
 
 int main(int argc, char* argv[]) {
     const std::string uri = argc > 1 ? argv[1] : "mongodb://127.0.0.1:27017";
