@@ -15,6 +15,8 @@ endif()
 
 set(EXECUTABLE_NAME "CS3203_BACKEND")
 
+set(COMMON_DIR ${CMAKE_SOURCE_DIR}/common)
+
 find_package(Boost REQUIRED)
 find_package(Threads REQUIRED)
 
