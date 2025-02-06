@@ -11,6 +11,30 @@
 #include <iostream>
 #include <vector>
 
+// Helper function to validate required fields in a JSON request
+bool validate_request(const crow::json::rvalue& body, std::initializer_list<std::string> required_fields) {
+    if (!body) return false;
+    for (const auto& field : required_fields) {
+        if (!body.has(field)) return false;
+    }
+    return true;
+}
+
+// Helper function to create error responses
+crow::response make_error_response(int status_code, const std::string& message) {
+    crow::json::wvalue res;
+    res["success"] = false;
+    res["message"] = message;
+    return crow::response(status_code, res);
+}
+
+// Helper function to create success responses
+crow::response make_success_response(int status_code, crow::json::wvalue data, const std::string& message) {
+    data["success"] = true;
+    data["message"] = message;
+    return crow::response(status_code, data);
+}
+
 int main(int argc, char* argv[]) {
     const std::string uri = argc > 1 ? argv[1] : "mongodb://127.0.0.1:27017";
     const std::string db_name = argc > 2 ? argv[2] : "CS3203";
@@ -20,148 +44,92 @@ int main(int argc, char* argv[]) {
 
     app.loglevel(crow::LogLevel::Warning);
 
+    // POST /insert_one
+    CROW_ROUTE(app, "/insert_one").methods(crow::HTTPMethod::Post)
+    ([&db](const crow::request& req) {
+        try {
+            auto body = crow::json::load(req.body);
+
+            if (!validate_request(body, {"collection", "document"})) {
+                return make_error_response(400, "Invalid request format");
+            }
+
+            auto collection_name = body["collection"].s();
+            auto json_document = body["document"];
+            auto bson_document = json_to_bson(json_document);
+
+            auto result = db.insert_one(collection_name, bson_document.view());
+
+            auto id = result->inserted_id().get_oid().value.to_string();
+            std::cout << "Inserted to collection " << collection_name << ": " << json_document << " with id " << id << "." << std::endl;
+
+            crow::json::wvalue response_data;
+            response_data["_id"] = id;
+            return make_success_response(200, response_data, "Document(s) inserted successfully");
+        } catch (const std::exception& e) {
+            return make_error_response(500, std::string("Server error: ") + e.what());
+        }
+    });
+
+    CROW_ROUTE(app, "/insert_many").methods(crow::HTTPMethod::Post)
+    ([&db](const crow::request& req) {
+        try {
+            auto body = crow::json::load(req.body);  
+
+            if (!validate_request(body, {"collection", "documents"})) {
+                return make_error_response(400, "Invalid request format");
+            }
+
+            auto collection_name = body["collection"].s();
+            auto json_documents = body["documents"];
+            std::vector<bsoncxx::document::value> bson_documents;
+            for (auto &document: json_documents) {
+                bson_documents.push_back(json_to_bson(document));
+            }
+
+            auto result = db.insert_many(collection_name, bson_documents);
+
+            int inserted_count = result->inserted_count();
+            std::cout << "Inserted to collection " << collection_name << ": " << inserted_count << " documents" << std::endl;
+
+            crow::json::wvalue response_data;
+            response_data["inserted_count"] = inserted_count;
+            return make_success_response(200, response_data, "Document(s) inserted successfully");
+        } catch (const std::exception& e) {
+            return make_error_response(500, std::string("Server error: ") + e.what());
+        }
+    });
+
     // GET /find_one
     CROW_ROUTE(app, "/find_one").methods(crow::HTTPMethod::Post)
     ([&db](const crow::request& req) {
         try {
             auto body = crow::json::load(req.body);
 
-            if (!body || !body.has("collection") || !body.has("filter")) {
-                return crow::response(400, R"({"success": false, "message": "Invalid request format"})");
+            if (!validate_request(body, {"collection", "filter"})) {
+                return make_error_response(400, "Invalid request format"); 
             }
 
-            std::string collection_name = body["collection"].s();
+            auto collection_name = body["collection"].s();
             auto json_filter = body["filter"];
+            auto bson_filter = json_to_bson(json_filter);
 
-            bsoncxx::document::value bson_filter = json_to_bson(json_filter);
-            bsoncxx::stdx::optional<bsoncxx::document::value> result = db.find_one(collection_name, bson_filter.view());
+            auto result = db.find_one(collection_name, bson_filter.view());
 
             if (!result.has_value()) {
-                return crow::response(200, R"({"success": true, "document": null, "message": "No matching documents found"})");
+                return make_success_response(200, {}, "No matching documents found");
             }
 
             std::cout << "Found document: " << bsoncxx::to_json(result.value()) << std::endl;
 
-            std::string document_json = bsoncxx::to_json(result.value());
+            auto document_json = bsoncxx::to_json(result.value());
             auto document_wvalue = crow::json::load(document_json);
-            if (!document_wvalue) {
-                return crow::response(500, R"({"success": false, "message": "Error converting document"})");
-            }
 
-            crow::json::wvalue res;
-            res["success"] = true;
-            res["document"] = document_wvalue;
-            res["message"] = "Document was found successfully";
-            return crow::response(200, res);
+            crow::json::wvalue response_data;
+            response_data["document"] = document_wvalue;
+            return make_success_response(200, response_data, "Document found successfully");
         } catch (const std::exception& e) {
-            return crow::response(500, R"({"success": false, "message": ")" + std::string(e.what()) + R"("})");
-        }
-    });
-
-    // POST /insert_one
-    CROW_ROUTE(app, "/insert_one").methods(crow::HTTPMethod::Post)
-    ([&db](const crow::request& req) {
-        try {
-            auto body = crow::json::load(req.body);  // Parse JSON request body
-
-            if (!body || !body.has("collection") || !body.has("document")) {
-                return crow::response(400, R"({"success": false, "message": "Invalid request format"})");
-            }
-
-            std::string collection_name = body["collection"].s();
-            auto json_document = body["document"];
-            bsoncxx::document::value bson_document = json_to_bson(json_document);
-
-            bsoncxx::stdx::optional<mongocxx::result::insert_one> result = db.insert_one(collection_name, bson_document.view());
-
-            if (!result) {
-                return crow::response(500, R"({"success": false, "message": "Failed to insert document: no result was returned from the database operation"})");
-            }
-
-            std::string id = result->inserted_id().get_oid().value.to_string();
-            std::cout << "Inserted to collection " << collection_name << ": " << json_document << " with id " << id << "." << std::endl;
-
-            crow::json::wvalue res;
-            res["success"] = true;
-            res["_id"] = id;
-            res["message"] = "Document inserted successfully";
-
-            return crow::response(200, res);
-        } catch (const std::exception& e) {
-            return crow::response(500, R"({"success": false, "message": ")" + std::string(e.what()) + R"("})");
-        }
-    });
-
-    CROW_ROUTE(app, "/delete_one").methods(crow::HTTPMethod::Post)
-    ([&db](const crow::request& req) {
-        try {
-            auto body = crow::json::load(req.body);
-
-            if (!body || !body.has("collection") || !body.has("filter")) {
-                return crow::response(400, R"({"success": false, "message": "Invalid request format"})");
-            }
-
-            std::string collection_name = body["collection"].s();
-            auto json_filter = body["filter"];
-
-            bsoncxx::document::value bson_filter = json_to_bson(json_filter);
-            bsoncxx::stdx::optional<mongocxx::result::delete_result> result = db.delete_one(collection_name, bson_filter.view());
-
-            if (!result) {
-                return crow::response(500, R"({"success": false, "message": "Failed to delete document: no result was returned from the database operation"})");
-            }
-
-            int delete_count = result->deleted_count();
-            std::cout << "Deleted " << delete_count << " documents from collection " << collection_name << std::endl;
-
-            crow::json::wvalue res;
-            res["success"] = true;
-            res["count"] = delete_count;
-            res["message"] = "Document deleted successfully";
-
-            return crow::response(200, res);
-        } catch (const std::exception& e) {
-            return crow::response(500, R"({"success": false, "message": ")" + std::string(e.what()) + R"("})");
-        }
-    });
-
-    CROW_ROUTE(app, "/update_one").methods(crow::HTTPMethod::Post)
-    ([&db](const crow::request& req) {
-        try {
-            auto body = crow::json::load(req.body);  // Parse JSON request body
-
-            if (!body || !body.has("collection") || !body.has("filter") || !body.has("update_document")) {
-                return crow::response(400, R"({"success": false, "message": "Invalid request format"})");
-            }
-
-            std::string collection_name = body["collection"].s();
-            auto json_filter = body["filter"];
-            bsoncxx::document::value bson_filter = json_to_bson(json_filter);
-            auto json_update_document = body["update_document"];
-            bsoncxx::document::value bson_update_document = json_to_bson(json_update_document);
-            bool upsert = false;
-            if (body.has("upsert") && body["upsert"]) {
-                upsert = true;
-            }
-
-            bsoncxx::stdx::optional<mongocxx::result::update> result = db.update_one(collection_name, bson_filter.view(), bson_update_document.view(), upsert);
-
-            if (!result) {
-                return crow::response(500, R"({"success": false, "message": "Failed to insert document: no result was returned from the database operation"})");
-            }
-
-            std::cout << "Updated collection " << collection_name << ": (matched_count, modified_count, upserted_count) is (" << result->matched_count() << ", " << result->modified_count() <<", " << result->upserted_count() << ")" << std::endl;
-
-            crow::json::wvalue res;
-            res["success"] = true;
-            res["matched_count"] = result->matched_count();
-            res["modified_count"] = result->modified_count();
-            res["upserted_count"] = result->upserted_count();
-            res["message"] = "Update successful";
-
-            return crow::response(200, res);
-        } catch (const std::exception& e) {
-            return crow::response(500, R"({"success": false, "message": ")" + std::string(e.what()) + R"("})");
+            return make_error_response(500, std::string("Server error: ") + e.what());
         }
     });
 
@@ -170,64 +138,53 @@ int main(int argc, char* argv[]) {
         try {
             auto body = crow::json::load(req.body);
 
-            if (!body || !body.has("collection") || !body.has("filter")) {
-                return crow::response(400, R"({"success": false, "message": "Invalid request format"})");
+            if (!validate_request(body, {"collection", "filter"})) {
+                return make_error_response(400, "Invalid request format");
             }
 
             std::string collection_name = body["collection"].s();
             auto json_filter = body["filter"];
+            auto bson_filter = json_to_bson(json_filter);
 
-            bsoncxx::document::value bson_filter = json_to_bson(json_filter);
-            mongocxx::cursor cursor = db.find(collection_name, bson_filter.view());
-
-            crow::json::wvalue res;
-            res["status"] = true;
-            res["message"] = "Documents retrieved successfully";
-
+            auto cursor = db.find(collection_name, bson_filter.view());
             std::vector<crow::json::wvalue> documents;
-            for (auto&& document : cursor) {
-                documents.push_back(crow::json::load(bsoncxx::to_json(document)));
-            }
-            res["documents"] = std::move(documents);
 
-            return crow::response(200, res);
+            for (auto&& document : cursor) {
+                auto document_json = bsoncxx::to_json(document);
+                documents.push_back(crow::json::load(document_json));
+            }
+
+            crow::json::wvalue response_data;
+            response_data["documents"] = std::move(documents);
+            return make_success_response(200, response_data, "Documents retrieved successfully");
         } catch (const std::exception& e) {
-            return crow::response(500, R"({"success": false, "message": ")" + std::string(e.what()) + R"("})");
+            return make_error_response(500, std::string("Server error: ") + e.what());
         }
     });
 
-    CROW_ROUTE(app, "/insert_many").methods(crow::HTTPMethod::Post)
+    CROW_ROUTE(app, "/delete_one").methods(crow::HTTPMethod::Post)
     ([&db](const crow::request& req) {
         try {
-            auto body = crow::json::load(req.body);  // Parse JSON request body
+            auto body = crow::json::load(req.body);
 
-            if (!body || !body.has("collection") || !body.has("documents")) {
-                return crow::response(400, R"({"success": false, "message": "Invalid request format"})");
+            if (!validate_request(body, {"collection", "filter"})) {
+                return make_error_response(400, "Invalid request format");
             }
 
-            std::string collection_name = body["collection"].s();
-            auto json_documents = body["documents"];
+            auto collection_name = body["collection"].s();
+            auto json_filter = body["filter"];
+            auto bson_filter = json_to_bson(json_filter);
 
-            std::vector<bsoncxx::document::value> bson_documents;
-            for (auto &document: json_documents) {
-                bson_documents.push_back(json_to_bson(document));
-            }
+            auto result = db.delete_one(collection_name, bson_filter.view());
 
-            bsoncxx::stdx::optional<mongocxx::result::insert_many> result = db.insert_many(collection_name, bson_documents);
+            int deleted_count = result->deleted_count();
+            std::cout << "Deleted " << deleted_count << " documents from collection " << collection_name << std::endl;
 
-            if (!result) {
-                return crow::response(500, R"({"success": false, "message": "Failed to insert document: no result was returned from the database operation"})");
-            }
-
-            std::cout << "Inserted to collection " << collection_name << ": " << result->inserted_count() << " documents" << std::endl;
-
-            crow::json::wvalue res;
-            res["success"] = true;
-            res["message"] = "Document inserted successfully";
-
-            return crow::response(200, res);
+            crow::json::wvalue response_data;
+            response_data["deleted_count"] = deleted_count;
+            return make_success_response(200, response_data, "Document(s) deleted successfully");
         } catch (const std::exception& e) {
-            return crow::response(500, R"({"success": false, "message": ")" + std::string(e.what()) + R"("})");
+            return make_error_response(500, std::string("Server error: ") + e.what());
         }
     });
 
@@ -236,31 +193,56 @@ int main(int argc, char* argv[]) {
         try {
             auto body = crow::json::load(req.body);
 
-            if (!body || !body.has("collection") || !body.has("filter")) {
-                return crow::response(400, R"({"success": false, "message": "Invalid request format"})");
+            if (!validate_request(body, {"collection", "filter"})) {
+                return make_error_response(400, "Invalid request format");
             }
 
-            std::string collection_name = body["collection"].s();
+            auto collection_name = body["collection"].s();
             auto json_filter = body["filter"];
+            auto bson_filter = json_to_bson(json_filter);
 
-            bsoncxx::document::value bson_filter = json_to_bson(json_filter);
-            bsoncxx::stdx::optional<mongocxx::result::delete_result> result = db.delete_many(collection_name, bson_filter.view());
+            auto result = db.delete_many(collection_name, bson_filter.view());
 
-            if (!result) {
-                return crow::response(500, R"({"success": false, "message": "Failed to delete document: no result was returned from the database operation"})");
+            int deleted_count = result->deleted_count();
+            std::cout << "Deleted " << deleted_count << " documents from collection " << collection_name << std::endl;
+
+            crow::json::wvalue response_data;
+            response_data["deleted_count"] = deleted_count;
+            return make_success_response(200, response_data, "Document(s) deleted successfully");
+        } catch (const std::exception& e) {
+            return make_error_response(500, std::string("Server error: ") + e.what());
+        }
+    });
+
+
+    CROW_ROUTE(app, "/update_one").methods(crow::HTTPMethod::Post)
+    ([&db](const crow::request& req) {
+        try {
+            auto body = crow::json::load(req.body);  // Parse JSON request body
+
+            if (!validate_request(body, {"collection", "filter", "update_document", "upsert"})) {
+                return make_error_response(400, "Invalid request format");
             }
 
-            int delete_count = result->deleted_count();
-            std::cout << "Deleted " << delete_count << " documents from collection " << collection_name << std::endl;
+            auto collection_name = body["collection"].s();
+            auto json_filter = body["filter"];
+            auto bson_filter = json_to_bson(json_filter);
+            auto json_update_document = body["update_document"];
+            auto bson_update_document = json_to_bson(json_update_document);
+            bool upsert = body["upsert"].b();
 
-            crow::json::wvalue res;
-            res["success"] = true;
-            res["count"] = delete_count;
-            res["message"] = "Document deleted successfully";
+            auto result = db.update_one(collection_name, bson_filter.view(), bson_update_document.view(), upsert);
 
-            return crow::response(200, res);
+            int matched_count = result->matched_count(), modified_count = result->modified_count(), upserted_count = result->upserted_count();
+            std::cout << "Updated collection " << collection_name << ": (matched_count, modified_count, upserted_count) is (" << matched_count << ", " << modified_count << ", " << upserted_count << ")" << std::endl;
+
+            crow::json::wvalue response_data;
+            response_data["matched_count"] = matched_count;
+            response_data["modified_count"] = modified_count;
+            response_data["upserted_count"] = upserted_count;
+            return make_success_response(200, response_data, "Document(s) updated successfully");
         } catch (const std::exception& e) {
-            return crow::response(500, R"({"success": false, "message": ")" + std::string(e.what()) + R"("})");
+            return make_error_response(500, std::string("Server error: ") + e.what());
         }
     });
 
@@ -269,38 +251,29 @@ int main(int argc, char* argv[]) {
         try {
             auto body = crow::json::load(req.body);  // Parse JSON request body
 
-            if (!body || !body.has("collection") || !body.has("filter") || !body.has("update_document")) {
-                return crow::response(400, R"({"success": false, "message": "Invalid request format"})");
+            if (!validate_request(body, {"collection", "filter", "update_document", "upsert"})) {
+                return make_error_response(400, "Invalid request format");
             }
 
-            std::string collection_name = body["collection"].s();
+            auto collection_name = body["collection"].s();
             auto json_filter = body["filter"];
-            bsoncxx::document::value bson_filter = json_to_bson(json_filter);
+            auto bson_filter = json_to_bson(json_filter);
             auto json_update_document = body["update_document"];
-            bsoncxx::document::value bson_update_document = json_to_bson(json_update_document);
-            bool upsert = false;
-            if (body.has("upsert") && body["upsert"]) {
-                upsert = true;
-            }
+            auto bson_update_document = json_to_bson(json_update_document);
+            bool upsert = body["upsert"].b();
 
-            bsoncxx::stdx::optional<mongocxx::result::update> result = db.update_many(collection_name, bson_filter.view(), bson_update_document.view(), upsert);
+            auto result = db.update_many(collection_name, bson_filter.view(), bson_update_document.view(), upsert);
 
-            if (!result) {
-                return crow::response(500, R"({"success": false, "message": "Failed to insert document: no result was returned from the database operation"})");
-            }
+            int matched_count = result->matched_count(), modified_count = result->modified_count(), upserted_count = result->upserted_count();
+            std::cout << "Updated collection " << collection_name << ": (matched_count, modified_count, upserted_count) is (" << matched_count << ", " << modified_count << ", " << upserted_count << ")" << std::endl;
 
-            std::cout << "Updated collection " << collection_name << ": (matched_count, modified_count, upserted_count) is (" << result->matched_count() << ", " << result->modified_count() <<", " << result->upserted_count() << ")" << std::endl;
-
-            crow::json::wvalue res;
-            res["success"] = true;
-            res["matched_count"] = result->matched_count();
-            res["modified_count"] = result->modified_count();
-            res["upserted_count"] = result->upserted_count();
-            res["message"] = "Update successful";
-
-            return crow::response(200, res);
+            crow::json::wvalue response_data;
+            response_data["matched_count"] = matched_count;
+            response_data["modified_count"] = modified_count;
+            response_data["upserted_count"] = upserted_count;
+            return make_success_response(200, response_data, "Document(s) updated successfully");
         } catch (const std::exception& e) {
-            return crow::response(500, R"({"success": false, "message": ")" + std::string(e.what()) + R"("})");
+            return make_error_response(500, std::string("Server error: ") + e.what());
         }
     });
 

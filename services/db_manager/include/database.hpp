@@ -28,7 +28,7 @@ public:
     auto update_one(const std::string& collection_name,
                     const bsoncxx::document::view& filter,
                     const bsoncxx::document::view& update_document,
-                    const bool& upsert = false)
+                    const bool& upsert)
         -> bsoncxx::stdx::optional<mongocxx::result::update>;
 
     auto find(const std::string& collection_name,
@@ -46,7 +46,7 @@ public:
     auto update_many(const std::string& collection_name,
                      const bsoncxx::document::view& filter,
                      const bsoncxx::document::view& update_document,
-                     const bool& upsert = false)
+                     const bool& upsert)
         -> bsoncxx::stdx::optional<mongocxx::result::update>;
 
 private:
