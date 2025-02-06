@@ -1,16 +1,15 @@
-version: "3.8"
+version: "0.0.1"
 services:
   mongo:
     image: mongo:6.0
     container_name: my_mongo
     ports:
       - "27017:27017"
-  
   db_manager:
-    build: .
+    build:
+      context: .
+      dockerfile: ./services/db_manager/Dockerfile
     depends_on:
       - mongo
     ports:
       - "8081:8081"
-    environment:
-      - MONGO_URI=mongodb://mongo:27017
