@@ -17,10 +17,8 @@ int main(int argc, char* argv[])
     const std::string uri = argc > 1 ? argv[1] : "mongodb://127.0.0.1:27017";
     const std::string db_name = argc > 2 ? argv[2] : "CS3203";
 
-    // Initialize Database
     Database db(uri, db_name);
 
-    // Create Crow app
     crow::SimpleApp app;
     app.loglevel(crow::LogLevel::Warning);
 
@@ -66,7 +64,6 @@ int main(int argc, char* argv[])
         return api_handler.update_many(req, db);
     });
 
-    // Run the server
     app.port(8081).multithreaded().run();
     return 0;
 }

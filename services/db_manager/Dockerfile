@@ -39,6 +39,7 @@ RUN cd /tmp && \
 
 # Copy project files to the container
 COPY CMakeLists.txt /app
+COPY common /app/common
 COPY services /app/services
 COPY scripts /app/scripts
 

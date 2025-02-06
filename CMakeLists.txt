@@ -13,7 +13,13 @@ if(NOT CMAKE_BUILD_TYPE)
     set(CMAKE_BUILD_TYPE Release)
 endif()
 
+if(POLICY CMP0167)
+    cmake_policy(SET CMP0167 NEW)
+endif()
+
 set(EXECUTABLE_NAME "CS3203_BACKEND")
+
+set(COMMON_DIR ${CMAKE_SOURCE_DIR}/common)
 
 find_package(Boost REQUIRED)
 find_package(Threads REQUIRED)

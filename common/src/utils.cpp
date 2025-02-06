@@ -6,6 +6,7 @@
 
 #include <iostream>
 
+// Helper function to convert document from json to bson
 auto json_to_bson(const crow::json::rvalue& json_document) -> bsoncxx::document::value {
     std::ostringstream oss;
     oss << json_document;

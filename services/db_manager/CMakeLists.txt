@@ -5,12 +5,13 @@ set(CMAKE_PREFIX_PATH "/opt/homebrew/opt/mongo-cxx-driver" ${CMAKE_PREFIX_PATH})
 set(SRC_FILES
     src/main.cpp
     src/api_handler.cpp
-    src/database.cpp
-    src/utils.cpp
+    ${COMMON_DIR}/src/database.cpp
+    ${COMMON_DIR}/src/utils.cpp
 )
 
 include_directories(${CMAKE_CURRENT_SOURCE_DIR}/includes/)
 include_directories(${CMAKE_CURRENT_SOURCE_DIR}/include)
+include_directories(${COMMON_DIR}/include)
 
 find_package(Boost REQUIRED) 
 find_package(Threads REQUIRED)  
