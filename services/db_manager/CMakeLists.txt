@@ -3,14 +3,12 @@ set(DB_MANAGER_EXECUTABLE_NAME "db_manager")
 set(CMAKE_PREFIX_PATH "/opt/homebrew/opt/mongo-cxx-driver" ${CMAKE_PREFIX_PATH})
 
 set(SRC_FILES
-    main.cpp
+    src/main.cpp
+    src/utils.cpp
 )
 
-set(HEADER_DIR
-    "${CMAKE_CURRENT_SOURCE_DIR}/includes/"
-)
-
-include_directories(${HEADER_DIR})
+include_directories(${CMAKE_CURRENT_SOURCE_DIR}/includes/)
+include_directories(${CMAKE_CURRENT_SOURCE_DIR}/include)
 
 find_package(Boost REQUIRED) 
 find_package(Threads REQUIRED)  
@@ -23,6 +21,7 @@ target_include_directories(${DB_MANAGER_EXECUTABLE_NAME}
                            PRIVATE 
                            ${CROW_INCLUDE_DIR}
                            ${Boost_INCLUDE_DIRS}
+
 )
 
 target_link_libraries(${DB_MANAGER_EXECUTABLE_NAME} 

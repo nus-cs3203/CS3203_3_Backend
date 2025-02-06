@@ -10,6 +10,8 @@
 
 #include "crow.h"
 
+#include "utils.hpp"
+
 using bsoncxx::builder::basic::kvp;
 using bsoncxx::builder::basic::make_document;
 
@@ -75,13 +77,6 @@ private:
     mongocxx::client client;
     mongocxx::database db;
 };
-
-auto json_to_bson(const crow::json::rvalue& json_document) -> bsoncxx::document::value {
-    std::ostringstream oss;
-    oss << json_document;
-    std::string json_str = oss.str();
-    return bsoncxx::from_json(json_str);
-}
 
 int main(int argc, char* argv[]) {
     const std::string uri = argc > 1 ? argv[1] : "mongodb://127.0.0.1:27017";
