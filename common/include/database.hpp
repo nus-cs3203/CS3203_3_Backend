@@ -33,7 +33,7 @@ public:
 
     auto find(const std::string& collection_name,
               const bsoncxx::document::view& filter,
-              const mongocxx::options::find& option)
+              const mongocxx::options::find& option = {})
         -> mongocxx::cursor;
 
     auto insert_many(const std::string& collection_name,

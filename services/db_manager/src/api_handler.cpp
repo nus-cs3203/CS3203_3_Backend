@@ -119,7 +119,7 @@ auto ApiHandler::find(const crow::request& req, Database& db) -> crow::response
 
         auto collection_name = body["collection"].s();
         auto bson_filter = json_to_bson(body["filter"]);
-        auto cursor = db.find(collection_name, bson_filter.view(), {});
+        auto cursor = db.find(collection_name, bson_filter.view());
 
         std::vector<crow::json::wvalue> documents;
         for (auto&& document: cursor) {
