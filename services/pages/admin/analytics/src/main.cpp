@@ -1,6 +1,7 @@
+#include "api_handler.hpp"
+#include "change_stream_handler.hpp"
 #include "database.hpp"
 #include "utils.hpp"
-#include "api_handler.hpp"
 
 #include <bsoncxx/builder/basic/document.hpp>
 #include <bsoncxx/json.hpp>
@@ -12,12 +13,16 @@
 #include <iostream>
 #include <vector>
 
-int main(int argc, char* argv[])
-{
+int main(int argc, char* argv[]) {
     const std::string uri = argc > 1 ? argv[1] : "mongodb://127.0.0.1:27017";
     const std::string db_name = argc > 2 ? argv[2] : "CS3203";
 
     Database db(uri, db_name);
+
+    ChangeStreamHandler change_stream_handler;
+    std::thread change_stream_thread([&change_stream_handler]() {
+        change_stream_handler.handle_insert_one_post();
+    });
 
     crow::SimpleApp app;
     app.loglevel(crow::LogLevel::Warning);

@@ -22,6 +22,7 @@
 - CrowCpp v.1.0+
 - Cmake 3.10+
 - Mongo-cxx-driver
+- mongodb-community
 
 ## Local Environment
 
@@ -29,7 +30,7 @@
 
 1. Use `brew` to install `boost`, `cmake` and `mongo-cxx-driver`:
     ```bash
-    brew install boost cmake mongo-cxx-driver
+    brew install boost cmake mongo-cxx-driver mongodb-community
     ```
 1. Change `set CMAKE_PREFIX_PATH` in `services/db_manager/src/CMakeLists.txt` to where mongo-cxx-driver is located. Use the command below to find where it is:
    ```bash
@@ -47,6 +48,16 @@
    ```bash
    cd ..
    ```
+1. Add the following into mongod.conf:
+    ```
+    replication:
+        replSetName: rs0
+    ```
+1. Run replica set:
+    ```
+    mongosh // connect using mongosh
+    rs.initiate() // initiate replica set
+    ```
 
 ### How to Build?
 

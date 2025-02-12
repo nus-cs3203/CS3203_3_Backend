@@ -24,7 +24,7 @@ auto ApiHandler::insert_one_post(const crow::request& req, Database& db) -> crow
             return make_error_response(400, "Invalid request format");
         }
 
-        auto collection_name = "post";
+        auto collection_name = "posts";
         auto json_document = body["post"];
 
         auto bson_document = json_to_bson(json_document);
