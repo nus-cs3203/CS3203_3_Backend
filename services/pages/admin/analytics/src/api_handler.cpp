@@ -35,23 +35,30 @@ auto ApiHandler::get_sentiment_analytics_by_source(const crow::request& req, Dat
         ));
 
         pipeline.group(bsoncxx::builder::basic::make_document(
-            bsoncxx::builder::basic::kvp("_id", "$source"), 
-            bsoncxx::builder::basic::kvp("count", bsoncxx::builder::basic::make_document(
-                bsoncxx::builder::basic::kvp("$sum", 1) 
-            )),
-            bsoncxx::builder::basic::kvp("sentiment_sum", bsoncxx::builder::basic::make_document(
-                bsoncxx::builder::basic::kvp("$sum", "$sentiment") 
-            ))
+            bsoncxx::builder::basic::kvp("_id", "$source"),
+            bsoncxx::builder::basic::kvp("count",
+                bsoncxx::builder::basic::make_document(
+                    bsoncxx::builder::basic::kvp("$sum", 1)
+                )
+            ),
+            bsoncxx::builder::basic::kvp("avg_sentiment",
+                bsoncxx::builder::basic::make_document(
+                    bsoncxx::builder::basic::kvp("$avg", "$sentiment")
+                )
+            )
         ));
 
         auto cursor = db.aggregate(collection_name, pipeline);
-        
-        for (auto&& doc : cursor) {
-            std::cout << bsoncxx::to_json(doc) << std::endl;
+
+        std::vector<crow::json::wvalue> documents;
+        for (auto&& document: cursor) {
+            auto document_json = bsoncxx::to_json(document);
+            documents.push_back(crow::json::load(document_json));
         }
 
         crow::json::wvalue response_data;
-        return make_success_response(200, response_data, "Posts retrieved");
+        response_data["result"] = std::move(documents);
+        return make_success_response(200, response_data, "Analytics result retrieved.");
     }
     catch (const std::exception& e) {
         return make_error_response(500, std::string("Server error: ") + e.what());
@@ -82,23 +89,30 @@ auto ApiHandler::get_sentiment_analytics_by_category(const crow::request& req, D
         ));
 
         pipeline.group(bsoncxx::builder::basic::make_document(
-            bsoncxx::builder::basic::kvp("_id", "$category"), 
-            bsoncxx::builder::basic::kvp("count", bsoncxx::builder::basic::make_document(
-                bsoncxx::builder::basic::kvp("$sum", 1) 
-            )),
-            bsoncxx::builder::basic::kvp("sentiment_sum", bsoncxx::builder::basic::make_document(
-                bsoncxx::builder::basic::kvp("$sum", "$sentiment") 
-            ))
+            bsoncxx::builder::basic::kvp("_id", "$category"),
+            bsoncxx::builder::basic::kvp("count",
+                bsoncxx::builder::basic::make_document(
+                    bsoncxx::builder::basic::kvp("$sum", 1)
+                )
+            ),
+            bsoncxx::builder::basic::kvp("avg_sentiment",
+                bsoncxx::builder::basic::make_document(
+                    bsoncxx::builder::basic::kvp("$avg", "$sentiment")
+                )
+            )
         ));
 
         auto cursor = db.aggregate(collection_name, pipeline);
-        
-        for (auto&& doc : cursor) {
-            std::cout << bsoncxx::to_json(doc) << std::endl;
+
+        std::vector<crow::json::wvalue> documents;
+        for (auto&& document: cursor) {
+            auto document_json = bsoncxx::to_json(document);
+            documents.push_back(crow::json::load(document_json));
         }
 
         crow::json::wvalue response_data;
-        return make_success_response(200, response_data, "Posts retrieved");
+        response_data["result"] = std::move(documents);
+        return make_success_response(200, response_data, "Analytics result retrieved.");
     }
     catch (const std::exception& e) {
         return make_error_response(500, std::string("Server error: ") + e.what());
