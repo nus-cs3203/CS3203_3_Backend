@@ -23,9 +23,19 @@ int main(int argc, char* argv[]) {
 
     ApiHandler api_handler;
 
+    CROW_ROUTE(app, "/get_sentiment_analytics_by_source").methods(crow::HTTPMethod::Post)
+    ([&db, &api_handler](const crow::request& req) {
+        return api_handler.get_sentiment_analytics_by_source(req, db);
+    });
+
     CROW_ROUTE(app, "/get_most_positive_posts").methods(crow::HTTPMethod::Post)
     ([&db, &api_handler](const crow::request& req) {
         return api_handler.get_most_positive_posts(req, db);
+    });
+
+    CROW_ROUTE(app, "/get_most_negative_posts").methods(crow::HTTPMethod::Post)
+    ([&db, &api_handler](const crow::request& req) {
+        return api_handler.get_most_negative_posts(req, db);
     });
 
     app.port(8082).multithreaded().run();

@@ -11,7 +11,8 @@
 class ApiHandler {
 public:
     ApiHandler() = default;
-
+    
+    auto get_sentiment_analytics_by_source(const crow::request& req, Database& db) -> crow::response;
     auto get_most_positive_posts(const crow::request& req, Database& db) -> crow::response;
     auto get_most_negative_posts(const crow::request& req, Database& db) -> crow::response;
 
