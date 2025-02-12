@@ -48,16 +48,6 @@
    ```bash
    cd ..
    ```
-1. Add the following into mongod.conf:
-    ```
-    replication:
-        replSetName: rs0
-    ```
-1. Run replica set:
-    ```
-    mongosh // connect using mongosh
-    rs.initiate() // initiate replica set
-    ```
 
 ### How to Build?
 
