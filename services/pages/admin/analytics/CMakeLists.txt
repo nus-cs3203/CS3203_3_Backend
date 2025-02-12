@@ -3,7 +3,6 @@ set(PAGES_ADMIN_ANALYTICS_EXECUTABLE_NAME "pages_admin_analytics")
 set(SRC_FILES
     src/main.cpp
     src/api_handler.cpp
-    src/change_stream_handler.cpp
     ${COMMON_DIR}/src/database.cpp
     ${COMMON_DIR}/src/utils.cpp
 )

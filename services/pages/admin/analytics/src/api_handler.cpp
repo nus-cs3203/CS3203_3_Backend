@@ -10,36 +10,74 @@
 #include <iostream>
 #include <vector>
 
-// POST /insert_one
-auto ApiHandler::insert_one_post(const crow::request& req, Database& db) -> crow::response
-{
+auto ApiHandler::get_most_positive_posts(const crow::request& req, Database& db) -> crow::response {
     try {
         auto body = crow::json::load(req.body);
 
-        if (!validate_request(body, {"post"})) {
+        if (!validate_request(body, {"limit"})) {
             return make_error_response(400, "Invalid request format");
         }
-
-        if (!validate_request(body["post"], {"title", "source", "category", "date", "sentiment"})) {
-            return make_error_response(400, "Invalid request format");
-        }
-
+        
         auto collection_name = "posts";
-        auto json_document = body["post"];
+        auto limit = body["limit"].i();
 
-        auto bson_document = json_to_bson(json_document);
+        auto cursor = _get_posts_sorted_by(db, {"post.sentiment"}, {false}, limit);
 
-        auto result = db.insert_one(collection_name, bson_document.view());
-        auto id = result->inserted_id().get_oid().value.to_string();
-
-        std::cout << "Inserted to collection " << collection_name 
-                  << ": " << json_document << " with id " << id << "." << std::endl;
+        std::vector<crow::json::wvalue> documents;
+        for (auto&& document: cursor) {
+            auto document_json = bsoncxx::to_json(document);
+            documents.push_back(crow::json::load(document_json));
+        }
 
         crow::json::wvalue response_data;
-        response_data["_id"] = id;
-        return make_success_response(200, response_data, "Document(s) inserted successfully");
+        response_data["posts"] = std::move(documents);
+        return make_success_response(200, response_data, "Posts retrieved");
     }
     catch (const std::exception& e) {
         return make_error_response(500, std::string("Server error: ") + e.what());
     }
+}
+
+auto ApiHandler::get_most_negative_posts(const crow::request& req, Database& db) -> crow::response {
+    try {
+        auto body = crow::json::load(req.body);
+
+        if (!validate_request(body, {"limit"})) {
+            return make_error_response(400, "Invalid request format");
+        }
+        
+        auto collection_name = "posts";
+        auto limit = body["limit"].i();
+
+        auto cursor = _get_posts_sorted_by(db, {"post.sentiment"}, {true}, limit);
+
+        std::vector<crow::json::wvalue> documents;
+        for (auto&& document: cursor) {
+            auto document_json = bsoncxx::to_json(document);
+            documents.push_back(crow::json::load(document_json));
+        }
+
+        crow::json::wvalue response_data;
+        response_data["posts"] = std::move(documents);
+        return make_success_response(200, response_data, "Posts retrieved");
+    }
+    catch (const std::exception& e) {
+        return make_error_response(500, std::string("Server error: ") + e.what());
+    }
+}
+
+auto ApiHandler::_get_posts_sorted_by(Database& db, const std::vector<std::string>& keys, const std::vector<bool>& ascending_orders, const int& limit) -> mongocxx::cursor {
+    std::string collection_name = "posts";
+    bsoncxx::builder::basic::document sort_builder{};
+    for (int i = 0; i < keys.size(); ++i) {
+        std::string key = keys[i];
+        int direction = ascending_orders[i] ? 1 : -1;
+        sort_builder.append(bsoncxx::builder::basic::kvp(key, direction));
+    }
+    mongocxx::options::find option;
+    option.sort(sort_builder.view());
+    option.limit(limit);
+
+    auto cursor = db.find(collection_name, {}, option);
+    return cursor;
 }

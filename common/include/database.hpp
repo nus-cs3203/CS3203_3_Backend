@@ -32,7 +32,8 @@ public:
         -> bsoncxx::stdx::optional<mongocxx::result::update>;
 
     auto find(const std::string& collection_name,
-              const bsoncxx::document::view& filter)
+              const bsoncxx::document::view& filter,
+              const mongocxx::options::find& option)
         -> mongocxx::cursor;
 
     auto insert_many(const std::string& collection_name,
@@ -48,6 +49,8 @@ public:
                      const bsoncxx::document::view& update_document,
                      const bool& upsert)
         -> bsoncxx::stdx::optional<mongocxx::result::update>;
+
+    auto aggregate(const std::string& collection_name, const mongocxx::pipeline& pipeline) -> mongocxx::cursor;
 
 private:
     mongocxx::instance instance; 

@@ -1,5 +1,4 @@
 #include "api_handler.hpp"
-#include "change_stream_handler.hpp"
 #include "database.hpp"
 #include "utils.hpp"
 
@@ -19,19 +18,14 @@ int main(int argc, char* argv[]) {
 
     Database db(uri, db_name);
 
-    ChangeStreamHandler change_stream_handler;
-    std::thread change_stream_thread([&change_stream_handler]() {
-        change_stream_handler.handle_insert_one_post();
-    });
-
     crow::SimpleApp app;
     app.loglevel(crow::LogLevel::Warning);
 
     ApiHandler api_handler;
 
-    CROW_ROUTE(app, "/insert_one_post").methods(crow::HTTPMethod::Post)
+    CROW_ROUTE(app, "/get_most_positive_posts").methods(crow::HTTPMethod::Post)
     ([&db, &api_handler](const crow::request& req) {
-        return api_handler.insert_one_post(req, db);
+        return api_handler.get_most_positive_posts(req, db);
     });
 
     app.port(8082).multithreaded().run();
