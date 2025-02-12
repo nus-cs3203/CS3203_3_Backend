@@ -11,10 +11,10 @@
 Database::Database(const std::string& uri, const std::string& db_name)
     : instance{}, client{mongocxx::uri{uri}}, db{client[db_name]} {}
 
-auto Database::find_one(const std::string& collection_name, const bsoncxx::document::view& filter)
+auto Database::find_one(const std::string& collection_name, const bsoncxx::document::view& filter, const mongocxx::options::find& option)
     -> bsoncxx::stdx::optional<bsoncxx::document::value> {
     auto collection = db[collection_name];
-    return collection.find_one(filter);
+    return collection.find_one(filter, option);
 }
 
 auto Database::find(const std::string& collection_name, const bsoncxx::document::view& filter, const mongocxx::options::find& option)
