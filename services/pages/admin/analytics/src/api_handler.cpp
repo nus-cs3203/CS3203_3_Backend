@@ -15,7 +15,7 @@ auto ApiHandler::get_sentiment_analytics_by_source(const crow::request& req, Dat
     try {
         auto body = crow::json::load(req.body);
 
-        if (!validate_request(body, {"start_date", "end_date", "limit"})) {
+        if (!validate_request(body, {"start_date", "end_date"})) {
             return make_error_response(400, "Invalid request format");
         }
         
@@ -24,7 +24,6 @@ auto ApiHandler::get_sentiment_analytics_by_source(const crow::request& req, Dat
         bsoncxx::types::b_date start_date{std::chrono::milliseconds(start_date_utc_unix_timestamp_second)};
         auto end_date_utc_unix_timestamp_second = body["end_date"].i() * 1000;
         bsoncxx::types::b_date end_date{std::chrono::milliseconds(end_date_utc_unix_timestamp_second)};
-        auto limit = body["limit"].i();
 
         mongocxx::pipeline pipeline{};
 
@@ -37,6 +36,53 @@ auto ApiHandler::get_sentiment_analytics_by_source(const crow::request& req, Dat
 
         pipeline.group(bsoncxx::builder::basic::make_document(
             bsoncxx::builder::basic::kvp("_id", "$source"), 
+            bsoncxx::builder::basic::kvp("count", bsoncxx::builder::basic::make_document(
+                bsoncxx::builder::basic::kvp("$sum", 1) 
+            )),
+            bsoncxx::builder::basic::kvp("sentiment_sum", bsoncxx::builder::basic::make_document(
+                bsoncxx::builder::basic::kvp("$sum", "$sentiment") 
+            ))
+        ));
+
+        auto cursor = db.aggregate(collection_name, pipeline);
+        
+        for (auto&& doc : cursor) {
+            std::cout << bsoncxx::to_json(doc) << std::endl;
+        }
+
+        crow::json::wvalue response_data;
+        return make_success_response(200, response_data, "Posts retrieved");
+    }
+    catch (const std::exception& e) {
+        return make_error_response(500, std::string("Server error: ") + e.what());
+    }
+}
+
+auto ApiHandler::get_sentiment_analytics_by_category(const crow::request& req, Database& db) -> crow::response {
+    try {
+        auto body = crow::json::load(req.body);
+
+        if (!validate_request(body, {"start_date", "end_date"})) {
+            return make_error_response(400, "Invalid request format");
+        }
+        
+        auto collection_name = "posts";
+        auto start_date_utc_unix_timestamp_second = body["start_date"].i() * 1000;
+        bsoncxx::types::b_date start_date{std::chrono::milliseconds(start_date_utc_unix_timestamp_second)};
+        auto end_date_utc_unix_timestamp_second = body["end_date"].i() * 1000;
+        bsoncxx::types::b_date end_date{std::chrono::milliseconds(end_date_utc_unix_timestamp_second)};
+
+        mongocxx::pipeline pipeline{};
+
+        pipeline.match(bsoncxx::builder::basic::make_document(
+            bsoncxx::builder::basic::kvp("date", bsoncxx::builder::basic::make_document(
+                bsoncxx::builder::basic::kvp("$gte", start_date),
+                bsoncxx::builder::basic::kvp("$lte", end_date)
+            ))
+        ));
+
+        pipeline.group(bsoncxx::builder::basic::make_document(
+            bsoncxx::builder::basic::kvp("_id", "$category"), 
             bsoncxx::builder::basic::kvp("count", bsoncxx::builder::basic::make_document(
                 bsoncxx::builder::basic::kvp("$sum", 1) 
             )),

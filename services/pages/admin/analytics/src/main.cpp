@@ -23,6 +23,11 @@ int main(int argc, char* argv[]) {
 
     ApiHandler api_handler;
 
+    CROW_ROUTE(app, "/get_sentiment_analytics_by_category").methods(crow::HTTPMethod::Post)
+    ([&db, &api_handler](const crow::request& req) {
+        return api_handler.get_sentiment_analytics_by_category(req, db);
+    });
+
     CROW_ROUTE(app, "/get_sentiment_analytics_by_source").methods(crow::HTTPMethod::Post)
     ([&db, &api_handler](const crow::request& req) {
         return api_handler.get_sentiment_analytics_by_source(req, db);
