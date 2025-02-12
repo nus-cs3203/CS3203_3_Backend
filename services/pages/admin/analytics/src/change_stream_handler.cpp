@@ -22,6 +22,14 @@ void ChangeStreamHandler::handle_insert_one_post() {
     while (true) {
         for (const auto& event : stream) {
             std::cout << bsoncxx::to_json(event) << std::endl;
+            auto document = event["fullDocument"].get_document().view();
+            auto category = document["category"].get_value().get_string().value;
+            auto date = document["date"].get_value().get_string().value;
+            auto sentiment = document["sentiment"].get_value().get_double().value;
+            auto source = document["source"].get_value().get_string().value;
+            auto title = document["title"].get_value().get_string().value;
+            std::cout << category << " " << date << " " << sentiment << " " << source << " " << title << std::endl;
+
         }
     }
 }
