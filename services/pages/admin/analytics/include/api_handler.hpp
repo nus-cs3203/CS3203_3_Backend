@@ -14,6 +14,7 @@ public:
 
     auto get_sentiment_analytics_by_source_over_time(const crow::request& req, Database& db) -> crow::response;
     auto get_sentiment_analytics_by_category_over_time(const crow::request& req, Database& db) -> crow::response;
+    auto get_sentiment_analytics_by_value(const crow::request& req, Database& db) -> crow::response;
     auto get_sentiment_analytics_by_category(const crow::request& req, Database& db) -> crow::response;
     auto get_sentiment_analytics_by_source(const crow::request& req, Database& db) -> crow::response;
     auto get_most_positive_posts(const crow::request& req, Database& db) -> crow::response;

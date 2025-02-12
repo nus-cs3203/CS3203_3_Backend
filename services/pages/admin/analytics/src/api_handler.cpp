@@ -169,6 +169,87 @@ auto ApiHandler::get_sentiment_analytics_by_source_over_time(const crow::request
     }
 }
 
+auto ApiHandler::get_sentiment_analytics_by_value(const crow::request& req, Database& db) -> crow::response {
+    try {
+        auto body = crow::json::load(req.body);
+
+        if (!validate_request(body, {"start_date", "end_date", "bucket_size"})) {
+            return make_error_response(400, "Invalid request format");
+        }
+
+        auto start_date_utc_unix_ms = static_cast<long long>(body["start_date"].i()) * 1000; // to ms
+        auto end_date_utc_unix_ms   = static_cast<long long>(body["end_date"].i())   * 1000; // to ms
+        bsoncxx::types::b_date start_date{std::chrono::milliseconds(start_date_utc_unix_ms)};
+        bsoncxx::types::b_date end_date{std::chrono::milliseconds(end_date_utc_unix_ms)};
+
+        double bucket_size = body["bucket_size"].d();
+        if (bucket_size <= 0) {
+            return make_error_response(400, "Bucket size must be greater than 0");
+        }
+
+        double min_sentiment = -1.0;
+        double max_sentiment = 1.0;
+        
+        std::vector<double> boundaries;
+        for (double val = min_sentiment; val < max_sentiment; val += bucket_size) {
+            boundaries.push_back(val);
+        }   
+        boundaries.push_back(max_sentiment);
+
+        mongocxx::pipeline pipeline{};
+
+        pipeline.match(
+            bsoncxx::builder::basic::make_document(
+                bsoncxx::builder::basic::kvp("date", 
+                    bsoncxx::builder::basic::make_document(
+                        bsoncxx::builder::basic::kvp("$gte", start_date),
+                        bsoncxx::builder::basic::kvp("$lte", end_date)
+                    )
+                )
+            )
+        );
+
+        {
+            using bsoncxx::builder::basic::array;
+            using bsoncxx::builder::basic::kvp;
+            using bsoncxx::builder::basic::make_document;
+
+            bsoncxx::builder::basic::array boundaries_array;
+            for (auto b : boundaries) {
+                boundaries_array.append(b);
+            }
+
+            auto bucket_stage = make_document(
+                kvp("groupBy", std::string{"$sentiment"}),
+                kvp("boundaries", boundaries_array.extract()),
+                kvp("default", std::string{"OutOfRange"}),
+                kvp("output", make_document(
+                    kvp("count", make_document(kvp("$sum", 1))),
+                    kvp("avg_sentiment", make_document(kvp("$avg", std::string{"$sentiment"})))
+                ))
+            );
+
+            pipeline.bucket(bucket_stage.view());
+        }
+
+        auto collection_name = "posts"; 
+        auto cursor = db.aggregate(collection_name, pipeline);
+
+        std::vector<crow::json::wvalue> documents;
+        for (auto&& doc : cursor) {
+            auto doc_json = bsoncxx::to_json(doc);
+            documents.push_back(crow::json::load(doc_json));
+        }
+
+        crow::json::wvalue response_data;
+        response_data["result"] = std::move(documents);
+
+        return make_success_response(200, response_data, "Sentiment bucket analytics retrieved.");
+    }
+    catch (const std::exception& e) {
+        return make_error_response(500, std::string("Server error: ") + e.what());
+    }
+}
 
 auto ApiHandler::get_sentiment_analytics_by_source(const crow::request& req, Database& db) -> crow::response {
     try {
