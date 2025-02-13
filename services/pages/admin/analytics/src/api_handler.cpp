@@ -15,163 +15,163 @@
 using bsoncxx::builder::basic::kvp;
 using bsoncxx::builder::basic::make_document;
 
-auto ApiHandler::get_sentiment_analytics_by_category_over_time(const crow::request& req, Database& db) -> crow::response
-{
-    try
-    {
-        auto body = crow::json::load(req.body);
-        if (!validate_request(body, {"start_date", "end_date", "time_granularity_regex"})) {
-            return make_error_response(400, "Invalid request format");
-        }
-        auto start_date_utc_unix_ms = static_cast<int64_t>(body["start_date"].i()) * 1000;
-        auto end_date_utc_unix_ms   = static_cast<int64_t>(body["end_date"].i()) * 1000;
+// auto ApiHandler::get_sentiment_analytics_by_category_over_time(const crow::request& req, Database& db) -> crow::response
+// {
+//     try
+//     {
+//         auto body = crow::json::load(req.body);
+//         if (!validate_request(body, {"start_date", "end_date", "time_granularity_regex"})) {
+//             return make_error_response(400, "Invalid request format");
+//         }
+//         auto start_date_utc_unix_ms = static_cast<int64_t>(body["start_date"].i()) * 1000;
+//         auto end_date_utc_unix_ms   = static_cast<int64_t>(body["end_date"].i()) * 1000;
 
-        bsoncxx::types::b_date start_date{std::chrono::milliseconds(start_date_utc_unix_ms)};
-        bsoncxx::types::b_date end_date{std::chrono::milliseconds(end_date_utc_unix_ms)};
-        auto time_granularity_regex = body["time_granularity_regex"].s();
+//         bsoncxx::types::b_date start_date{std::chrono::milliseconds(start_date_utc_unix_ms)};
+//         bsoncxx::types::b_date end_date{std::chrono::milliseconds(end_date_utc_unix_ms)};
+//         auto time_granularity_regex = body["time_granularity_regex"].s();
 
-        mongocxx::pipeline pipeline{};
+//         mongocxx::pipeline pipeline{};
 
-        pipeline.match(make_document(
-            kvp("date",
-                make_document(
-                    kvp("$gte", start_date),
-                    kvp("$lte", end_date)
-                )
-            )
-        ));
+//         pipeline.match(make_document(
+//             kvp("date",
+//                 make_document(
+//                     kvp("$gte", start_date),
+//                     kvp("$lte", end_date)
+//                 )
+//             )
+//         ));
 
-        pipeline.group(make_document(
-            kvp(
-                "_id",
-                make_document(
-                    kvp(
-                        "month",
-                        make_document(
-                            kvp(
-                                "$dateToString",
-                                make_document(
-                                    kvp("format", time_granularity_regex),
-                                    kvp("date", "$date")
-                                )
-                            )
-                        )
-                    ),
-                    kvp("category", "$category")
-                )
-            ),
-            kvp("count",
-                make_document(
-                    kvp("$sum", 1)
-                )
-            ),
-            kvp("avg_sentiment",
-                make_document(
-                    kvp("$avg", "$sentiment")
-                )
-            )
-        ));
+//         pipeline.group(make_document(
+//             kvp(
+//                 "_id",
+//                 make_document(
+//                     kvp(
+//                         "month",
+//                         make_document(
+//                             kvp(
+//                                 "$dateToString",
+//                                 make_document(
+//                                     kvp("format", time_granularity_regex),
+//                                     kvp("date", "$date")
+//                                 )
+//                             )
+//                         )
+//                     ),
+//                     kvp("category", "$category")
+//                 )
+//             ),
+//             kvp("count",
+//                 make_document(
+//                     kvp("$sum", 1)
+//                 )
+//             ),
+//             kvp("avg_sentiment",
+//                 make_document(
+//                     kvp("$avg", "$sentiment")
+//                 )
+//             )
+//         ));
 
-        pipeline.sort(make_document(
-            kvp("_id.month", 1)
-        ));
+//         pipeline.sort(make_document(
+//             kvp("_id.month", 1)
+//         ));
 
-        auto cursor = db.aggregate("posts", pipeline);
+//         auto cursor = db.aggregate("posts", pipeline);
 
-        std::vector<crow::json::wvalue> documents;
-        for (auto&& document: cursor) {
-            auto document_json = bsoncxx::to_json(document);
-            documents.push_back(crow::json::load(document_json));
-        }
+//         std::vector<crow::json::wvalue> documents;
+//         for (auto&& document: cursor) {
+//             auto document_json = bsoncxx::to_json(document);
+//             documents.push_back(crow::json::load(document_json));
+//         }
 
-        crow::json::wvalue response_data;
-        response_data["result"] = std::move(documents);
-        return make_success_response(200, response_data, "Analytics (category across time) retrieved.");
-    }
-    catch (const std::exception& e)
-    {
-        return make_error_response(500, std::string("Server error: ") + e.what());
-    }
-}
+//         crow::json::wvalue response_data;
+//         response_data["result"] = std::move(documents);
+//         return make_success_response(200, response_data, "Analytics (category across time) retrieved.");
+//     }
+//     catch (const std::exception& e)
+//     {
+//         return make_error_response(500, std::string("Server error: ") + e.what());
+//     }
+// }
 
-auto ApiHandler::get_sentiment_analytics_by_source_over_time(const crow::request& req, Database& db) -> crow::response
-{
-    try
-    {
-        auto body = crow::json::load(req.body);
-        if (!validate_request(body, {"start_date", "end_date", "time_granularity_regex"})) {
-            return make_error_response(400, "Invalid request format");
-        }
-        auto start_date_utc_unix_ms = static_cast<int64_t>(body["start_date"].i()) * 1000;
-        auto end_date_utc_unix_ms   = static_cast<int64_t>(body["end_date"].i()) * 1000;
+// auto ApiHandler::get_sentiment_analytics_by_source_over_time(const crow::request& req, Database& db) -> crow::response
+// {
+//     try
+//     {
+//         auto body = crow::json::load(req.body);
+//         if (!validate_request(body, {"start_date", "end_date", "time_granularity_regex"})) {
+//             return make_error_response(400, "Invalid request format");
+//         }
+//         auto start_date_utc_unix_ms = static_cast<int64_t>(body["start_date"].i()) * 1000;
+//         auto end_date_utc_unix_ms   = static_cast<int64_t>(body["end_date"].i()) * 1000;
 
-        bsoncxx::types::b_date start_date{std::chrono::milliseconds(start_date_utc_unix_ms)};
-        bsoncxx::types::b_date end_date{std::chrono::milliseconds(end_date_utc_unix_ms)};
-        auto time_granularity_regex = body["time_granularity_regex"].s();
+//         bsoncxx::types::b_date start_date{std::chrono::milliseconds(start_date_utc_unix_ms)};
+//         bsoncxx::types::b_date end_date{std::chrono::milliseconds(end_date_utc_unix_ms)};
+//         auto time_granularity_regex = body["time_granularity_regex"].s();
 
-        mongocxx::pipeline pipeline{};
+//         mongocxx::pipeline pipeline{};
 
-        pipeline.match(make_document(
-            kvp("date",
-                make_document(
-                    kvp("$gte", start_date),
-                    kvp("$lte", end_date)
-                )
-            )
-        ));
+//         pipeline.match(make_document(
+//             kvp("date",
+//                 make_document(
+//                     kvp("$gte", start_date),
+//                     kvp("$lte", end_date)
+//                 )
+//             )
+//         ));
 
-        pipeline.group(make_document(
-            kvp(
-                "_id",
-                make_document(
-                    kvp(
-                        "month",
-                        make_document(
-                            kvp(
-                                "$dateToString",
-                                make_document(
-                                    kvp("format", time_granularity_regex),
-                                    kvp("date", "$date")
-                                )
-                            )
-                        )
-                    ),
-                    kvp("source", "$source")
-                )
-            ),
-            kvp("count",
-                make_document(
-                    kvp("$sum", 1)
-                )
-            ),
-            kvp("avg_sentiment",
-                make_document(
-                    kvp("$avg", "$sentiment")
-                )
-            )
-        ));
+//         pipeline.group(make_document(
+//             kvp(
+//                 "_id",
+//                 make_document(
+//                     kvp(
+//                         "month",
+//                         make_document(
+//                             kvp(
+//                                 "$dateToString",
+//                                 make_document(
+//                                     kvp("format", time_granularity_regex),
+//                                     kvp("date", "$date")
+//                                 )
+//                             )
+//                         )
+//                     ),
+//                     kvp("source", "$source")
+//                 )
+//             ),
+//             kvp("count",
+//                 make_document(
+//                     kvp("$sum", 1)
+//                 )
+//             ),
+//             kvp("avg_sentiment",
+//                 make_document(
+//                     kvp("$avg", "$sentiment")
+//                 )
+//             )
+//         ));
 
-        pipeline.sort(make_document(
-            kvp("_id.month", 1)
-        ));
+//         pipeline.sort(make_document(
+//             kvp("_id.month", 1)
+//         ));
 
-        auto cursor = db.aggregate("posts", pipeline);
+//         auto cursor = db.aggregate("posts", pipeline);
 
-        std::vector<crow::json::wvalue> documents;
-        for (auto&& document: cursor) {
-            auto document_json = bsoncxx::to_json(document);
-            documents.push_back(crow::json::load(document_json));
-        }
+//         std::vector<crow::json::wvalue> documents;
+//         for (auto&& document: cursor) {
+//             auto document_json = bsoncxx::to_json(document);
+//             documents.push_back(crow::json::load(document_json));
+//         }
 
-        crow::json::wvalue response_data;
-        response_data["result"] = std::move(documents);
-        return make_success_response(200, response_data, "Analytics (category across time) retrieved.");
-    }
-    catch (const std::exception& e)
-    {
-        return make_error_response(500, std::string("Server error: ") + e.what());
-    }
-}
+//         crow::json::wvalue response_data;
+//         response_data["result"] = std::move(documents);
+//         return make_success_response(200, response_data, "Analytics (category across time) retrieved.");
+//     }
+//     catch (const std::exception& e)
+//     {
+//         return make_error_response(500, std::string("Server error: ") + e.what());
+//     }
+// }
 
 auto ApiHandler::get_sentiment_analytics_by_value(const crow::request& req, Database& db) -> crow::response {
     try {
@@ -279,7 +279,14 @@ auto ApiHandler::get_posts_grouped(const crow::request& req, Database& db) -> cr
         std::vector<crow::json::wvalue> documents;
         for (auto&& document: cursor) {
             auto document_json = bsoncxx::to_json(document);
-            documents.push_back(crow::json::load(document_json));
+            crow::json::rvalue rval_json = crow::json::load(document_json);
+
+            crow::json::wvalue wval_json;
+            wval_json[group_by_field] = rval_json["_id"];
+            wval_json["count"] = rval_json["count"];
+            wval_json["avg_sentiment"] = rval_json["avg_sentiment"];
+
+            documents.push_back(std::move(wval_json));
         }
 
         crow::json::wvalue response_data;
@@ -287,6 +294,51 @@ auto ApiHandler::get_posts_grouped(const crow::request& req, Database& db) -> cr
         return make_success_response(200, response_data, "Analytics result retrieved.");
     }
     catch (const std::exception& e) {
+        return make_error_response(500, std::string("Server error: ") + e.what());
+    }
+}
+
+auto ApiHandler::get_posts_grouped_over_time(const crow::request& req, Database& db) -> crow::response {
+    try
+    {
+        auto body = crow::json::load(req.body);
+        if (!validate_request(body, {"start_date", "end_date", "group_by_field", "time_bucket_regex"})) {
+            return make_error_response(400, "Invalid request format");
+        }
+
+        auto start_date_str = body["start_date"].s();
+        auto start_date_ts = string_to_utc_unix_timestamp(start_date_str, Constants::DATETIME_FORMAT) * 1000;
+        bsoncxx::types::b_date start_date{std::chrono::milliseconds(start_date_ts)};
+
+        auto end_date_str = body["end_date"].s();
+        auto end_date_ts = string_to_utc_unix_timestamp(end_date_str, Constants::DATETIME_FORMAT) * 1000;
+        bsoncxx::types::b_date end_date{std::chrono::milliseconds(end_date_ts)};
+
+        auto group_by_field = body["group_by_field"].s();
+
+        auto time_bucket_regex = body["time_bucket_regex"].s();
+
+        bsoncxx::document::value filter = make_document(
+            kvp("date", make_document(
+                kvp("$gte", start_date),
+                kvp("$lte", end_date)
+            ))
+        );
+
+        auto cursor = _get_posts_grouped_over_time(db, group_by_field, time_bucket_regex, filter);
+
+        std::vector<crow::json::wvalue> documents;
+        for (auto&& document: cursor) {
+            auto document_json = bsoncxx::to_json(document);
+            documents.push_back(crow::json::load(document_json));
+        }
+
+        crow::json::wvalue response_data;
+        response_data["result"] = std::move(documents);
+        return make_success_response(200, response_data, "Analytics (grouped over time) retrieved.");
+    }
+    catch (const std::exception& e)
+    {
         return make_error_response(500, std::string("Server error: ") + e.what());
     }
 }
@@ -337,6 +389,51 @@ auto ApiHandler::get_posts_sorted(const crow::request& req, Database& db) -> cro
         return make_error_response(500, std::string("Server error: ") + e.what());
     }
 }
+
+auto ApiHandler::_get_posts_grouped_over_time(Database& db, const std::string& group_by_field, const std::string& time_bucket_regex, const bsoncxx::document::view& filter) -> mongocxx::cursor {
+    mongocxx::pipeline pipeline{};
+
+    pipeline.match(filter);
+
+    pipeline.group(make_document(
+        kvp(
+            "_id",
+            make_document(
+                kvp(
+                    "time_bucket",
+                    make_document(
+                        kvp(
+                            "$dateToString",
+                            make_document(
+                                kvp("format", time_bucket_regex),
+                                kvp("date", "$date")
+                            )
+                        )
+                    )
+                ),
+                kvp(group_by_field, "$" + group_by_field)
+            )
+        ),
+        kvp("count",
+            make_document(
+                kvp("$sum", 1)
+            )
+        ),
+        kvp("avg_sentiment",
+            make_document(
+                kvp("$avg", "$sentiment")
+            )
+        )
+    ));
+
+    pipeline.sort(make_document(
+        kvp("_id.time_bucket", 1)
+    ));
+
+    auto cursor = db.aggregate("posts", pipeline);
+    return cursor;
+}
+
 
 auto ApiHandler::_get_posts_grouped(Database& db, const std::string& group_by_field, const bsoncxx::document::view& filter) -> mongocxx::cursor {
     mongocxx::pipeline pipeline{};
