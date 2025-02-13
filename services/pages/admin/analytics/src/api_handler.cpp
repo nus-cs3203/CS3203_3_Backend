@@ -105,7 +105,7 @@ auto ApiHandler::get_posts_grouped_by_field_over_time(const crow::request& req, 
 
         crow::json::wvalue response_data;
         response_data["result"] = std::move(result);
-        return make_success_response(200, response_data, "Analytics (grouped over time) retrieved.");
+        return make_success_response(200, response_data, "Analytics result retrieved.");
     }
     catch (const std::exception& e)
     {
@@ -158,7 +158,7 @@ auto ApiHandler::get_posts_grouped_by_sentiment_value(const crow::request& req, 
 
         crow::json::wvalue response_data;
         response_data["result"] = std::move(result);
-        return make_success_response(200, response_data, "Sentiment bucket analytics retrieved.");
+        return make_success_response(200, response_data, "Analytics result retrieved.");
     }
     catch (const std::exception& e) {
         return make_error_response(500, std::string("Server error: ") + e.what());
