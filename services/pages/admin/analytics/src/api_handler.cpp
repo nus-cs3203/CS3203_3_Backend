@@ -249,98 +249,32 @@ auto ApiHandler::get_sentiment_analytics_by_value(const crow::request& req, Data
     }
 }
 
-auto ApiHandler::get_sentiment_analytics_by_source(const crow::request& req, Database& db) -> crow::response {
+auto ApiHandler::get_posts_grouped(const crow::request& req, Database& db) -> crow::response {
     try {
         auto body = crow::json::load(req.body);
 
-        if (!validate_request(body, {"start_date", "end_date"})) {
+        if (!validate_request(body, {"start_date", "end_date", "group_by_field"})) {
             return make_error_response(400, "Invalid request format");
         }
         
-        auto collection_name = "posts";
-        auto start_date_utc_unix_timestamp_second = body["start_date"].i() * 1000;
-        bsoncxx::types::b_date start_date{std::chrono::milliseconds(start_date_utc_unix_timestamp_second)};
-        auto end_date_utc_unix_timestamp_second = body["end_date"].i() * 1000;
-        bsoncxx::types::b_date end_date{std::chrono::milliseconds(end_date_utc_unix_timestamp_second)};
+        auto start_date_str = body["start_date"].s();
+        auto start_date_ts = string_to_utc_unix_timestamp(start_date_str, Constants::DATETIME_FORMAT) * 1000;
+        bsoncxx::types::b_date start_date{std::chrono::milliseconds(start_date_ts)};
 
-        mongocxx::pipeline pipeline{};
+        auto end_date_str = body["end_date"].s();
+        auto end_date_ts = string_to_utc_unix_timestamp(end_date_str, Constants::DATETIME_FORMAT) * 1000;
+        bsoncxx::types::b_date end_date{std::chrono::milliseconds(end_date_ts)};
 
-        pipeline.match(make_document(
+        auto group_by_field = body["group_by_field"].s();
+
+        bsoncxx::document::value filter = make_document(
             kvp("date", make_document(
                 kvp("$gte", start_date),
                 kvp("$lte", end_date)
             ))
-        ));
+        );
 
-        pipeline.group(make_document(
-            kvp("_id", "$source"),
-            kvp("count",
-                make_document(
-                    kvp("$sum", 1)
-                )
-            ),
-            kvp("avg_sentiment",
-                make_document(
-                    kvp("$avg", "$sentiment")
-                )
-            )
-        ));
-
-        auto cursor = db.aggregate(collection_name, pipeline);
-
-        std::vector<crow::json::wvalue> documents;
-        for (auto&& document: cursor) {
-            auto document_json = bsoncxx::to_json(document);
-            documents.push_back(crow::json::load(document_json));
-        }
-
-        crow::json::wvalue response_data;
-        response_data["result"] = std::move(documents);
-        return make_success_response(200, response_data, "Analytics result retrieved.");
-    }
-    catch (const std::exception& e) {
-        return make_error_response(500, std::string("Server error: ") + e.what());
-    }
-}
-
-auto ApiHandler::get_sentiment_analytics_by_category(const crow::request& req, Database& db) -> crow::response {
-    try {
-        auto body = crow::json::load(req.body);
-
-        if (!validate_request(body, {"start_date", "end_date"})) {
-            return make_error_response(400, "Invalid request format");
-        }
-        
-        auto collection_name = "posts";
-        auto start_date_utc_unix_timestamp_second = body["start_date"].i() * 1000;
-        bsoncxx::types::b_date start_date{std::chrono::milliseconds(start_date_utc_unix_timestamp_second)};
-        auto end_date_utc_unix_timestamp_second = body["end_date"].i() * 1000;
-        bsoncxx::types::b_date end_date{std::chrono::milliseconds(end_date_utc_unix_timestamp_second)};
-
-        mongocxx::pipeline pipeline{};
-
-        pipeline.match(make_document(
-            kvp("date", make_document(
-                kvp("$gte", start_date),
-                kvp("$lte", end_date)
-            ))
-        ));
-
-        pipeline.group(make_document(
-            kvp("_id", "$category"),
-            kvp("count",
-                make_document(
-                    kvp("$sum", 1)
-                )
-            ),
-            kvp("avg_sentiment",
-                make_document(
-                    kvp("$avg", "$sentiment")
-                )
-            )
-        ));
-
-        auto cursor = db.aggregate(collection_name, pipeline);
+        auto cursor = _get_posts_grouped(db, group_by_field, filter);
 
         std::vector<crow::json::wvalue> documents;
         for (auto&& document: cursor) {
@@ -403,6 +337,30 @@ auto ApiHandler::get_posts_sorted(const crow::request& req, Database& db) -> cro
         return make_error_response(500, std::string("Server error: ") + e.what());
     }
 }
+
+auto ApiHandler::_get_posts_grouped(Database& db, const std::string& group_by_field, const bsoncxx::document::view& filter) -> mongocxx::cursor {
+    mongocxx::pipeline pipeline{};
+
+    pipeline.match(filter);
+
+    pipeline.group(make_document(
+        kvp("_id", "$" + group_by_field),
+        kvp("count",
+            make_document(
+                kvp("$sum", 1)
+            )
+        ),
+        kvp("avg_sentiment",
+            make_document(
+                kvp("$avg", "$sentiment")
+            )
+        )
+    ));
+
+    auto cursor = db.aggregate(Constants::COLLECTION_POSTS, pipeline);
+    return cursor;
+}
+
 
 auto ApiHandler::_get_posts_sorted(Database& db, const std::vector<std::string>& keys, const std::vector<bool>& ascending_orders, const int& limit) -> mongocxx::cursor {
     if (keys.size() != ascending_orders.size()) {

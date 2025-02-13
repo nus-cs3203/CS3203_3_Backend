@@ -38,14 +38,9 @@ int main(int argc, char* argv[]) {
         return api_handler.get_sentiment_analytics_by_value(req, db);
     });
 
-    CROW_ROUTE(app, "/get_sentiment_analytics_by_category").methods(crow::HTTPMethod::Post)
+    CROW_ROUTE(app, "/get_posts_grouped").methods(crow::HTTPMethod::Post)
     ([&db, &api_handler](const crow::request& req) {
-        return api_handler.get_sentiment_analytics_by_category(req, db);
-    });
-
-    CROW_ROUTE(app, "/get_sentiment_analytics_by_source").methods(crow::HTTPMethod::Post)
-    ([&db, &api_handler](const crow::request& req) {
-        return api_handler.get_sentiment_analytics_by_source(req, db);
+        return api_handler.get_posts_grouped(req, db);
     });
 
     CROW_ROUTE(app, "/get_posts_sorted").methods(crow::HTTPMethod::Post)

@@ -48,3 +48,17 @@ std::string utc_unix_timestamp_to_string(const long long int& utc_unix_timestamp
     
     return oss.str();
 }
+
+long long int string_to_utc_unix_timestamp(const std::string& datetime, const std::string& format) {
+    std::tm tm = {};
+    std::istringstream ss(datetime);
+    ss >> std::get_time(&tm, format.c_str()); // Parse time
+
+    if (ss.fail()) {
+        throw std::runtime_error("Failed to parse date/time string");
+    }
+
+    // Convert to Unix timestamp (seconds)
+    std::time_t time = timegm(&tm); // Use timegm for UTC, mktime for local time
+    return static_cast<long long int>(time);
+}

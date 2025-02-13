@@ -14,4 +14,6 @@ crow::response make_success_response(int status_code, crow::json::wvalue data, c
 
 std::string utc_unix_timestamp_to_string(const long long int& utc_unix_timestamp, const std::string& format);
 
+long long int string_to_utc_unix_timestamp(const std::string& datetime, const std::string& format);
+
 #endif
