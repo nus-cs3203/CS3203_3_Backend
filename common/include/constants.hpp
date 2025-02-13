@@ -4,8 +4,11 @@
 #include <string>
 
 namespace Constants {
-    const std::string COLLECTION_POSTS = "posts";
     const std::string DATETIME_FORMAT = "%d-%m-%Y %H:%M:%S";
+
+    const std::string MONGO_URI = "mongodb://127.0.0.1:27017";
+    const std::string DB_NAME = "CS3203";
+    const std::string COLLECTION_POSTS = "posts";
 }
 
 #endif // CONSTANTS_HPP

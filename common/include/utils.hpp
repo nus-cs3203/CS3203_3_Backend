@@ -6,14 +6,16 @@
 
 auto json_to_bson(const crow::json::rvalue& json_document) -> bsoncxx::document::value;
 
-bool validate_request(const crow::json::rvalue& body, std::initializer_list<std::string> required_fields);
+auto validate_request(const crow::json::rvalue& body, std::initializer_list<std::string> required_fields) -> bool;
 
-crow::response make_error_response(int status_code, const std::string& message);
+auto make_error_response(int status_code, const std::string& message) -> crow::response;
 
-crow::response make_success_response(int status_code, crow::json::wvalue data, const std::string& message);
+auto make_success_response(int status_code, crow::json::wvalue data, const std::string& message) -> crow::response;
 
-std::string utc_unix_timestamp_to_string(const long long int& utc_unix_timestamp, const std::string& format);
+auto utc_unix_timestamp_to_string(const long long int& utc_unix_timestamp, const std::string& format) -> std::string;
 
-long long int string_to_utc_unix_timestamp(const std::string& datetime, const std::string& format);
+auto string_to_utc_unix_timestamp(const std::string& datetime, const std::string& format) -> long long int;
+
+auto read_env(const std::string& key, const std::string& default_value = "") -> std::string;
 
 #endif

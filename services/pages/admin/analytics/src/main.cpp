@@ -1,4 +1,5 @@
 #include "api_handler.hpp"
+#include "constants.hpp"
 #include "database.hpp"
 #include "utils.hpp"
 
@@ -12,11 +13,11 @@
 #include <iostream>
 #include <vector>
 
-int main(int argc, char* argv[]) {
-    const std::string uri = argc > 1 ? argv[1] : "mongodb://127.0.0.1:27017";
-    const std::string db_name = argc > 2 ? argv[2] : "CS3203";
+int main() {
+    const std::string MONGO_URI = read_env("MONGO_URI", Constants::MONGO_URI);
+    const std::string DB_NAME = read_env("DB_NAME", Constants::DB_NAME);
 
-    Database db(uri, db_name);
+    Database db(MONGO_URI, DB_NAME);
 
     crow::SimpleApp app;
     app.loglevel(crow::LogLevel::Warning);
