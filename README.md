@@ -406,3 +406,390 @@ curl -X POST http://localhost:8081/update_many \
      }'
 ```
 
+# API Contract
+
+## Service: **pages_admin_analytics**
+
+This service provides analytics for the `posts` collection.
+
+---
+
+### **Collection: `posts`**
+
+Each document in the `posts` collection has the following structure:
+
+```json
+{
+    "_id": {
+        "oid": "string", // mongodb internal id
+    },
+    "title": "string",
+    "source": "string",
+    "category": "string",
+    "date": "Date",
+    "sentiment": "float"
+}
+```
+
+---
+
+### **POST /get_posts_grouped_by_field**
+
+- **Purpose**: Group posts based on a specified field (e.g., `category`), returning `count` and `avg_sentiment` that group.
+- **`group_by_field` explanation**: This is the field in the `posts` collection used for grouping e.g.  `"category"`, `"source"`.
+
+**Request:**
+```json
+{
+    "start_date": "string",   // format: %d-%m-%Y %H:%M:%S
+    "end_date": "string",     // format: %d-%m-%Y %H:%M:%S
+    "group_by_field": "string"
+}
+```
+
+**Response:**
+```json
+{
+    "success": "bool",
+    "message": "string",
+    "result": {
+        "group_value_1": {
+            "count": "int",
+            "avg_sentiment": "float"
+        },
+        "group_value_2": {
+            "count": "int",
+            "avg_sentiment": "float"
+        },
+        ...
+    }
+}
+```
+
+**Sample Request:**
+```sh
+    curl -X POST "http://localhost:8082/get_posts_grouped_by_field" \
+    -H "Content-Type: application/json" \
+    -d '{
+        "start_date": "1-1-2024 00:00:00",
+        "end_date": "31-12-2024 23:59:59",
+        "group_by_field": "category"
+    }'
+```
+
+**Sample Response:**
+```json
+{
+  "success": true,
+  "message": "Analytics result retrieved.",
+  "result": {
+    "politics": {
+      "count": 1,
+      "avg_sentiment": -0.5
+    },
+    "technology": {
+      "count": 3,
+      "avg_sentiment": 0.733333
+    },
+    "environment": {
+      "count": 1,
+      "avg_sentiment": -0.3
+    },
+    "business": {
+      "count": 1,
+      "avg_sentiment": 0.7
+    },
+    "finance": {
+      "count": 1,
+      "avg_sentiment": 0.6
+    },
+    "entertainment": {
+      "count": 1,
+      "avg_sentiment": -0.2
+    },
+    "sports": {
+      "count": 1,
+      "avg_sentiment": 1.0
+    },
+    "health": {
+      "count": 1,
+      "avg_sentiment": 1.0
+    }
+  }
+}
+```
+
+---
+
+### **POST /get_posts_grouped_by_field_over_time**
+
+- **Purpose**: Similar to `get_posts_grouped_by_field`, but also groups the results by a time interval (based on the `time_bucket_regex`).
+- **`time_bucket_regex` explanation**: This is a date format string specifying how to bucket or group posts by their date. For example, `"%m-%Y"` groups posts by month-year (e.g., `02-2024`) and `"%Y"` groups posts by year (e.g., `2024`).
+
+**Request:**
+```json
+{
+    "start_date": "string",       // format: %d-%m-%Y %H:%M:%S
+    "end_date": "string",         // format: %d-%m-%Y %H:%M:%S
+    "time_bucket_regex": "string", // e.g. "%m-%Y"
+    "group_by_field": "string"
+}
+```
+
+**Response:**
+```json
+{
+    "success": "bool",
+    "message": "string",
+    "result": {
+        "time_bucket_value_1": {
+            "group_value_1": {
+                "count": "int",
+                "avg_sentiment": "float"
+            },
+            "group_value_2": {
+                "count": "int",
+                "avg_sentiment": "float"
+            },
+            ...
+        },
+        "time_bucket_value_2": {
+            ...
+        }
+    }
+}
+```
+
+**Sample Request:**
+```sh
+    curl -X POST "http://localhost:8082/get_posts_grouped_by_field_over_time" \
+    -H "Content-Type: application/json" \
+    -d '{
+        "start_date": "1-1-2024 00:00:00",
+        "end_date": "31-12-2024 23:59:59",
+        "group_by_field": "category",
+        "time_bucket_regex": "%m-%Y"
+    }'
+```
+
+**Sample Response:**
+```json
+{
+  "success": true,
+  "message": "Analytics result retrieved.",
+  "result": {
+    "02-2024": {
+      "health": {
+        "count": 1,
+        "avg_sentiment": 1
+      },
+      "politics": {
+        "count": 1,
+        "avg_sentiment": -0.5
+      },
+      "technology": {
+        "count": 3,
+        "avg_sentiment": 0.73333333333333339
+      },
+      "entertainment": {
+        "count": 1,
+        "avg_sentiment": -0.2
+      },
+      "finance": {
+        "count": 1,
+        "avg_sentiment": 0.6
+      },
+      "business": {
+        "count": 1,
+        "avg_sentiment": 0.7
+      },
+      "sports": {
+        "count": 1,
+        "avg_sentiment": 1
+      },
+      "environment": {
+        "count": 1,
+        "avg_sentiment": -0.3
+      }
+    }
+  }
+}
+```
+
+---
+
+### **POST /get_posts_grouped_by_sentiment_value**
+
+- **Purpose**: Group posts into "buckets" based on their sentiment value. For example, if the `bucket_size` is 0.5, it will group sentiments in the following ranges: `[-1, -0.5), [-0.5, 0), [0, 0.5), [0.5, 1)`.
+- **`bucket_size` explanation**: A numerical interval for grouping sentiment values, e.g. `0.5` creates buckets of width 0.5 each.
+
+**Request:**
+```json
+{
+    "start_date": "string",  // format: %d-%m-%Y %H:%M:%S
+    "end_date": "string",    // format: %d-%m-%Y %H:%M:%S
+    "bucket_size": "float"
+}
+```
+
+**Response:**
+```json
+{
+    "success": "bool",
+    "message": "string",
+    "result": [
+        {
+            "left_bound_inclusive": "float",
+            "right_bound_exclusive": "float",
+            "count": "int"
+        },
+        ...
+    ]
+}
+```
+
+**Sample Request:**
+```sh
+    curl -X POST "http://localhost:8082/get_posts_grouped_by_sentiment_value" \
+    -H "Content-Type: application/json" \
+    -d '{
+        "start_date": "1-1-2024 00:00:00",
+        "end_date": "31-12-2024 23:59:59",
+        "bucket_size": 0.5
+    }'
+```
+
+**Sample Response:**
+```json
+{
+  "success": true,
+  "message": "Analytics result retrieved.",
+  "result": [
+    {
+      "count": 3,
+      "right_bound_exclusive": 0,
+      "left_bound_inclusive": -0.5
+    },
+    {
+      "left_bound_inclusive": 0.5,
+      "right_bound_exclusive": 1,
+      "count": 5
+    },
+    {
+      "count": 2,
+      "right_bound_exclusive": 1.5,
+      "left_bound_inclusive": 1.0
+    }
+  ]
+}
+```
+
+---
+
+### **POST /get_posts_sorted_by_fields**
+
+- **Purpose**: Retrieve posts sorted by one or more specified fields.
+
+**Request:**
+```json
+{
+    "keys": ["string"],
+    "ascending_orders": ["bool"],
+    "limit": "int"
+}
+```
+- **`keys`**: An array of field names to sort by (e.g., `["sentiment", "date"]`).
+- **`ascending_orders`**: A corresponding array of booleans indicating ascending (`true`) or descending (`false`) for each key.
+- **`limit`**: The maximum number of posts to return.
+
+**Response:**
+```json
+{
+    "success": "bool",
+    "message": "string",
+    "posts": [
+        {
+            "title": "string",
+            "source": "string",
+            "category": "string",
+            "date": "DD-MM-YYYY",
+            "sentiment": "float",
+            "_id": {"$oid": "string"}
+        },
+        ...
+    ]
+}
+```
+
+**Sample Request:**
+```sh
+    curl -X POST "http://localhost:8082/get_posts_sorted_by_fields" \
+    -H "Content-Type: application/json" \
+    -d '{
+        "keys": ["sentiment"],
+        "ascending_orders": [false],
+        "limit": 5
+    }'
+```
+
+**Sample Response:**
+```json
+{
+  "success": true,
+  "message": "Post(s) retrieved.",
+  "posts": [
+    {
+      "sentiment": 1,
+      "date": "12-02-2024 18:15:00",
+      "category": "sports",
+      "title": "Sports Team Wins Championship",
+      "source": "SportsCenter",
+      "_id": {
+        "$oid": "67acd782bde3d73ac0147417"
+      }
+    },
+    {
+      "_id": {
+        "$oid": "67acd782bde3d73ac0147419"
+      },
+      "source": "GreenTech",
+      "title": "Advancements in Renewable Energy",
+      "category": "technology",
+      "date": "14-02-2024 11:20:00",
+      "sentiment": 0.9
+    },
+    {
+      "sentiment": 0.8,
+      "date": "10-02-2024 12:00:00",
+      "category": "technology",
+      "title": "Tech Breakthrough in AI",
+      "source": "TechNews",
+      "_id": {
+        "$oid": "67acd782bde3d73ac0147415"
+      }
+    },
+    {
+      "sentiment": 0.6,
+      "date": "11-02-2024 14:30:00",
+      "category": "finance",
+      "title": "Stock Market Sees Record Highs",
+      "source": "FinanceDaily",
+      "_id": {
+        "$oid": "67acd782bde3d73ac0147416"
+      }
+    },
+    {
+      "_id": {
+        "$oid": "67acd782bde3d73ac0147418"
+      },
+      "source": "MovieCritic",
+      "title": "New Movie Release Receives Mixed Reviews",
+      "category": "entertainment",
+      "date": "13-02-2024 09:45:00",
+      "sentiment": -0.2
+    }
+  ]
+}
+```
+
+---
