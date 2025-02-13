@@ -48,14 +48,9 @@ int main(int argc, char* argv[]) {
         return api_handler.get_sentiment_analytics_by_source(req, db);
     });
 
-    CROW_ROUTE(app, "/get_most_positive_posts").methods(crow::HTTPMethod::Post)
+    CROW_ROUTE(app, "/get_posts_sorted").methods(crow::HTTPMethod::Post)
     ([&db, &api_handler](const crow::request& req) {
-        return api_handler.get_most_positive_posts(req, db);
-    });
-
-    CROW_ROUTE(app, "/get_most_negative_posts").methods(crow::HTTPMethod::Post)
-    ([&db, &api_handler](const crow::request& req) {
-        return api_handler.get_most_negative_posts(req, db);
+        return api_handler.get_posts_sorted(req, db);
     });
 
     app.port(8082).multithreaded().run();

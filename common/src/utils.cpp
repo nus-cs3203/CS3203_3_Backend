@@ -37,3 +37,14 @@ crow::response make_success_response(int status_code, crow::json::wvalue data, c
     data["message"] = message;
     return crow::response(status_code, data);
 }
+
+std::string utc_unix_timestamp_to_string(const long long int& utc_unix_timestamp, const std::string& format) {
+    std::time_t time = static_cast<std::time_t>(utc_unix_timestamp);
+    
+    std::tm utc_time = *std::gmtime(&time);
+
+    std::ostringstream oss;
+    oss << std::put_time(&utc_time, format.c_str());
+    
+    return oss.str();
+}

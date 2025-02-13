@@ -12,4 +12,6 @@ crow::response make_error_response(int status_code, const std::string& message);
 
 crow::response make_success_response(int status_code, crow::json::wvalue data, const std::string& message);
 
+std::string utc_unix_timestamp_to_string(const long long int& utc_unix_timestamp, const std::string& format);
+
 #endif

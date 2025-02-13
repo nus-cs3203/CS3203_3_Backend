@@ -1,4 +1,5 @@
 #include "api_handler.hpp"
+#include "constants.hpp"
 
 #include <bsoncxx/builder/basic/document.hpp>
 #include <bsoncxx/json.hpp>
@@ -359,72 +360,68 @@ auto ApiHandler::get_sentiment_analytics_by_category(const crow::request& req, D
     }
 }
 
-auto ApiHandler::get_most_positive_posts(const crow::request& req, Database& db) -> crow::response {
+auto ApiHandler::get_posts_sorted(const crow::request& req, Database& db) -> crow::response  {
     try {
         auto body = crow::json::load(req.body);
 
-        if (!validate_request(body, {"limit"})) {
+        if (!validate_request(body, {"keys", "ascending_orders", "limit"})) {
             return make_error_response(400, "Invalid request format");
+        }
+        if (body["keys"].t() != crow::json::type::List) {
+            return make_error_response(400, "Invalid format: 'keys' must be an array");
+        }
+        if (body["ascending_orders"].t() != crow::json::type::List) {
+            return make_error_response(400, "Invalid format: 'ascending_orders' must be an array");
         }
         
         auto collection_name = "posts";
+        std::vector<std::string> keys;
+        auto keys_json = body["keys"];
+        for (const auto& key: keys_json.lo()) {
+            keys.push_back("posts." + static_cast<std::string>(key.s())); 
+        }
+        std::vector<bool> ascending_orders;
+        auto ascending_orders_json = body["ascending_orders"];
+        for (const auto& ascending_order: ascending_orders_json.lo()) {
+            ascending_orders.push_back(ascending_order.b());
+        }
         auto limit = body["limit"].i();
 
-        auto cursor = _get_posts_sorted_by(db, {"post.sentiment"}, {false}, limit);
+        auto cursor = _get_posts_sorted(db, Constants::COLLECTION_POSTS, keys, ascending_orders, limit);
 
         std::vector<crow::json::wvalue> documents;
         for (auto&& document: cursor) {
             auto document_json = bsoncxx::to_json(document);
-            documents.push_back(crow::json::load(document_json));
+            crow::json::rvalue rval_json = crow::json::load(document_json);
+            crow::json::wvalue wval_json = crow::json::load(document_json);
+            wval_json["date"] = utc_unix_timestamp_to_string(rval_json["date"]["$date"].i() / 1000, Constants::DATETIME_FORMAT);
+            documents.push_back(std::move(wval_json));
         }
 
         crow::json::wvalue response_data;
         response_data["posts"] = std::move(documents);
-        return make_success_response(200, response_data, "Posts retrieved");
+        return make_success_response(200, response_data, "Post(s) retrieved.");
     }
     catch (const std::exception& e) {
         return make_error_response(500, std::string("Server error: ") + e.what());
     }
 }
 
-auto ApiHandler::get_most_negative_posts(const crow::request& req, Database& db) -> crow::response {
-    try {
-        auto body = crow::json::load(req.body);
-
-        if (!validate_request(body, {"limit"})) {
-            return make_error_response(400, "Invalid request format");
-        }
-        
-        auto collection_name = "posts";
-        auto limit = body["limit"].i();
-
-        auto cursor = _get_posts_sorted_by(db, {"post.sentiment"}, {true}, limit);
-
-        std::vector<crow::json::wvalue> documents;
-        for (auto&& document: cursor) {
-            auto document_json = bsoncxx::to_json(document);
-            documents.push_back(crow::json::load(document_json));
-        }
-
-        crow::json::wvalue response_data;
-        response_data["posts"] = std::move(documents);
-        return make_success_response(200, response_data, "Posts retrieved");
+auto ApiHandler::_get_posts_sorted(Database& db, const std::string& collection_name, const std::vector<std::string>& keys, const std::vector<bool>& ascending_orders, const int& limit) -> mongocxx::cursor {
+    if (keys.size() != ascending_orders.size()) {
+        throw std::invalid_argument("keys and ascending_orders vectors must have the same size.");
     }
-    catch (const std::exception& e) {
-        return make_error_response(500, std::string("Server error: ") + e.what());
-    }
-}
 
-auto ApiHandler::_get_posts_sorted_by(Database& db, const std::vector<std::string>& keys, const std::vector<bool>& ascending_orders, const int& limit) -> mongocxx::cursor {
-    std::string collection_name = "posts";
+    mongocxx::options::find option;
+
     bsoncxx::builder::basic::document sort_builder{};
     for (int i = 0; i < keys.size(); ++i) {
         std::string key = keys[i];
         int direction = ascending_orders[i] ? 1 : -1;
         sort_builder.append(bsoncxx::builder::basic::kvp(key, direction));
     }
-    mongocxx::options::find option;
     option.sort(sort_builder.view());
+
     option.limit(limit);
 
     auto cursor = db.find(collection_name, {}, option);
