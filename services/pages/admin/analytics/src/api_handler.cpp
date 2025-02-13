@@ -15,165 +15,7 @@
 using bsoncxx::builder::basic::kvp;
 using bsoncxx::builder::basic::make_document;
 
-// auto ApiHandler::get_sentiment_analytics_by_category_over_time(const crow::request& req, Database& db) -> crow::response
-// {
-//     try
-//     {
-//         auto body = crow::json::load(req.body);
-//         if (!validate_request(body, {"start_date", "end_date", "time_granularity_regex"})) {
-//             return make_error_response(400, "Invalid request format");
-//         }
-//         auto start_date_utc_unix_ms = static_cast<int64_t>(body["start_date"].i()) * 1000;
-//         auto end_date_utc_unix_ms   = static_cast<int64_t>(body["end_date"].i()) * 1000;
-
-//         bsoncxx::types::b_date start_date{std::chrono::milliseconds(start_date_utc_unix_ms)};
-//         bsoncxx::types::b_date end_date{std::chrono::milliseconds(end_date_utc_unix_ms)};
-//         auto time_granularity_regex = body["time_granularity_regex"].s();
-
-//         mongocxx::pipeline pipeline{};
-
-//         pipeline.match(make_document(
-//             kvp("date",
-//                 make_document(
-//                     kvp("$gte", start_date),
-//                     kvp("$lte", end_date)
-//                 )
-//             )
-//         ));
-
-//         pipeline.group(make_document(
-//             kvp(
-//                 "_id",
-//                 make_document(
-//                     kvp(
-//                         "month",
-//                         make_document(
-//                             kvp(
-//                                 "$dateToString",
-//                                 make_document(
-//                                     kvp("format", time_granularity_regex),
-//                                     kvp("date", "$date")
-//                                 )
-//                             )
-//                         )
-//                     ),
-//                     kvp("category", "$category")
-//                 )
-//             ),
-//             kvp("count",
-//                 make_document(
-//                     kvp("$sum", 1)
-//                 )
-//             ),
-//             kvp("avg_sentiment",
-//                 make_document(
-//                     kvp("$avg", "$sentiment")
-//                 )
-//             )
-//         ));
-
-//         pipeline.sort(make_document(
-//             kvp("_id.month", 1)
-//         ));
-
-//         auto cursor = db.aggregate("posts", pipeline);
-
-//         std::vector<crow::json::wvalue> documents;
-//         for (auto&& document: cursor) {
-//             auto document_json = bsoncxx::to_json(document);
-//             documents.push_back(crow::json::load(document_json));
-//         }
-
-//         crow::json::wvalue response_data;
-//         response_data["result"] = std::move(documents);
-//         return make_success_response(200, response_data, "Analytics (category across time) retrieved.");
-//     }
-//     catch (const std::exception& e)
-//     {
-//         return make_error_response(500, std::string("Server error: ") + e.what());
-//     }
-// }
-
-// auto ApiHandler::get_sentiment_analytics_by_source_over_time(const crow::request& req, Database& db) -> crow::response
-// {
-//     try
-//     {
-//         auto body = crow::json::load(req.body);
-//         if (!validate_request(body, {"start_date", "end_date", "time_granularity_regex"})) {
-//             return make_error_response(400, "Invalid request format");
-//         }
-//         auto start_date_utc_unix_ms = static_cast<int64_t>(body["start_date"].i()) * 1000;
-//         auto end_date_utc_unix_ms   = static_cast<int64_t>(body["end_date"].i()) * 1000;
-
-//         bsoncxx::types::b_date start_date{std::chrono::milliseconds(start_date_utc_unix_ms)};
-//         bsoncxx::types::b_date end_date{std::chrono::milliseconds(end_date_utc_unix_ms)};
-//         auto time_granularity_regex = body["time_granularity_regex"].s();
-
-//         mongocxx::pipeline pipeline{};
-
-//         pipeline.match(make_document(
-//             kvp("date",
-//                 make_document(
-//                     kvp("$gte", start_date),
-//                     kvp("$lte", end_date)
-//                 )
-//             )
-//         ));
-
-//         pipeline.group(make_document(
-//             kvp(
-//                 "_id",
-//                 make_document(
-//                     kvp(
-//                         "month",
-//                         make_document(
-//                             kvp(
-//                                 "$dateToString",
-//                                 make_document(
-//                                     kvp("format", time_granularity_regex),
-//                                     kvp("date", "$date")
-//                                 )
-//                             )
-//                         )
-//                     ),
-//                     kvp("source", "$source")
-//                 )
-//             ),
-//             kvp("count",
-//                 make_document(
-//                     kvp("$sum", 1)
-//                 )
-//             ),
-//             kvp("avg_sentiment",
-//                 make_document(
-//                     kvp("$avg", "$sentiment")
-//                 )
-//             )
-//         ));
-
-//         pipeline.sort(make_document(
-//             kvp("_id.month", 1)
-//         ));
-
-//         auto cursor = db.aggregate("posts", pipeline);
-
-//         std::vector<crow::json::wvalue> documents;
-//         for (auto&& document: cursor) {
-//             auto document_json = bsoncxx::to_json(document);
-//             documents.push_back(crow::json::load(document_json));
-//         }
-
-//         crow::json::wvalue response_data;
-//         response_data["result"] = std::move(documents);
-//         return make_success_response(200, response_data, "Analytics (category across time) retrieved.");
-//     }
-//     catch (const std::exception& e)
-//     {
-//         return make_error_response(500, std::string("Server error: ") + e.what());
-//     }
-// }
-
-auto ApiHandler::get_sentiment_analytics_by_value(const crow::request& req, Database& db) -> crow::response {
+auto ApiHandler::get_posts_grouped_by_sentiment_value(const crow::request& req, Database& db) -> crow::response {
     try {
         auto body = crow::json::load(req.body);
 
@@ -181,67 +23,43 @@ auto ApiHandler::get_sentiment_analytics_by_value(const crow::request& req, Data
             return make_error_response(400, "Invalid request format");
         }
 
-        auto start_date_utc_unix_ms = static_cast<long long>(body["start_date"].i()) * 1000; // to ms
-        auto end_date_utc_unix_ms   = static_cast<long long>(body["end_date"].i())   * 1000; // to ms
-        bsoncxx::types::b_date start_date{std::chrono::milliseconds(start_date_utc_unix_ms)};
-        bsoncxx::types::b_date end_date{std::chrono::milliseconds(end_date_utc_unix_ms)};
+        auto start_date_str = body["start_date"].s();
+        auto start_date_ts = string_to_utc_unix_timestamp(start_date_str, Constants::DATETIME_FORMAT) * 1000;
+        bsoncxx::types::b_date start_date{std::chrono::milliseconds(start_date_ts)};
+
+        auto end_date_str = body["end_date"].s();
+        auto end_date_ts = string_to_utc_unix_timestamp(end_date_str, Constants::DATETIME_FORMAT) * 1000;
+        bsoncxx::types::b_date end_date{std::chrono::milliseconds(end_date_ts)};
 
         double bucket_size = body["bucket_size"].d();
+
         if (bucket_size <= 0) {
             return make_error_response(400, "Bucket size must be greater than 0");
         }
 
-        double min_sentiment = -1.0;
-        double max_sentiment = 1.0;
-        
-        std::vector<double> boundaries;
-        for (double val = min_sentiment; val < max_sentiment; val += bucket_size) {
-            boundaries.push_back(val);
-        }   
-        boundaries.push_back(max_sentiment);
-
-        mongocxx::pipeline pipeline{};
-
-        pipeline.match(
-            make_document(
-                kvp("date", 
-                    make_document(
-                        kvp("$gte", start_date),
-                        kvp("$lte", end_date)
-                    )
-                )
-            )
-        );
-
-        bsoncxx::builder::basic::array boundaries_array;
-        for (auto b : boundaries) {
-            boundaries_array.append(b);
-        }
-
-        auto bucket_stage = make_document(
-            kvp("groupBy", std::string{"$sentiment"}),
-            kvp("boundaries", boundaries_array.extract()),
-            kvp("default", std::string{"OutOfRange"}),
-            kvp("output", make_document(
-                kvp("count", make_document(kvp("$sum", 1))),
-                kvp("avg_sentiment", make_document(kvp("$avg", std::string{"$sentiment"})))
+        bsoncxx::document::value filter = make_document(
+            kvp("date", make_document(
+                kvp("$gte", start_date),
+                kvp("$lte", end_date)
             ))
         );
 
-        pipeline.bucket(bucket_stage.view());
+        auto cursor = _get_posts_grouped_by_sentiment_value(db, bucket_size, filter);
 
-        auto collection_name = "posts"; 
-        auto cursor = db.aggregate(collection_name, pipeline);
-
-        std::vector<crow::json::wvalue> documents;
+        std::vector<crow::json::wvalue> result;
         for (auto&& doc : cursor) {
             auto doc_json = bsoncxx::to_json(doc);
-            documents.push_back(crow::json::load(doc_json));
+            crow::json::rvalue rval_json = crow::json::load(doc_json);
+
+            crow::json::wvalue sub_result;
+            sub_result["left_bound_inclusive"] = rval_json["_id"];
+            sub_result["right_bound_exclusive"] = rval_json["_id"].d() + bucket_size;
+            sub_result["count"] = rval_json["count"];
+            result.push_back(sub_result);
         }
 
         crow::json::wvalue response_data;
-        response_data["result"] = std::move(documents);
-
+        response_data["result"] = std::move(result);
         return make_success_response(200, response_data, "Sentiment bucket analytics retrieved.");
     }
     catch (const std::exception& e) {
@@ -461,6 +279,41 @@ auto ApiHandler::_get_posts_grouped_over_time(
     auto cursor = db.aggregate("posts", pipeline);
     return cursor;
 }
+
+auto ApiHandler::_get_posts_grouped_by_sentiment_value(Database& db, const double &bucket_size, const bsoncxx::document::view& filter) -> mongocxx::cursor {
+    mongocxx::pipeline pipeline{};
+
+    pipeline.match(filter);
+
+    double min_sentiment = -1.0;
+    double max_sentiment = 1.01;
+    
+    std::vector<double> boundaries;
+    for (double val = min_sentiment; val < max_sentiment; val += bucket_size) {
+        boundaries.push_back(val);
+    }   
+    boundaries.push_back(max_sentiment);
+
+    bsoncxx::builder::basic::array boundaries_array;
+    for (auto b: boundaries) {
+        boundaries_array.append(b);
+    }
+
+    auto bucket_stage = make_document(
+        kvp("groupBy", std::string{"$sentiment"}),
+        kvp("boundaries", boundaries_array.extract()),
+        kvp("default", std::string{"OutOfRange"}),
+        kvp("output", make_document(
+            kvp("count", make_document(kvp("$sum", 1)))
+        ))
+    );
+
+    pipeline.bucket(bucket_stage.view());
+
+    auto cursor = db.aggregate(Constants::COLLECTION_POSTS, pipeline);
+    return cursor;
+}
+
 
 
 auto ApiHandler::_get_posts_sorted(Database& db, const std::vector<std::string>& keys, const std::vector<bool>& ascending_orders, const int& limit) -> mongocxx::cursor {
