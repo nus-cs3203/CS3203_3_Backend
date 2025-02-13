@@ -54,4 +54,4 @@ RUN mkdir build && cd build && \
 # Set the default command to run the application
 RUN echo "/usr/local/lib" > /etc/ld.so.conf.d/mongo-cxx-driver.conf && \
     ldconfig
-CMD ["./release/bin/analytics_page"]
+CMD ["./release/bin/pages_admin_analytics"]

@@ -1,4 +1,9 @@
-version: "0.0.1"
+version: "3.8"
+
+x-common-env: &common_env
+  MONGO_URI: "mongodb://my_mongo:27017"
+  DB_NAME: "CS3203"
+
 services:
   mongo:
     image: mongo:6.0
@@ -8,8 +13,22 @@ services:
   db_manager:
     build:
       context: .
-      dockerfile: ./services/db_manager/Dockerfile
+      dockerfile: ./services/db/db_manager/Dockerfile
     depends_on:
       - mongo
     ports:
       - "8081:8081"
+    profiles:
+      - db
+    environment:
+      <<: *common_env
+  page_admin_analytics:
+    build:
+      context: .
+      dockerfile: ./services/pages/admin/analytics/Dockerfile
+    depends_on:
+      - mongo
+    ports:
+      - "8082:8082"
+    environment:
+      <<: *common_env
