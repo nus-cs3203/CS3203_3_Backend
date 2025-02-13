@@ -426,7 +426,7 @@ Each document in the `posts` collection has the following structure:
     "title": "string",
     "source": "string",
     "category": "string",
-    "date": "Date",
+    "date": "Datetime",
     "sentiment": "float"
 }
 ```
