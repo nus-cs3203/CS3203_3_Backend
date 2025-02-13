@@ -325,14 +325,20 @@ auto ApiHandler::get_posts_grouped_over_time(const crow::request& req, Database&
 
         auto cursor = _get_posts_grouped_over_time(db, group_by_field, time_bucket_regex, filter);
 
-        std::vector<crow::json::wvalue> documents;
+        crow::json::wvalue result;
         for (auto&& document: cursor) {
             auto document_json = bsoncxx::to_json(document);
-            documents.push_back(crow::json::load(document_json));
+            crow::json::rvalue rval_json = crow::json::load(document_json);
+
+            auto time_bucket_value = rval_json["_id"]["time_bucket"].s();
+            auto group_by_field_value = rval_json["_id"][group_by_field].s();
+
+            result[time_bucket_value][group_by_field_value]["count"] = rval_json["count"].i();
+            result[time_bucket_value][group_by_field_value]["avg_sentiment"] = rval_json["avg_sentiment"].d();
         }
 
         crow::json::wvalue response_data;
-        response_data["result"] = std::move(documents);
+        response_data["result"] = std::move(result);
         return make_success_response(200, response_data, "Analytics (grouped over time) retrieved.");
     }
     catch (const std::exception& e)
@@ -388,50 +394,6 @@ auto ApiHandler::get_posts_sorted(const crow::request& req, Database& db) -> cro
     }
 }
 
-auto ApiHandler::_get_posts_grouped_over_time(Database& db, const std::string& group_by_field, const std::string& time_bucket_regex, const bsoncxx::document::view& filter) -> mongocxx::cursor {
-    mongocxx::pipeline pipeline{};
-
-    pipeline.match(filter);
-
-    pipeline.group(make_document(
-        kvp(
-            "_id",
-            make_document(
-                kvp(
-                    "time_bucket",
-                    make_document(
-                        kvp(
-                            "$dateToString",
-                            make_document(
-                                kvp("format", time_bucket_regex),
-                                kvp("date", "$date")
-                            )
-                        )
-                    )
-                ),
-                kvp(group_by_field, "$" + group_by_field)
-            )
-        ),
-        kvp("count",
-            make_document(
-                kvp("$sum", 1)
-            )
-        ),
-        kvp("avg_sentiment",
-            make_document(
-                kvp("$avg", "$sentiment")
-            )
-        )
-    ));
-
-    pipeline.sort(make_document(
-        kvp("_id.time_bucket", 1)
-    ));
-
-    auto cursor = db.aggregate("posts", pipeline);
-    return cursor;
-}
-
 
 auto ApiHandler::_get_posts_grouped(Database& db, const std::string& group_by_field, const bsoncxx::document::view& filter) -> mongocxx::cursor {
     mongocxx::pipeline pipeline{};
@@ -453,6 +415,50 @@ auto ApiHandler::_get_posts_grouped(Database& db, const std::string& group_by_fi
     ));
 
     auto cursor = db.aggregate(Constants::COLLECTION_POSTS, pipeline);
+    return cursor;
+}
+
+auto ApiHandler::_get_posts_grouped_over_time(
+    Database& db, 
+    const std::string& group_by_field, 
+    const std::string& time_bucket_regex, 
+    const bsoncxx::document::view& filter
+) -> mongocxx::cursor {
+
+    mongocxx::pipeline pipeline{};
+
+    pipeline.match(filter);
+
+    pipeline.group(
+        make_document(
+            kvp("_id",
+                make_document(
+                    kvp(
+                        "time_bucket",
+                        make_document(
+                            kvp("$dateToString",
+                                make_document(
+                                    kvp("format", time_bucket_regex),
+                                    kvp("date", "$date")
+                                )
+                            )
+                        )
+                    ),
+                    kvp(group_by_field, "$" + group_by_field)
+                )
+            ),
+            kvp("count", make_document(kvp("$sum", 1))),
+            kvp("avg_sentiment", make_document(kvp("$avg", "$sentiment")))
+        )
+    );
+
+    pipeline.sort(
+        make_document(
+            kvp("time_bucket", 1)
+        )
+    );
+
+    auto cursor = db.aggregate("posts", pipeline);
     return cursor;
 }
 
