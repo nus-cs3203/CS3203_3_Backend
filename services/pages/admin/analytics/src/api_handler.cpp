@@ -276,21 +276,19 @@ auto ApiHandler::get_posts_grouped(const crow::request& req, Database& db) -> cr
 
         auto cursor = _get_posts_grouped(db, group_by_field, filter);
 
-        std::vector<crow::json::wvalue> documents;
+        crow::json::wvalue result;
         for (auto&& document: cursor) {
             auto document_json = bsoncxx::to_json(document);
             crow::json::rvalue rval_json = crow::json::load(document_json);
 
-            crow::json::wvalue wval_json;
-            wval_json[group_by_field] = rval_json["_id"];
-            wval_json["count"] = rval_json["count"];
-            wval_json["avg_sentiment"] = rval_json["avg_sentiment"];
-
-            documents.push_back(std::move(wval_json));
+            crow::json::wvalue sub_result;
+            sub_result["count"] = rval_json["count"];
+            sub_result["avg_sentiment"] = rval_json["avg_sentiment"];
+            result[rval_json["_id"].s()] = std::move(sub_result);
         }
 
         crow::json::wvalue response_data;
-        response_data["result"] = std::move(documents);
+        response_data["result"] = std::move(result);
         return make_success_response(200, response_data, "Analytics result retrieved.");
     }
     catch (const std::exception& e) {
