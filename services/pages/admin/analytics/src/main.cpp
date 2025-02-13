@@ -28,19 +28,19 @@ int main(int argc, char* argv[]) {
         return api_handler.get_posts_grouped_by_sentiment_value(req, db);
     });
 
-    CROW_ROUTE(app, "/get_posts_grouped").methods(crow::HTTPMethod::Post)
+    CROW_ROUTE(app, "/get_posts_grouped_by_field").methods(crow::HTTPMethod::Post)
     ([&db, &api_handler](const crow::request& req) {
-        return api_handler.get_posts_grouped(req, db);
+        return api_handler.get_posts_grouped_by_field(req, db);
     });
 
-    CROW_ROUTE(app, "/get_posts_grouped_over_time").methods(crow::HTTPMethod::Post)
+    CROW_ROUTE(app, "/get_posts_grouped_by_field_over_time").methods(crow::HTTPMethod::Post)
     ([&db, &api_handler](const crow::request& req) {
-        return api_handler.get_posts_grouped_over_time(req, db);
+        return api_handler.get_posts_grouped_by_field_over_time(req, db);
     });
 
-    CROW_ROUTE(app, "/get_posts_sorted").methods(crow::HTTPMethod::Post)
+    CROW_ROUTE(app, "/get_posts_sorted_by_fields").methods(crow::HTTPMethod::Post)
     ([&db, &api_handler](const crow::request& req) {
-        return api_handler.get_posts_sorted(req, db);
+        return api_handler.get_posts_sorted_by_fields(req, db);
     });
 
     app.port(8082).multithreaded().run();
