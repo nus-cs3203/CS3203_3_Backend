@@ -412,6 +412,8 @@ curl -X POST http://localhost:8081/update_many \
 
 This service provides analytics for the `posts` collection.
 
+Note: Sample responses are obtained by using dummy data defined in [here](./services/pages/admin/analytics/dummy_data/README.MD) (with the assumption of no other data under `posts` collection).
+
 ---
 
 ### **Collection: `posts`**
@@ -426,7 +428,7 @@ Each document in the `posts` collection has the following structure:
     "title": "string",
     "source": "string",
     "category": "string",
-    "date": "Datetime",
+    "date": "mongodb datetime",
     "sentiment": "float"
 }
 ```
@@ -441,8 +443,8 @@ Each document in the `posts` collection has the following structure:
 **Request:**
 ```json
 {
-    "start_date": "string",   // format: %d-%m-%Y %H:%M:%S
-    "end_date": "string",     // format: %d-%m-%Y %H:%M:%S
+    "start_date": "string",   // format: dd-mm-YYYY HH:MM:SS
+    "end_date": "string",     // format: dd-mm-YYYY HH:MM:SS
     "group_by_field": "string"
 }
 ```
@@ -471,8 +473,8 @@ Each document in the `posts` collection has the following structure:
     curl -X POST "http://localhost:8082/get_posts_grouped_by_field" \
     -H "Content-Type: application/json" \
     -d '{
-        "start_date": "1-1-2024 00:00:00",
-        "end_date": "31-12-2024 23:59:59",
+        "start_date": "01-01-2010 00:00:00",
+        "end_date": "31-12-2010 23:59:59",
         "group_by_field": "category"
     }'
 ```
@@ -480,42 +482,54 @@ Each document in the `posts` collection has the following structure:
 **Sample Response:**
 ```json
 {
-  "success": true,
-  "message": "Analytics result retrieved.",
-  "result": {
-    "politics": {
-      "count": 1,
-      "avg_sentiment": -0.5
-    },
-    "technology": {
-      "count": 3,
-      "avg_sentiment": 0.733333
-    },
-    "environment": {
-      "count": 1,
-      "avg_sentiment": -0.3
-    },
-    "business": {
-      "count": 1,
-      "avg_sentiment": 0.7
-    },
-    "finance": {
-      "count": 1,
-      "avg_sentiment": 0.6
-    },
-    "entertainment": {
-      "count": 1,
-      "avg_sentiment": -0.2
-    },
-    "sports": {
-      "count": 1,
-      "avg_sentiment": 1.0
-    },
-    "health": {
-      "count": 1,
-      "avg_sentiment": 1.0
+    "message": "Analytics result retrieved.",
+    "success": true,
+    "result": {
+        "Politics": {
+            "count": 1,
+            "avg_sentiment": -0.198254
+        },
+        "Recreation": {
+            "count": 2,
+            "avg_sentiment": -0.077424
+        },
+        "Financial": {
+            "count": 1,
+            "avg_sentiment": -0.737511
+        },
+        "Healthcare": {
+            "count": 2,
+            "avg_sentiment": 0.380603
+        },
+        "Retail": {
+            "count": 1,
+            "avg_sentiment": -0.080992
+        },
+        "Social Services": {
+            "count": 1,
+            "avg_sentiment": -0.436532
+        },
+        "Public Safety": {
+            "count": 1,
+            "avg_sentiment": 0.26788
+        },
+        "Environmental": {
+            "count": 2,
+            "avg_sentiment": 0.373306
+        },
+        "Transportation": {
+            "count": 1,
+            "avg_sentiment": 0.270747
+        },
+        "Employment": {
+            "count": 1,
+            "avg_sentiment": 0.696234
+        },
+        "Housing": {
+            "count": 3,
+            "avg_sentiment": -0.042444
+        }
     }
-  }
 }
 ```
 
@@ -529,8 +543,8 @@ Each document in the `posts` collection has the following structure:
 **Request:**
 ```json
 {
-    "start_date": "string",       // format: %d-%m-%Y %H:%M:%S
-    "end_date": "string",         // format: %d-%m-%Y %H:%M:%S
+    "start_date": "string",       // format: dd-mm-YYYY HH:MM:SS
+    "end_date": "string",         // format: dd-mm-YYYY HH:MM:SS
     "time_bucket_regex": "string", // e.g. "%m-%Y"
     "group_by_field": "string"
 }
@@ -565,8 +579,8 @@ Each document in the `posts` collection has the following structure:
     curl -X POST "http://localhost:8082/get_posts_grouped_by_field_over_time" \
     -H "Content-Type: application/json" \
     -d '{
-        "start_date": "1-1-2024 00:00:00",
-        "end_date": "31-12-2024 23:59:59",
+        "start_date": "01-01-2010 00:00:00",
+        "end_date": "31-12-2010 23:59:59",
         "group_by_field": "category",
         "time_bucket_regex": "%m-%Y"
     }'
@@ -575,44 +589,80 @@ Each document in the `posts` collection has the following structure:
 **Sample Response:**
 ```json
 {
-  "success": true,
-  "message": "Analytics result retrieved.",
-  "result": {
-    "02-2024": {
-      "health": {
-        "count": 1,
-        "avg_sentiment": 1
-      },
-      "politics": {
-        "count": 1,
-        "avg_sentiment": -0.5
-      },
-      "technology": {
-        "count": 3,
-        "avg_sentiment": 0.73333333333333339
-      },
-      "entertainment": {
-        "count": 1,
-        "avg_sentiment": -0.2
-      },
-      "finance": {
-        "count": 1,
-        "avg_sentiment": 0.6
-      },
-      "business": {
-        "count": 1,
-        "avg_sentiment": 0.7
-      },
-      "sports": {
-        "count": 1,
-        "avg_sentiment": 1
-      },
-      "environment": {
-        "count": 1,
-        "avg_sentiment": -0.3
-      }
+    "message": "Analytics result retrieved.",
+    "success": true,
+    "result": {
+        "05-2010": {
+            "Retail": {
+                "count": 1,
+                "avg_sentiment": -0.0809918000000000026794566565513378009
+            },
+            "Healthcare": {
+                "count": 2,
+                "avg_sentiment": 0.38060264799999998786006472073495388
+            },
+            "Environmental": {
+                "count": 1,
+                "avg_sentiment": 0.500866342999999991647541719430591911
+            },
+            "Housing": {
+                "count": 1,
+                "avg_sentiment": 0.264428435999999988936792760796379298
+            }
+        },
+        "03-2010": {
+            "Public Safety": {
+                "count": 1,
+                "avg_sentiment": 0.267879894999999978999483118968782946
+            }
+        },
+        "06-2010": {
+            "Social Services": {
+                "count": 1,
+                "avg_sentiment": -0.436532213999999973985666201770072803
+            },
+            "Environmental": {
+                "count": 1,
+                "avg_sentiment": 0.245745574999999993881516502369777299
+            },
+            "Transportation": {
+                "count": 1,
+                "avg_sentiment": 0.270746941999999990446923447962035425
+            }
+        },
+        "08-2010": {
+            "Financial": {
+                "count": 1,
+                "avg_sentiment": -0.737510960000000048708557187637779862
+            },
+            "Politics": {
+                "count": 1,
+                "avg_sentiment": -0.198254379000000008348436608685005922
+            },
+            "Housing": {
+                "count": 1,
+                "avg_sentiment": -0.215923077999999990517210335383424535
+            }
+        },
+        "07-2010": {
+            "Recreation": {
+                "count": 2,
+                "avg_sentiment": -0.0774242129999999639800023487623548135
+            }
+        },
+        "09-2010": {
+            "Employment": {
+                "count": 1,
+                "avg_sentiment": 0.696234156000000048436504584969952703
+            }
+        },
+        "01-2010": {
+            "Housing": {
+                "count": 1,
+                "avg_sentiment": -0.175837053999999992637270906925550662
+            }
+        }
     }
-  }
 }
 ```
 
@@ -626,8 +676,8 @@ Each document in the `posts` collection has the following structure:
 **Request:**
 ```json
 {
-    "start_date": "string",  // format: %d-%m-%Y %H:%M:%S
-    "end_date": "string",    // format: %d-%m-%Y %H:%M:%S
+    "start_date": "string",  // format: dd-mm-YYYY HH:MM:SS
+    "end_date": "string",    // format: dd-mm-YYYY HH:MM:SS
     "bucket_size": "float"
 }
 ```
@@ -653,8 +703,8 @@ Each document in the `posts` collection has the following structure:
     curl -X POST "http://localhost:8082/get_posts_grouped_by_sentiment_value" \
     -H "Content-Type: application/json" \
     -d '{
-        "start_date": "1-1-2024 00:00:00",
-        "end_date": "31-12-2024 23:59:59",
+        "start_date": "01-01-2010 00:00:00",
+        "end_date": "31-12-2010 23:59:59",
         "bucket_size": 0.5
     }'
 ```
@@ -662,25 +712,30 @@ Each document in the `posts` collection has the following structure:
 **Sample Response:**
 ```json
 {
-  "success": true,
-  "message": "Analytics result retrieved.",
-  "result": [
-    {
-      "count": 3,
-      "right_bound_exclusive": 0,
-      "left_bound_inclusive": -0.5
-    },
-    {
-      "left_bound_inclusive": 0.5,
-      "right_bound_exclusive": 1,
-      "count": 5
-    },
-    {
-      "count": 2,
-      "right_bound_exclusive": 1.5,
-      "left_bound_inclusive": 1.0
-    }
-  ]
+    "message": "Analytics result retrieved.",
+    "success": true,
+    "result": [
+        {
+            "right_bound_exclusive": -0.5,
+            "count": 2,
+            "left_bound_inclusive": -1.0
+        },
+        {
+            "left_bound_inclusive": -0.5,
+            "count": 6,
+            "right_bound_exclusive": 0
+        },
+        {
+            "right_bound_exclusive": 0.5,
+            "count": 4,
+            "left_bound_inclusive": 0.0
+        },
+        {
+            "right_bound_exclusive": 1,
+            "count": 4,
+            "left_bound_inclusive": 0.5
+        }
+    ]
 }
 ```
 
@@ -712,7 +767,7 @@ Each document in the `posts` collection has the following structure:
             "title": "string",
             "source": "string",
             "category": "string",
-            "date": "DD-MM-YYYY",
+            "date": "dd-mm-YYYY HH:MM:SS",
             "sentiment": "float",
             "_id": {"$oid": "string"}
         },
@@ -735,60 +790,60 @@ Each document in the `posts` collection has the following structure:
 **Sample Response:**
 ```json
 {
-  "success": true,
-  "message": "Post(s) retrieved.",
-  "posts": [
-    {
-      "sentiment": 1,
-      "date": "12-02-2024 18:15:00",
-      "category": "sports",
-      "title": "Sports Team Wins Championship",
-      "source": "SportsCenter",
-      "_id": {
-        "$oid": "67acd782bde3d73ac0147417"
-      }
-    },
-    {
-      "_id": {
-        "$oid": "67acd782bde3d73ac0147419"
-      },
-      "source": "GreenTech",
-      "title": "Advancements in Renewable Energy",
-      "category": "technology",
-      "date": "14-02-2024 11:20:00",
-      "sentiment": 0.9
-    },
-    {
-      "sentiment": 0.8,
-      "date": "10-02-2024 12:00:00",
-      "category": "technology",
-      "title": "Tech Breakthrough in AI",
-      "source": "TechNews",
-      "_id": {
-        "$oid": "67acd782bde3d73ac0147415"
-      }
-    },
-    {
-      "sentiment": 0.6,
-      "date": "11-02-2024 14:30:00",
-      "category": "finance",
-      "title": "Stock Market Sees Record Highs",
-      "source": "FinanceDaily",
-      "_id": {
-        "$oid": "67acd782bde3d73ac0147416"
-      }
-    },
-    {
-      "_id": {
-        "$oid": "67acd782bde3d73ac0147418"
-      },
-      "source": "MovieCritic",
-      "title": "New Movie Release Receives Mixed Reviews",
-      "category": "entertainment",
-      "date": "13-02-2024 09:45:00",
-      "sentiment": -0.2
-    }
-  ]
+    "message": "Post(s) retrieved.",
+    "success": true,
+    "posts": [
+        {
+            "date": "17-11-2009 00:00:00",
+            "source": "reddit",
+            "category": "Financial",
+            "title": "The Harold Lloyd Method of Mass Transit Advertising",
+            "sentiment": 0.837126,
+            "_id": {
+                "$oid": "67ae0af686ec6a1996a96074"
+            }
+        },
+        {
+            "_id": {
+                "$oid": "67ae0af686ec6a1996a96075"
+            },
+            "sentiment": -0.175837,
+            "title": "Hello la, I'm in Singapore for the week and want to go dancing, was wondering Zirca or Zouk, and which days?",
+            "category": "Housing",
+            "source": "reddit",
+            "date": "12-01-2010 00:00:00"
+        },
+        {
+            "date": "22-10-2008 00:00:00",
+            "source": "reddit",
+            "category": "Transportation",
+            "title": "Good article on the Singapore economy: 'Review strategy, take crisis as opportunity '",
+            "sentiment": -0.287196,
+            "_id": {
+                "$oid": "67ae0af686ec6a1996a96072"
+            }
+        },
+        {
+            "date": "30-09-2008 00:00:00",
+            "source": "reddit",
+            "category": "Politics",
+            "title": "RIP JB Jeyaretnam. Possibly Singapore's greatest citizen.",
+            "sentiment": 0.477568,
+            "_id": {
+                "$oid": "67ae0af686ec6a1996a96071"
+            }
+        },
+        {
+            "_id": {
+                "$oid": "67ae0af686ec6a1996a96073"
+            },
+            "sentiment": -0.475928,
+            "title": "High-living Singaporean monk faces jail for fraud.",
+            "category": "Infrastructure",
+            "source": "reddit",
+            "date": "09-10-2009 00:00:00"
+        }
+    ]
 }
 ```
 
