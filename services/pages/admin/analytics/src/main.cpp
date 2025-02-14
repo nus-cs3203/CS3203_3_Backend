@@ -13,13 +13,34 @@
 #include <iostream>
 #include <vector>
 
+struct CORS {
+    struct context {};
+
+    void before_handle(crow::request& req, crow::response& res, context& ctx) {
+        if (req.method == "OPTIONS"_method) {
+            res.add_header("Access-Control-Allow-Origin", "*");
+            res.add_header("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS");
+            res.add_header("Access-Control-Allow-Headers", "Content-Type, Authorization");
+            res.code = 204;
+            res.end();
+        }
+    }
+
+    void after_handle(crow::request& req, crow::response& res, context& ctx) {
+        res.add_header("Access-Control-Allow-Origin", "*");
+        res.add_header("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS");
+        res.add_header("Access-Control-Allow-Headers", "Content-Type, Authorization");
+    }
+};
+
 int main() {
     const std::string MONGO_URI = read_env("MONGO_URI", Constants::MONGO_URI);
-    const std::string DB_NAME = read_env("DB_NAME", Constants::DB_NAME);
+    const std::string DB_NAME   = read_env("DB_NAME", Constants::DB_NAME);
 
     Database db(MONGO_URI, DB_NAME);
 
-    crow::SimpleApp app;
+    crow::App<CORS> app; 
+
     app.loglevel(crow::LogLevel::Warning);
 
     ApiHandler api_handler;
@@ -44,6 +65,7 @@ int main() {
         return api_handler.get_posts_sorted_by_fields(req, db);
     });
 
+    // Run the server
     app.port(8082).multithreaded().run();
     return 0;
 }
