@@ -425,11 +425,14 @@ Each document in the `posts` collection has the following structure:
     "_id": {
         "oid": "string", // mongodb internal id
     },
+    "id": "string",
     "title": "string",
     "source": "string",
     "category": "string",
     "date": "mongodb datetime",
-    "sentiment": "float"
+    "sentiment": "float",
+    "description": "string",
+    "url": "string"
 }
 ```
 
@@ -795,52 +798,67 @@ Each document in the `posts` collection has the following structure:
     "posts": [
         {
             "date": "17-11-2009 00:00:00",
-            "source": "reddit",
+            "source": "Reddit",
             "category": "Financial",
+            "id": "de456",
+            "url": "https://example.com/",
+            "description": "This is a description for post #4",
             "title": "The Harold Lloyd Method of Mass Transit Advertising",
             "sentiment": 0.837126,
             "_id": {
-                "$oid": "67ae0af686ec6a1996a96074"
+                "$oid": "67aeded9b5bc2d9932255caa"
             }
         },
         {
             "_id": {
-                "$oid": "67ae0af686ec6a1996a96075"
+                "$oid": "67aeded9b5bc2d9932255cab"
             },
             "sentiment": -0.175837,
             "title": "Hello la, I'm in Singapore for the week and want to go dancing, was wondering Zirca or Zouk, and which days?",
+            "description": "This is a description for post #5",
+            "url": "https://example.com/",
+            "id": "ef567",
             "category": "Housing",
-            "source": "reddit",
+            "source": "Reddit",
             "date": "12-01-2010 00:00:00"
         },
         {
             "date": "22-10-2008 00:00:00",
-            "source": "reddit",
+            "source": "Reddit",
             "category": "Transportation",
+            "id": "bc234",
+            "url": "https://example.com/",
+            "description": "This is a description for post #2",
             "title": "Good article on the Singapore economy: 'Review strategy, take crisis as opportunity '",
             "sentiment": -0.287196,
             "_id": {
-                "$oid": "67ae0af686ec6a1996a96072"
+                "$oid": "67aeded9b5bc2d9932255ca8"
             }
         },
         {
             "date": "30-09-2008 00:00:00",
-            "source": "reddit",
+            "source": "Reddit",
             "category": "Politics",
+            "id": "ab123",
+            "url": "https://example.com/",
+            "description": "This is a description for post #1",
             "title": "RIP JB Jeyaretnam. Possibly Singapore's greatest citizen.",
             "sentiment": 0.477568,
             "_id": {
-                "$oid": "67ae0af686ec6a1996a96071"
+                "$oid": "67aeded9b5bc2d9932255ca7"
             }
         },
         {
             "_id": {
-                "$oid": "67ae0af686ec6a1996a96073"
+                "$oid": "67aeded9b5bc2d9932255ca9"
             },
             "sentiment": -0.475928,
             "title": "High-living Singaporean monk faces jail for fraud.",
+            "description": "This is a description for post #3",
+            "url": "https://example.com/",
+            "id": "cd345",
             "category": "Infrastructure",
-            "source": "reddit",
+            "source": "Reddit",
             "date": "09-10-2009 00:00:00"
         }
     ]
