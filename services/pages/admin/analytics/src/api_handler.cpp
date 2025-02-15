@@ -15,7 +15,7 @@
 using bsoncxx::builder::basic::kvp;
 using bsoncxx::builder::basic::make_document;
 
-auto ApiHandler::get_posts_grouped_by_field(const crow::request& req, Database& db) -> crow::response {
+auto ApiHandler::get_posts_grouped_by_field(const crow::request& req, std::shared_ptr<Database> db) -> crow::response {
     try {
         auto body = crow::json::load(req.body);
 
@@ -62,7 +62,7 @@ auto ApiHandler::get_posts_grouped_by_field(const crow::request& req, Database& 
     }
 }
 
-auto ApiHandler::get_posts_grouped_by_field_over_time(const crow::request& req, Database& db) -> crow::response {
+auto ApiHandler::get_posts_grouped_by_field_over_time(const crow::request& req, std::shared_ptr<Database> db) -> crow::response {
     try
     {
         auto body = crow::json::load(req.body);
@@ -113,7 +113,7 @@ auto ApiHandler::get_posts_grouped_by_field_over_time(const crow::request& req, 
     }
 }
 
-auto ApiHandler::get_posts_grouped_by_sentiment_value(const crow::request& req, Database& db) -> crow::response {
+auto ApiHandler::get_posts_grouped_by_sentiment_value(const crow::request& req, std::shared_ptr<Database> db) -> crow::response {
     try {
         auto body = crow::json::load(req.body);
 
@@ -166,7 +166,7 @@ auto ApiHandler::get_posts_grouped_by_sentiment_value(const crow::request& req, 
 }
 
 
-auto ApiHandler::get_posts_sorted_by_fields(const crow::request& req, Database& db) -> crow::response  {
+auto ApiHandler::get_posts_sorted_by_fields(const crow::request& req, std::shared_ptr<Database> db) -> crow::response  {
     try {
         auto body = crow::json::load(req.body);
 
@@ -214,7 +214,7 @@ auto ApiHandler::get_posts_sorted_by_fields(const crow::request& req, Database& 
 }
 
 
-auto ApiHandler::_get_posts_grouped_by_field(Database& db, const std::string& group_by_field, const bsoncxx::document::view& filter) -> mongocxx::cursor {
+auto ApiHandler::_get_posts_grouped_by_field(std::shared_ptr<Database> db, const std::string& group_by_field, const bsoncxx::document::view& filter) -> mongocxx::cursor {
     mongocxx::pipeline pipeline{};
 
     pipeline.match(filter);
@@ -233,12 +233,12 @@ auto ApiHandler::_get_posts_grouped_by_field(Database& db, const std::string& gr
         )
     ));
 
-    auto cursor = db.aggregate(Constants::COLLECTION_POSTS, pipeline);
+    auto cursor = db->aggregate(Constants::COLLECTION_POSTS, pipeline);
     return cursor;
 }
 
 auto ApiHandler::_get_posts_grouped_by_field_over_time(
-    Database& db, 
+    std::shared_ptr<Database> db, 
     const std::string& group_by_field, 
     const std::string& time_bucket_regex, 
     const bsoncxx::document::view& filter
@@ -277,11 +277,11 @@ auto ApiHandler::_get_posts_grouped_by_field_over_time(
         )
     );
 
-    auto cursor = db.aggregate("posts", pipeline);
+    auto cursor = db->aggregate("posts", pipeline);
     return cursor;
 }
 
-auto ApiHandler::_get_posts_grouped_by_sentiment_value(Database& db, const double &bucket_size, const bsoncxx::document::view& filter) -> mongocxx::cursor {
+auto ApiHandler::_get_posts_grouped_by_sentiment_value(std::shared_ptr<Database> db, const double &bucket_size, const bsoncxx::document::view& filter) -> mongocxx::cursor {
     mongocxx::pipeline pipeline{};
 
     pipeline.match(filter);
@@ -311,13 +311,13 @@ auto ApiHandler::_get_posts_grouped_by_sentiment_value(Database& db, const doubl
 
     pipeline.bucket(bucket_stage.view());
 
-    auto cursor = db.aggregate(Constants::COLLECTION_POSTS, pipeline);
+    auto cursor = db->aggregate(Constants::COLLECTION_POSTS, pipeline);
     return cursor;
 }
 
 
 
-auto ApiHandler::_get_posts_sorted_by_fields(Database& db, const std::vector<std::string>& keys, const std::vector<bool>& ascending_orders, const int& limit) -> mongocxx::cursor {
+auto ApiHandler::_get_posts_sorted_by_fields(std::shared_ptr<Database> db, const std::vector<std::string>& keys, const std::vector<bool>& ascending_orders, const int& limit) -> mongocxx::cursor {
     if (keys.size() != ascending_orders.size()) {
         throw std::invalid_argument("keys and ascending_orders vectors must have the same size.");
     }
@@ -334,6 +334,6 @@ auto ApiHandler::_get_posts_sorted_by_fields(Database& db, const std::vector<std
 
     option.limit(limit);
 
-    auto cursor = db.find(Constants::COLLECTION_POSTS, {}, option);
+    auto cursor = db->find(Constants::COLLECTION_POSTS, {}, option);
     return cursor;
 }

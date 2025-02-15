@@ -12,6 +12,7 @@
 
 #include <iostream>
 #include <vector>
+#include <memory>
 
 struct CORS {
     struct context {};
@@ -37,8 +38,8 @@ int main() {
     const std::string MONGO_URI = read_env("MONGO_URI", Constants::MONGO_URI);
     const std::string DB_NAME   = read_env("DB_NAME", Constants::DB_NAME);
 
-    Database db(MONGO_URI, DB_NAME);
-
+    auto db = std::make_shared<Database>(MONGO_URI, DB_NAME);
+    
     crow::App<CORS> app; 
 
     app.loglevel(crow::LogLevel::Warning);
@@ -46,22 +47,22 @@ int main() {
     ApiHandler api_handler;
 
     CROW_ROUTE(app, "/get_posts_grouped_by_sentiment_value").methods(crow::HTTPMethod::Post)
-    ([&db, &api_handler](const crow::request& req) {
+    ([db, &api_handler](const crow::request& req) {
         return api_handler.get_posts_grouped_by_sentiment_value(req, db);
     });
 
     CROW_ROUTE(app, "/get_posts_grouped_by_field").methods(crow::HTTPMethod::Post)
-    ([&db, &api_handler](const crow::request& req) {
+    ([db, &api_handler](const crow::request& req) {
         return api_handler.get_posts_grouped_by_field(req, db);
     });
 
     CROW_ROUTE(app, "/get_posts_grouped_by_field_over_time").methods(crow::HTTPMethod::Post)
-    ([&db, &api_handler](const crow::request& req) {
+    ([db, &api_handler](const crow::request& req) {
         return api_handler.get_posts_grouped_by_field_over_time(req, db);
     });
 
     CROW_ROUTE(app, "/get_posts_sorted_by_fields").methods(crow::HTTPMethod::Post)
-    ([&db, &api_handler](const crow::request& req) {
+    ([db, &api_handler](const crow::request& req) {
         return api_handler.get_posts_sorted_by_fields(req, db);
     });
 
