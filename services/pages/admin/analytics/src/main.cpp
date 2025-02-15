@@ -66,6 +66,6 @@ int main() {
     });
 
     // Run the server
-    app.port(8082).multithreaded().run();
+    app.port(8082).run();
     return 0;
 }
