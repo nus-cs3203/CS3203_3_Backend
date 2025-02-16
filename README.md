@@ -406,8 +406,6 @@ curl -X POST http://localhost:8081/update_many \
      }'
 ```
 
-# API Contract
-
 ## Service: **pages_admin_analytics**
 
 This service provides analytics for the `posts` collection.
@@ -866,3 +864,12 @@ Each document in the `posts` collection has the following structure:
 ```
 
 ---
+
+## Service: **db/bulk_uploader**
+
+How to bulk upload?
+1. Run docker services
+```bash
+    docker compose up
+```
+2. Run the script in services/db/bulk_uploader/script.ipynb
