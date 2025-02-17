@@ -184,7 +184,7 @@ auto ApiHandler::get_posts_sorted_by_fields(const crow::request& req, std::share
         std::vector<std::string> keys;
         auto keys_json = body["keys"];
         for (const auto& key: keys_json.lo()) {
-            keys.push_back("posts." + static_cast<std::string>(key.s())); 
+            keys.push_back(static_cast<std::string>(key.s())); 
         }
         std::vector<bool> ascending_orders;
         auto ascending_orders_json = body["ascending_orders"];
