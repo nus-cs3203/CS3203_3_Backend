@@ -26,3 +26,4 @@ find_package(Threads REQUIRED)
 
 add_subdirectory(services/db/db_manager)
 add_subdirectory(services/pages/admin/analytics)
+add_subdirectory(services/pages/admin/management)

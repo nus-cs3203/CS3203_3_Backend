@@ -32,3 +32,13 @@ services:
       - "8082:8082"
     environment:
       <<: *common_env
+  page_admin_management:
+    build:
+      context: .
+      dockerfile: ./services/pages/admin/management/Dockerfile
+    depends_on:
+      - mongo
+    ports:
+      - "8083:8083"
+    environment:
+      <<: *common_env
