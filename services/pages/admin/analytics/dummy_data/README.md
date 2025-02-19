@@ -11,10 +11,10 @@
 ```
 4. Insert dummy data:
 ```bash
-    db.posts.insertMany([
+    db.complaints.insertMany([
     {
         "title": "RIP JB Jeyaretnam. Possibly Singapore's greatest citizen.",
-        "description": "This is a description for post #1",
+        "description": "This is a description for complaint #1",
         "id": "ab123",
         "url": "https://example.com/",
         "sentiment": 0.477567863,
@@ -24,7 +24,7 @@
     },
     {
         "title": "Good article on the Singapore economy: 'Review strategy, take crisis as opportunity '",
-        "description": "This is a description for post #2",
+        "description": "This is a description for complaint #2",
         "id": "bc234",
         "url": "https://example.com/",
         "sentiment": -0.287195891,
@@ -34,7 +34,7 @@
     },
     {
         "title": "High-living Singaporean monk faces jail for fraud.",
-        "description": "This is a description for post #3",
+        "description": "This is a description for complaint #3",
         "id": "cd345",
         "url": "https://example.com/",
         "sentiment": -0.475928083,
@@ -44,7 +44,7 @@
     },
     {
         "title": "The Harold Lloyd Method of Mass Transit Advertising",
-        "description": "This is a description for post #4",
+        "description": "This is a description for complaint #4",
         "id": "de456",
         "url": "https://example.com/",
         "sentiment": 0.837125612,
@@ -54,7 +54,7 @@
     },
     {
         "title": "Hello la, I'm in Singapore for the week and want to go dancing, was wondering Zirca or Zouk, and which days?",
-        "description": "This is a description for post #5",
+        "description": "This is a description for complaint #5",
         "id": "ef567",
         "url": "https://example.com/",
         "sentiment": -0.175837054,
@@ -64,7 +64,7 @@
     },
     {
         "title": "A Curious Case of Censorship?",
-        "description": "This is a description for post #6",
+        "description": "This is a description for complaint #6",
         "id": "fg678",
         "url": "https://example.com/",
         "sentiment": 0.267879895,
@@ -74,7 +74,7 @@
     },
     {
         "title": "/r/Singapore: I'm thinking of producing a war/soldier-themed short-film. However, I'm torn between the general lack of support for it from peers or ideas.",
-        "description": "This is a description for post #7",
+        "description": "This is a description for complaint #7",
         "id": "gh789",
         "url": "https://example.com/",
         "sentiment": -0.000265525,
@@ -84,7 +84,7 @@
     },
     {
         "title": "A Golden Investment That Sounds Too Good To Be True",
-        "description": "This is a description for post #8",
+        "description": "This is a description for complaint #8",
         "id": "hi890",
         "url": "https://example.com/",
         "sentiment": -0.0809918,
@@ -94,7 +94,7 @@
     },
     {
         "title": "Singapore dog mill goes bust, 75 dogs used for breeding need to be rehomed.",
-        "description": "This is a description for post #9",
+        "description": "This is a description for complaint #9",
         "id": "ij901",
         "url": "https://example.com/",
         "sentiment": 0.500866343,
@@ -104,7 +104,7 @@
     },
     {
         "title": "A Singapore Startup",
-        "description": "This is a description for post #10",
+        "description": "This is a description for complaint #10",
         "id": "jk012",
         "url": "https://example.com/",
         "sentiment": 0.264428436,
@@ -114,7 +114,7 @@
     },
     {
         "title": "Interview with Singaporean Crust-Grind band Wormrot.",
-        "description": "This is a description for post #11",
+        "description": "This is a description for complaint #11",
         "id": "kl123",
         "url": "https://example.com/",
         "sentiment": 0.761470821,
@@ -124,7 +124,7 @@
     },
     {
         "title": "Singapore Users: Anyone else having problems loading images from imgur.com? Seems like Singtel users are affected",
-        "description": "This is a description for post #12",
+        "description": "This is a description for complaint #12",
         "id": "lm234",
         "url": "https://example.com/",
         "sentiment": 0.245745575,
@@ -134,7 +134,7 @@
     },
     {
         "title": "I can't access imgur link from starhub and singnet",
-        "description": "This is a description for post #13",
+        "description": "This is a description for complaint #13",
         "id": "mn345",
         "url": "https://example.com/",
         "sentiment": 0.270746942,
@@ -144,7 +144,7 @@
     },
     {
         "title": "Solution to imgur.com for Singtel users..",
-        "description": "This is a description for post #14",
+        "description": "This is a description for complaint #14",
         "id": "no456",
         "url": "https://example.com/",
         "sentiment": -0.436532214,
@@ -154,7 +154,7 @@
     },
     {
         "title": "Big drain not working",
-        "description": "This is a description for post #15",
+        "description": "This is a description for complaint #15",
         "id": "op567",
         "url": "https://example.com/",
         "sentiment": -0.911377971,
@@ -164,7 +164,7 @@
     },
     {
         "title": "Singapore's suicide rate rising (at least 401 in 2009)",
-        "description": "This is a description for post #16",
+        "description": "This is a description for complaint #16",
         "id": "pq678",
         "url": "https://example.com/",
         "sentiment": 0.756529545,
@@ -174,7 +174,7 @@
     },
     {
         "title": "Does anyone outside of Singapore even know or care that the Youth Olympic Games is going on now?",
-        "description": "This is a description for post #17",
+        "description": "This is a description for complaint #17",
         "id": "qr789",
         "url": "https://example.com/",
         "sentiment": -0.73751096,
@@ -184,7 +184,7 @@
     },
     {
         "title": "So.. we're kinda like STOMP but much more civilised right?",
-        "description": "This is a description for post #18",
+        "description": "This is a description for complaint #18",
         "id": "rs890",
         "url": "https://example.com/",
         "sentiment": -0.198254379,
@@ -194,7 +194,7 @@
     },
     {
         "title": "Preparing For A.C.M.E II and FAQs",
-        "description": "This is a description for post #19",
+        "description": "This is a description for complaint #19",
         "id": "st901",
         "url": "https://example.com/",
         "sentiment": -0.215923078,
@@ -204,7 +204,7 @@
     },
     {
         "title": "Rewarding our foreign workers for their hard work",
-        "description": "This is a description for post #20",
+        "description": "This is a description for complaint #20",
         "id": "tu012",
         "url": "https://example.com/",
         "sentiment": 0.696234156,

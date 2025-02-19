@@ -408,15 +408,15 @@ curl -X POST http://localhost:8081/update_many \
 
 ## Service: **pages_admin_analytics**
 
-This service provides analytics for the `posts` collection.
+This service provides analytics for the `complaints` collection.
 
-Note: Sample responses are obtained by using dummy data defined in [here](./services/pages/admin/analytics/dummy_data/README.MD) (with the assumption of no other data under `posts` collection).
+Note: Sample responses are obtained by using dummy data defined in [here](./services/pages/admin/analytics/dummy_data/README.MD) (with the assumption of no other data under `complaints` collection).
 
 ---
 
-### **Collection: `posts`**
+### **Collection: `complaints`**
 
-Each document in the `posts` collection has the following structure:
+Each document in the `complaints` collection has the following structure:
 
 ```json
 {
@@ -436,10 +436,10 @@ Each document in the `posts` collection has the following structure:
 
 ---
 
-### **POST /get_posts_grouped_by_field**
+### **POST /get_complaints_grouped_by_field**
 
-- **Purpose**: Group posts based on a specified field (e.g., `category`), returning `count` and `avg_sentiment` that group.
-- **`group_by_field` explanation**: This is the field in the `posts` collection used for grouping e.g.  `"category"`, `"source"`.
+- **Purpose**: Group complaints based on a specified field (e.g., `category`), returning `count` and `avg_sentiment` that group.
+- **`group_by_field` explanation**: This is the field in the `complaints` collection used for grouping e.g.  `"category"`, `"source"`.
 
 **Request:**
 ```json
@@ -471,7 +471,7 @@ Each document in the `posts` collection has the following structure:
 
 **Sample Request:**
 ```sh
-    curl -X POST "http://localhost:8082/get_posts_grouped_by_field" \
+    curl -X POST "http://localhost:8082/get_complaints_grouped_by_field" \
     -H "Content-Type: application/json" \
     -d '{
         "start_date": "01-01-2010 00:00:00",
@@ -536,10 +536,10 @@ Each document in the `posts` collection has the following structure:
 
 ---
 
-### **POST /get_posts_grouped_by_field_over_time**
+### **POST /get_complaints_grouped_by_field_over_time**
 
-- **Purpose**: Similar to `get_posts_grouped_by_field`, but also groups the results by a time interval (based on the `time_bucket_regex`).
-- **`time_bucket_regex` explanation**: This is a date format string specifying how to bucket or group posts by their date. For example, `"%m-%Y"` groups posts by month-year (e.g., `02-2024`) and `"%Y"` groups posts by year (e.g., `2024`).
+- **Purpose**: Similar to `get_complaints_grouped_by_field`, but also groups the results by a time interval (based on the `time_bucket_regex`).
+- **`time_bucket_regex` explanation**: This is a date format string specifying how to bucket or group complaints by their date. For example, `"%m-%Y"` groups complaints by month-year (e.g., `02-2024`) and `"%Y"` groups complaints by year (e.g., `2024`).
 
 **Request:**
 ```json
@@ -577,7 +577,7 @@ Each document in the `posts` collection has the following structure:
 
 **Sample Request:**
 ```sh
-    curl -X POST "http://localhost:8082/get_posts_grouped_by_field_over_time" \
+    curl -X POST "http://localhost:8082/get_complaints_grouped_by_field_over_time" \
     -H "Content-Type: application/json" \
     -d '{
         "start_date": "01-01-2010 00:00:00",
@@ -669,9 +669,9 @@ Each document in the `posts` collection has the following structure:
 
 ---
 
-### **POST /get_posts_grouped_by_sentiment_value**
+### **POST /get_complaints_grouped_by_sentiment_value**
 
-- **Purpose**: Group posts into "buckets" based on their sentiment value. For example, if the `bucket_size` is 0.5, it will group sentiments in the following ranges: `[-1, -0.5), [-0.5, 0), [0, 0.5), [0.5, 1)`.
+- **Purpose**: Group complaints into "buckets" based on their sentiment value. For example, if the `bucket_size` is 0.5, it will group sentiments in the following ranges: `[-1, -0.5), [-0.5, 0), [0, 0.5), [0.5, 1)`.
 - **`bucket_size` explanation**: A numerical interval for grouping sentiment values, e.g. `0.5` creates buckets of width 0.5 each.
 
 **Request:**
@@ -701,7 +701,7 @@ Each document in the `posts` collection has the following structure:
 
 **Sample Request:**
 ```sh
-    curl -X POST "http://localhost:8082/get_posts_grouped_by_sentiment_value" \
+    curl -X POST "http://localhost:8082/get_complaints_grouped_by_sentiment_value" \
     -H "Content-Type: application/json" \
     -d '{
         "start_date": "01-01-2010 00:00:00",
@@ -742,9 +742,9 @@ Each document in the `posts` collection has the following structure:
 
 ---
 
-### **POST /get_posts_sorted_by_fields**
+### **POST /get_complaints_sorted_by_fields**
 
-- **Purpose**: Retrieve posts sorted by one or more specified fields.
+- **Purpose**: Retrieve complaints sorted by one or more specified fields.
 
 **Request:**
 ```json
@@ -756,14 +756,14 @@ Each document in the `posts` collection has the following structure:
 ```
 - **`keys`**: An array of field names to sort by (e.g., `["sentiment", "date"]`).
 - **`ascending_orders`**: A corresponding array of booleans indicating ascending (`true`) or descending (`false`) for each key.
-- **`limit`**: The maximum number of posts to return.
+- **`limit`**: The maximum number of complaints to return.
 
 **Response:**
 ```json
 {
     "success": "bool",
     "message": "string",
-    "posts": [
+    "complaints": [
         {
             "title": "string",
             "source": "string",
@@ -779,7 +779,7 @@ Each document in the `posts` collection has the following structure:
 
 **Sample Request:**
 ```sh
-    curl -X POST "http://localhost:8082/get_posts_sorted_by_fields" \
+    curl -X POST "http://localhost:8082/get_complaints_sorted_by_fields" \
     -H "Content-Type: application/json" \
     -d '{
         "keys": ["sentiment"],
@@ -791,16 +791,16 @@ Each document in the `posts` collection has the following structure:
 **Sample Response:**
 ```json
 {
-    "message": "Post(s) retrieved.",
+    "message": "Complaint(s) retrieved.",
     "success": true,
-    "posts": [
+    "complaints": [
         {
             "date": "17-11-2009 00:00:00",
             "source": "Reddit",
             "category": "Financial",
             "id": "de456",
             "url": "https://example.com/",
-            "description": "This is a description for post #4",
+            "description": "This is a description for complaint #4",
             "title": "The Harold Lloyd Method of Mass Transit Advertising",
             "sentiment": 0.837126,
             "_id": {
@@ -813,7 +813,7 @@ Each document in the `posts` collection has the following structure:
             },
             "sentiment": -0.175837,
             "title": "Hello la, I'm in Singapore for the week and want to go dancing, was wondering Zirca or Zouk, and which days?",
-            "description": "This is a description for post #5",
+            "description": "This is a description for complaint #5",
             "url": "https://example.com/",
             "id": "ef567",
             "category": "Housing",
@@ -826,7 +826,7 @@ Each document in the `posts` collection has the following structure:
             "category": "Transportation",
             "id": "bc234",
             "url": "https://example.com/",
-            "description": "This is a description for post #2",
+            "description": "This is a description for complaint #2",
             "title": "Good article on the Singapore economy: 'Review strategy, take crisis as opportunity '",
             "sentiment": -0.287196,
             "_id": {
@@ -839,7 +839,7 @@ Each document in the `posts` collection has the following structure:
             "category": "Politics",
             "id": "ab123",
             "url": "https://example.com/",
-            "description": "This is a description for post #1",
+            "description": "This is a description for complaint #1",
             "title": "RIP JB Jeyaretnam. Possibly Singapore's greatest citizen.",
             "sentiment": 0.477568,
             "_id": {
@@ -852,7 +852,7 @@ Each document in the `posts` collection has the following structure:
             },
             "sentiment": -0.475928,
             "title": "High-living Singaporean monk faces jail for fraud.",
-            "description": "This is a description for post #3",
+            "description": "This is a description for complaint #3",
             "url": "https://example.com/",
             "id": "cd345",
             "category": "Infrastructure",
