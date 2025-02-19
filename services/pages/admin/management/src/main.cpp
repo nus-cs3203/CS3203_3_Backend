@@ -46,9 +46,9 @@ int main() {
 
     ApiHandler api_handler;
 
-    CROW_ROUTE(app, "/test").methods(crow::HTTPMethod::Post)
+    CROW_ROUTE(app, "/get_complaint_by_oid").methods(crow::HTTPMethod::Post)
     ([db, &api_handler](const crow::request& req) {
-        return api_handler.test(req, db);
+        return api_handler.get_complaint_by_oid(req, db);
     });
 
     // Run the server

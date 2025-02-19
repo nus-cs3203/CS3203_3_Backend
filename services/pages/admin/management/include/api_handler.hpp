@@ -14,7 +14,7 @@ class ApiHandler {
 public:
     ApiHandler() = default;
 
-    auto test(const crow::request& req, std::shared_ptr<Database> db) -> crow::response;
+    auto get_complaint_by_oid(const crow::request& req, std::shared_ptr<Database> db) -> crow::response;
 };
 
 #endif
