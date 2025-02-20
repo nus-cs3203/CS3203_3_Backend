@@ -14,7 +14,9 @@ class ApiHandler {
 public:
     ApiHandler() = default;
 
-    auto get_complaint_by_oid(const crow::request& req, std::shared_ptr<Database> db) -> crow::response;
+    auto get_by_oid(const crow::request& req, std::shared_ptr<Database> db, const std::string& collection_name) -> crow::response;
+    auto delete_by_oid(const crow::request& req, std::shared_ptr<Database> db, const std::string& collection_name) -> crow::response;
+
 };
 
 #endif

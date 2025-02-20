@@ -46,9 +46,16 @@ int main() {
 
     ApiHandler api_handler;
 
-    CROW_ROUTE(app, "/get_complaint_by_oid").methods(crow::HTTPMethod::Post)
-    ([db, &api_handler](const crow::request& req) {
-        return api_handler.get_complaint_by_oid(req, db);
+    const auto COLLECTION_COMPLAINTS = Constants::COLLECTION_COMPLAINTS;
+
+    CROW_ROUTE(app, "/complaints/get_by_oid").methods(crow::HTTPMethod::Post)
+    ([db, &api_handler, COLLECTION_COMPLAINTS](const crow::request& req) {
+        return api_handler.get_by_oid(req, db, COLLECTION_COMPLAINTS);
+    });
+
+    CROW_ROUTE(app, "/complaints/delete_by_oid").methods(crow::HTTPMethod::Post)
+    ([db, &api_handler, COLLECTION_COMPLAINTS](const crow::request& req) {
+        return api_handler.delete_by_oid(req, db, COLLECTION_COMPLAINTS);
     });
 
     // Run the server
