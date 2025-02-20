@@ -69,6 +69,58 @@ auto ApiHandler::get_by_oid(const crow::request& req, std::shared_ptr<Database> 
     }
 }
 
+auto ApiHandler::search(const crow::request& req, std::shared_ptr<Database> db, const std::string& collection_name, const std::vector<std::string>& keys, const std::vector<bool>& ascending_orders) -> crow::response {
+    try {
+        auto body = crow::json::load(req.body);
+
+        if (!validate_request(body, {"filter", "page_size", "page_number"})) {
+            return make_error_response(400, "Invalid request format");
+        }
+
+        auto bson_filter = json_to_bson(body["filter"]);
+        auto page_size = body["page_size"].i();
+        auto page_number = body["page_number"].i();
+
+        if (page_size < 1) {
+            return make_error_response(400, "Invalid page_size < 1.");
+        }
+        if (page_number < 1) {
+            return make_error_response(400, "Invalid page_number < 1.");
+        }
+
+        bsoncxx::builder::basic::document sort_builder{};
+        for (int i = 0; i < keys.size(); ++i) {
+            std::string key = keys[i];
+            int direction = ascending_orders[i] ? 1 : -1;
+            sort_builder.append(kvp(key, direction));
+        }
+
+        mongocxx::options::find find_options;
+        find_options.sort(sort_builder.view());
+        find_options.skip((page_number - 1) * page_size);
+        find_options.limit(page_size);
+
+        auto cursor = db->find(collection_name, bson_filter.view(), find_options);
+
+        auto total_count = db->count_documents(collection_name, bson_filter.view());
+
+        std::vector<crow::json::wvalue> documents;
+        for (auto&& document: cursor) {
+            auto document_json = bsoncxx::to_json(document);
+            documents.push_back(crow::json::load(document_json));
+        }
+
+        crow::json::wvalue response_data;
+        response_data["documents"] = std::move(documents);
+        response_data["total_count"] = total_count;
+        return make_success_response(200, response_data, "Documents retrieved successfully");
+    }
+    catch (const std::exception& e) {
+        return make_error_response(500, std::string("Server error: ") + e.what());
+    }
+}
+
+
 auto ApiHandler::insert_one(const crow::request& req, std::shared_ptr<Database> db, const std::string& collection_name) -> crow::response {
     try {
         auto body = crow::json::load(req.body);

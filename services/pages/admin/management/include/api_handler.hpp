@@ -16,6 +16,7 @@ public:
 
     auto get_all(const crow::request& req, std::shared_ptr<Database> db, const std::string& collection_name) -> crow::response;
     auto get_by_oid(const crow::request& req, std::shared_ptr<Database> db, const std::string& collection_name) -> crow::response;
+    auto search(const crow::request& req, std::shared_ptr<Database> db, const std::string& collection_name, const std::vector<std::string>& keys, const std::vector<bool>& ascending_orders) -> crow::response;
     
     auto insert_one(const crow::request& req, std::shared_ptr<Database> db, const std::string& collection_name) -> crow::response;
 

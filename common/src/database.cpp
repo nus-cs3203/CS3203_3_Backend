@@ -73,6 +73,11 @@ auto Database::update_many(
     return collection.update_many(filter, update_document, options);
 }
 
+auto Database::count_documents(const std::string& collection_name, const bsoncxx::document::view& filter) -> long long int {
+    auto collection = db[collection_name];
+    return collection.count_documents(filter);
+}
+
 auto Database::aggregate(const std::string& collection_name, const mongocxx::pipeline& pipeline) -> mongocxx::cursor {
     auto collection = db[collection_name];
     return collection.aggregate(pipeline);
