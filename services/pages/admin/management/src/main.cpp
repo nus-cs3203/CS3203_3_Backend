@@ -46,6 +46,23 @@ int main() {
 
     ApiHandler api_handler;
 
+    const auto COLLECTION_CATEGORIES = Constants::COLLECTION_CATEGORIES;
+
+    CROW_ROUTE(app, "/categories/get_by_oid").methods(crow::HTTPMethod::Post)
+    ([db, &api_handler, COLLECTION_CATEGORIES](const crow::request& req) {
+        return api_handler.get_by_oid(req, db, COLLECTION_CATEGORIES);
+    });
+
+    CROW_ROUTE(app, "/categories/delete_by_oid").methods(crow::HTTPMethod::Post)
+    ([db, &api_handler, COLLECTION_CATEGORIES](const crow::request& req) {
+        return api_handler.delete_by_oid(req, db, COLLECTION_CATEGORIES);
+    });
+
+    CROW_ROUTE(app, "/categories/update_by_oid").methods(crow::HTTPMethod::Post)
+    ([db, &api_handler, COLLECTION_CATEGORIES](const crow::request& req) {
+        return api_handler.update_by_oid(req, db, COLLECTION_CATEGORIES);
+    });
+
     const auto COLLECTION_COMPLAINTS = Constants::COLLECTION_COMPLAINTS;
 
     CROW_ROUTE(app, "/complaints/get_by_oid").methods(crow::HTTPMethod::Post)
@@ -68,7 +85,6 @@ int main() {
         return api_handler.update_by_oid(req, db, COLLECTION_COMPLAINTS);
     });
 
-    // Run the server
     app.port(8083).run();
     return 0;
 }
