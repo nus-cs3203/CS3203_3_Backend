@@ -15,6 +15,25 @@
 using bsoncxx::builder::basic::kvp;
 using bsoncxx::builder::basic::make_document;
 
+auto ApiHandler::get_all(const crow::request& req, std::shared_ptr<Database> db, const std::string& collection_name) -> crow::response {
+    try {
+        auto cursor = db->find(collection_name, {});
+
+        std::vector<crow::json::wvalue> documents;
+        for (auto&& document: cursor) {
+            auto document_json = bsoncxx::to_json(document);
+            documents.push_back(crow::json::load(document_json));
+        }
+
+        crow::json::wvalue response_data;
+        response_data["documents"] = std::move(documents);
+        return make_success_response(200, response_data, "Document(s) retrieved successfully");
+    }
+    catch (const std::exception& e) {
+        return make_error_response(500, std::string("Server error: ") + e.what());
+    }
+}
+
 auto ApiHandler::get_by_oid(const crow::request& req, std::shared_ptr<Database> db, const std::string& collection_name) -> crow::response {
     try {
         auto body = crow::json::load(req.body);
@@ -50,19 +69,23 @@ auto ApiHandler::get_by_oid(const crow::request& req, std::shared_ptr<Database> 
     }
 }
 
-auto ApiHandler::get_all(const crow::request& req, std::shared_ptr<Database> db, const std::string& collection_name) -> crow::response {
+auto ApiHandler::insert_one(const crow::request& req, std::shared_ptr<Database> db, const std::string& collection_name) -> crow::response {
     try {
-        auto cursor = db->find(collection_name, {});
+        auto body = crow::json::load(req.body);
 
-        std::vector<crow::json::wvalue> documents;
-        for (auto&& document: cursor) {
-            auto document_json = bsoncxx::to_json(document);
-            documents.push_back(crow::json::load(document_json));
+        if (!validate_request(body, {"document"})) {
+            return make_error_response(400, "Invalid request format");
         }
 
+        auto json_document = body["document"];
+        auto bson_document = json_to_bson(json_document);
+
+        auto result = db->insert_one(collection_name, bson_document.view());
+        auto id = result->inserted_id().get_oid().value.to_string();
+
         crow::json::wvalue response_data;
-        response_data["documents"] = std::move(documents);
-        return make_success_response(200, response_data, "Document(s) retrieved successfully");
+        response_data["_id"] = id;
+        return make_success_response(200, response_data, "Document inserted successfully");
     }
     catch (const std::exception& e) {
         return make_error_response(500, std::string("Server error: ") + e.what());

@@ -58,6 +58,11 @@ int main() {
         return api_handler.get_by_oid(req, db, COLLECTION_CATEGORIES);
     });
 
+    CROW_ROUTE(app, "/categories/insert_one").methods(crow::HTTPMethod::Post)
+    ([db, &api_handler, COLLECTION_CATEGORIES](const crow::request& req) {
+        return api_handler.insert_one(req, db, COLLECTION_CATEGORIES);
+    });
+
     CROW_ROUTE(app, "/categories/delete_by_oid").methods(crow::HTTPMethod::Post)
     ([db, &api_handler, COLLECTION_CATEGORIES](const crow::request& req) {
         return api_handler.delete_by_oid(req, db, COLLECTION_CATEGORIES);
