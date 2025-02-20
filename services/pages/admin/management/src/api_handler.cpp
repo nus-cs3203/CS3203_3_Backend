@@ -79,38 +79,41 @@ auto ApiHandler::delete_by_oid(const crow::request& req, std::shared_ptr<Databas
 
 auto ApiHandler::delete_many_by_oids(const crow::request& req, std::shared_ptr<Database> db, const std::string& collection_name) -> crow::response {
     try {
-        // auto body = crow::json::load(req.body);
+        auto body = crow::json::load(req.body);
 
-        // if (!validate_request(body, {"oids"})) {
-        //     return make_error_response(400, "Invalid request format");
-        // }
+        if (!validate_request(body, {"oids"})) {
+            return make_error_response(400, "Invalid request format");
+        }
 
-        // if (body["oids"].t() != crow::json::type::List) {
-        //     return make_error_response(400, "Invalid format: 'oids' must be an array");
-        // }
+        if (body["oids"].t() != crow::json::type::List) {
+            return make_error_response(400, "Invalid format: 'oids' must be an array");
+        }
 
-        // bsoncxx::builder::basic::array oid_arr;
-        // auto oids_json = body["oids"];
-        // for (const auto& oid_json: oids_json.lo()) {
-        //     std::string oid_str = oid_json.s();
-        //     bsoncxx::oid oid{oid_str};
-        //     bsoncxx::builder::basic::document oid_doc;
-        //     oid_doc.append(kvp("_id", oid));
-        //     oid_arr.append(oid_doc);
-        // }
+        auto oid_jsons = body["oids"];
+        bsoncxx::builder::basic::array oid_arr_builder;
+        for (const auto& oid_json: oid_jsons.lo()) {
+            std::string oid_str = oid_json.s();
+            bsoncxx::oid oid{oid_str};
+            oid_arr_builder.append(oid);
+        }
 
-        // auto filter = make_document(
-        //     kvp("_id", 
-        //         kvp("$in", oid_arr.view())    
-        //     )
-        // );
+        bsoncxx::array::value oid_arr = oid_arr_builder.extract();
 
-        // auto result = db->delete_many(collection_name, filter.view());
-        // auto deleted_count = result->deleted_count();
+        auto filter = make_document(
+            kvp(
+                "_id",
+                make_document(
+                    kvp("$in", bsoncxx::types::b_array{oid_arr.view()})
+                )
+            )
+        );
+
+        auto result = db->delete_many(collection_name, filter.view());
+        auto deleted_count = result->deleted_count();
 
         crow::json::wvalue response_data;
-        // response_data["deleted_count"] = deleted_count;
-        return make_success_response(200, response_data, "Document deleted successfully");
+        response_data["deleted_count"] = deleted_count;
+        return make_success_response(200, response_data, "Document(s) deleted successfully");
     }
     catch (const std::exception& e) {
         return make_error_response(500, std::string("Server error: ") + e.what());
