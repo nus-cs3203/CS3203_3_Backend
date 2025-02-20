@@ -48,6 +48,11 @@ int main() {
 
     const auto COLLECTION_CATEGORIES = Constants::COLLECTION_CATEGORIES;
 
+    CROW_ROUTE(app, "/categories/get_all").methods(crow::HTTPMethod::Post)
+    ([db, &api_handler, COLLECTION_CATEGORIES](const crow::request& req) {
+        return api_handler.get_all(req, db, COLLECTION_CATEGORIES);
+    });
+
     CROW_ROUTE(app, "/categories/get_by_oid").methods(crow::HTTPMethod::Post)
     ([db, &api_handler, COLLECTION_CATEGORIES](const crow::request& req) {
         return api_handler.get_by_oid(req, db, COLLECTION_CATEGORIES);

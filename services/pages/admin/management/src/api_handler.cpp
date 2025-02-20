@@ -50,6 +50,25 @@ auto ApiHandler::get_by_oid(const crow::request& req, std::shared_ptr<Database> 
     }
 }
 
+auto ApiHandler::get_all(const crow::request& req, std::shared_ptr<Database> db, const std::string& collection_name) -> crow::response {
+    try {
+        auto cursor = db->find(collection_name, {});
+
+        std::vector<crow::json::wvalue> documents;
+        for (auto&& document: cursor) {
+            auto document_json = bsoncxx::to_json(document);
+            documents.push_back(crow::json::load(document_json));
+        }
+
+        crow::json::wvalue response_data;
+        response_data["documents"] = std::move(documents);
+        return make_success_response(200, response_data, "Document(s) retrieved successfully");
+    }
+    catch (const std::exception& e) {
+        return make_error_response(500, std::string("Server error: ") + e.what());
+    }
+}
+
 auto ApiHandler::delete_by_oid(const crow::request& req, std::shared_ptr<Database> db, const std::string& collection_name) -> crow::response {
     try {
         auto body = crow::json::load(req.body);
