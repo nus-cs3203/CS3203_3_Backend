@@ -1111,6 +1111,7 @@ Searches for the **existence** of a word in the `title` or `description` of a co
         "field1": "field1 value",
         "field2": "field2 value"
     },
+    "page_size": "int",
     "page_number": "int"
 }
 ```
@@ -1132,10 +1133,12 @@ curl -X POST http://localhost:8083/complaints/search \
      -d '{
          "filter": {
              "$text": {
-                 "$search": "pastor"
+                 "$search": "new"
              },
-             "category": "Infrastructure"
-         }
+             "category": "Technology"
+         },
+         "page_size": 25,
+         "page_number": 1
      }'
 ```
 
