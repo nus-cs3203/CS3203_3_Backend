@@ -85,6 +85,17 @@
 
 # API Contract
 
+## Service: **db/bulk_uploader**
+
+How to bulk upload?
+1. Run docker services
+```bash
+    docker compose up
+```
+2. Run the script in services/db/bulk_uploader/script.ipynb
+
+---
+
 ## Service: db_manager
 
 The API for db_manager closely follows MongoDB semantics (insert_one, insert_many, find_one, find, delete_one, delete_many, update_one, update_many). You can read this documentation to understand their specific behaviors further: [MongoDB C++ Driver Documentation](https://www.mongodb.com/docs/languages/cpp/cpp-driver/current/get-started/).
@@ -865,11 +876,381 @@ Each document in the `complaints` collection has the following structure:
 
 ---
 
-## Service: **db/bulk_uploader**
+## Service: **pages_admin_management**
 
-How to bulk upload?
-1. Run docker services
-```bash
-    docker compose up
+This service provides various endpoints to manage categories and complaints for administrative purposes.
+
+---
+
+### **Collection: `categories`**
+
+Each document in the `categories` collection could have an example structure like:
+```json
+{
+    "_id": {
+        "oid": "string" // MongoDB internal ID
+    },
+    "category": "string",
+    "color": "string"
+}
 ```
-2. Run the script in services/db/bulk_uploader/script.ipynb
+
+#### **POST /categories/get_all**
+
+**Request:**
+```json
+{
+}
+```
+
+**Response:**
+```json
+{
+    "success": "bool",
+    "message": "string",
+    "documents": []
+}
+```
+
+**Sample Request:**
+```sh
+curl -X POST "http://localhost:8083/categories/get_all" \
+     -H "Content-Type: application/json"
+```
+
+---
+
+#### **POST /categories/get_by_oid**
+
+**Request:**
+```json
+{
+    "oid": "string"
+}
+```
+
+**Response:**
+```json
+{
+    "success": "bool",
+    "message": "string",
+    "document": {} // Category document or null
+}
+```
+
+**Sample Request:**
+```sh
+curl -X POST "http://localhost:8083/categories/get_by_oid" \
+     -H "Content-Type: application/json" \
+     -d '{
+         "oid": "67b458405b0f29f2e7c47ce8"
+     }'
+```
+
+---
+
+#### **POST /categories/insert_one**
+
+**Request:**
+```json
+{
+    "document": {}
+}
+```
+
+**Response:**
+```json
+{
+    "success": "bool",
+    "message": "string",
+    "_id": "string"  // internal id of MongoDB
+}
+```
+
+**Sample Request:**
+```sh
+curl -X POST http://localhost:8083/categories/insert_one \
+     -H "Content-Type: application/json" \
+     -d '{
+         "document": {
+             "category": "Others",
+             "color": "#FFFFFF"
+         }
+     }'
+```
+
+---
+
+#### **POST /categories/delete_by_oid**
+
+**Request:**
+```json
+{
+    "oid": "string"
+}
+```
+
+**Response:**
+```json
+{
+    "success": "bool",
+    "message": "string",
+    "delete_count": "int"
+}
+```
+
+**Sample Request:**
+```sh
+curl -X POST "http://localhost:8083/categories/delete_by_oid" \
+     -H "Content-Type: application/json" \
+     -d '{
+         "oid": "67b458405b0f29f2e7c47ce8"
+     }'
+```
+
+---
+
+#### **POST /categories/update_by_oid**
+
+**Request:**
+```json
+{
+    "oid": "string",
+    "update_document": {
+        "$set": {
+            "field1": "...",
+            "field2": "...",
+            ...
+        }
+    }
+}
+```
+
+**Response:**
+```json
+{
+    "success": "bool",
+    "message": "string",
+    "matched_count": "int",
+    "modified_count": "int",
+    "upserted_count": "int"
+}
+```
+
+**Sample Request:**
+```sh
+curl -X POST "http://localhost:8083/categories/update_by_oid" \
+     -H "Content-Type: application/json" \
+     -d '{
+         "oid": "67b735dfc9b96625a2f1385c",
+         "update_document": {
+             "$set": {
+                 "color": "#34495A"
+             }
+         }
+     }'
+```
+
+---
+
+### **Collection: `complaints`**
+
+Each document in the `complaints` collection could have an example structure like:
+```json
+{
+    "_id": {
+        "oid": "string" // MongoDB internal ID
+    },
+    "title": "string",
+    "source": "string",
+    "category": "string",
+    "date": "mongodb datetime or string of format 'dd-mm-YYYY HH:MM:SS'",
+    "description": "string",
+    "url": "string",
+    ...
+}
+```
+
+#### **POST /complaints/get_by_oid**
+
+**Request:**
+```json
+{
+    "oid": "string"
+}
+```
+
+**Response:**
+```json
+{
+    "success": "bool",
+    "message": "string",
+    "document": {} // Complaint document or null
+}
+```
+
+**Sample Request:**
+```sh
+curl -X POST "http://localhost:8083/complaints/get_by_oid" \
+     -H "Content-Type: application/json" \
+     -d '{
+         "oid": "67b458405b0f29f2e7c47ce8"
+     }'
+```
+
+---
+
+#### **POST /complaints/delete_by_oid**
+
+**Request:**
+```json
+{
+    "oid": "string"
+}
+```
+
+**Response:**
+```json
+{
+    "success": "bool",
+    "message": "string",
+    "delete_count": "int"
+}
+```
+
+**Sample Request:**
+```sh
+curl -X POST "http://localhost:8083/complaints/delete_by_oid" \
+     -H "Content-Type: application/json" \
+     -d '{
+         "oid": "67b458405b0f29f2e7c47ce8"
+     }'
+```
+
+---
+
+#### **POST /complaints/search**
+
+**Text field explanation**:  
+Searches for the **existence** of a word in the `title` or `description` of a complaint (case-insensitive). For example, `"this"` will match the word `"this"` but not just the letter `"t"`.
+
+**Pagination explanation**:  
+- Filtered results are sorted by time (decreasing order).  
+- `total_count` of filtered results is returned.  
+- This endpoint will return the slice of documents at index `[page_size * page_number, page_size * (page_number + 1) - 1]` (1-based indexing).
+
+**Request:**
+```json
+{
+    "collection": "string",
+    "filter": {
+        "$text": {
+            "$search": "keyword"
+        },
+        "field1": "field1 value",
+        "field2": "field2 value"
+    },
+    "page_number": "int"
+}
+```
+
+**Response:**
+```json
+{
+    "success": "bool",
+    "documents": [],
+    "message": "string",
+    "total_count": "int"
+}
+```
+
+**Sample Request:**
+```sh
+curl -X POST http://localhost:8083/complaints/search \
+     -H "Content-Type: application/json" \
+     -d '{
+         "filter": {
+             "$text": {
+                 "$search": "pastor"
+             },
+             "category": "Infrastructure"
+         }
+     }'
+```
+
+---
+
+#### **POST /complaints/delete_many_by_oids**
+
+**Request:**
+```json
+{
+    "oids": ["string", "string", ...]
+}
+```
+
+**Response:**
+```json
+{
+    "success": "bool",
+    "message": "string",
+    "delete_count": "int"
+}
+```
+
+**Sample Request:**
+```sh
+curl -X POST "http://localhost:8083/complaints/delete_many_by_oids" \
+     -H "Content-Type: application/json" \
+     -d '{
+         "oids": ["67b458405b0f29f2e7c47ce9", "67b458405b0f29f2e7c47ce7"]
+     }'
+```
+
+---
+
+#### **POST /complaints/update_by_oid**
+
+> **Note**: For the field `date`, it must be a string of format `dd-mm-YYYY HH:MM:SS`.
+
+**Request:**
+```json
+{
+    "oid": "string",
+    "update_document": {
+        "$set": {
+            "field1": "...",
+            "field2": "...",
+            ...
+        }
+    }
+}
+```
+
+**Response:**
+```json
+{
+    "success": "bool",
+    "message": "string",
+    "matched_count": "int",
+    "modified_count": "int",
+    "upserted_count": "int"
+}
+```
+
+**Sample Request:**
+```sh
+curl -X POST "http://localhost:8083/complaints/update_by_oid" \
+     -H "Content-Type: application/json" \
+     -d '{
+         "oid": "67b744f98c61c92b7195e96d",
+         "update_document": {
+             "$set": {
+                 "title": "new title",
+                 "date": "01-01-2025 00:00:00"
+             }
+         }
+     }'
+```
+
+---
