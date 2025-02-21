@@ -13,6 +13,7 @@
    docker compose build
    docker compose up
    ```
+3. Initialize the database (run /services/db/initializer/script.ipynb)
 
 # For Developers (i.e. Albert)
 
