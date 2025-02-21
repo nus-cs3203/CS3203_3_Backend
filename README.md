@@ -86,7 +86,7 @@
 
 # API Contract
 
-## Service: **db/initializer**
+## Service: **initializer**
 
 How to initialize the database?
 1. Run docker services
