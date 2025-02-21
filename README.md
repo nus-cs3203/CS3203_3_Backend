@@ -85,14 +85,14 @@
 
 # API Contract
 
-## Service: **db/bulk_uploader**
+## Service: **db/initializer**
 
-How to bulk upload?
+How to initialize the database?
 1. Run docker services
 ```bash
     docker compose up
 ```
-2. Run the script in services/db/bulk_uploader/script.ipynb
+2. Run the script in services/db/initializer/script.ipynb
 
 ---
 
