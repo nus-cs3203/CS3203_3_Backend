@@ -427,23 +427,7 @@ Note: Sample responses are obtained by using dummy data defined in [here](./serv
 
 ### **Collection: `complaints`**
 
-Each document in the `complaints` collection has the following structure:
-
-```json
-{
-    "_id": {
-        "oid": "string", // mongodb internal id
-    },
-    "id": "string",
-    "title": "string",
-    "source": "string",
-    "category": "string",
-    "date": "mongodb datetime",
-    "sentiment": "float",
-    "description": "string",
-    "url": "string"
-}
-```
+Refer to Schema Document for collection definition.
 
 ---
 
@@ -884,16 +868,7 @@ This service provides various endpoints to manage categories and complaints for 
 
 ### **Collection: `categories`**
 
-Each document in the `categories` collection could have an example structure like:
-```json
-{
-    "_id": {
-        "oid": "string" // MongoDB internal ID
-    },
-    "category": "string",
-    "color": "string"
-}
-```
+Refer to Schema Document for collection definition.
 
 #### **POST /categories/get_all**
 
@@ -973,7 +948,7 @@ curl -X POST http://localhost:8083/categories/insert_one \
      -H "Content-Type: application/json" \
      -d '{
          "document": {
-             "category": "Others",
+             "name": "Others",
              "color": "#FFFFFF"
          }
      }'
@@ -1055,21 +1030,7 @@ curl -X POST "http://localhost:8083/categories/update_by_oid" \
 
 ### **Collection: `complaints`**
 
-Each document in the `complaints` collection could have an example structure like:
-```json
-{
-    "_id": {
-        "oid": "string" // MongoDB internal ID
-    },
-    "title": "string",
-    "source": "string",
-    "category": "string",
-    "date": "mongodb datetime or string of format 'dd-mm-YYYY HH:MM:SS'",
-    "description": "string",
-    "url": "string",
-    ...
-}
-```
+Refer to Schema Document for collection definition.
 
 #### **POST /complaints/get_by_oid**
 
