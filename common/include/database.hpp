@@ -63,6 +63,11 @@ public:
         const bool& upsert
     ) -> bsoncxx::stdx::optional<mongocxx::result::update>;
 
+    auto count_documents(
+        const std::string& collection_name,
+        const bsoncxx::document::view& filter
+    ) -> long long int;
+
     auto aggregate(
         const std::string& collection_name, 
         const mongocxx::pipeline& pipeline

@@ -13,6 +13,7 @@
    docker compose build
    docker compose up
    ```
+3. Initialize the database (run /services/db/initializer/script.ipynb)
 
 # For Developers (i.e. Albert)
 
@@ -84,6 +85,17 @@
    ```
 
 # API Contract
+
+## Service: **db/initializer**
+
+How to initialize the database?
+1. Run docker services
+```bash
+    docker compose up
+```
+2. Run the script in services/db/initializer/script.ipynb
+
+---
 
 ## Service: db_manager
 
@@ -408,38 +420,22 @@ curl -X POST http://localhost:8081/update_many \
 
 ## Service: **pages_admin_analytics**
 
-This service provides analytics for the `posts` collection.
+This service provides analytics for the `complaints` collection.
 
-Note: Sample responses are obtained by using dummy data defined in [here](./services/pages/admin/analytics/dummy_data/README.MD) (with the assumption of no other data under `posts` collection).
-
----
-
-### **Collection: `posts`**
-
-Each document in the `posts` collection has the following structure:
-
-```json
-{
-    "_id": {
-        "oid": "string", // mongodb internal id
-    },
-    "id": "string",
-    "title": "string",
-    "source": "string",
-    "category": "string",
-    "date": "mongodb datetime",
-    "sentiment": "float",
-    "description": "string",
-    "url": "string"
-}
-```
+Note: Sample responses are obtained by using dummy data defined in [here](./services/pages/admin/analytics/dummy_data/README.MD) (with the assumption of no other data under `complaints` collection).
 
 ---
 
-### **POST /get_posts_grouped_by_field**
+### **Collection: `complaints`**
 
-- **Purpose**: Group posts based on a specified field (e.g., `category`), returning `count` and `avg_sentiment` that group.
-- **`group_by_field` explanation**: This is the field in the `posts` collection used for grouping e.g.  `"category"`, `"source"`.
+Refer to Schema Document for collection definition.
+
+---
+
+### **POST /get_complaints_grouped_by_field**
+
+- **Purpose**: Group complaints based on a specified field (e.g., `category`), returning `count` and `avg_sentiment` that group.
+- **`group_by_field` explanation**: This is the field in the `complaints` collection used for grouping e.g.  `"category"`, `"source"`.
 
 **Request:**
 ```json
@@ -471,7 +467,7 @@ Each document in the `posts` collection has the following structure:
 
 **Sample Request:**
 ```sh
-    curl -X POST "http://localhost:8082/get_posts_grouped_by_field" \
+    curl -X POST "http://localhost:8082/get_complaints_grouped_by_field" \
     -H "Content-Type: application/json" \
     -d '{
         "start_date": "01-01-2010 00:00:00",
@@ -536,10 +532,10 @@ Each document in the `posts` collection has the following structure:
 
 ---
 
-### **POST /get_posts_grouped_by_field_over_time**
+### **POST /get_complaints_grouped_by_field_over_time**
 
-- **Purpose**: Similar to `get_posts_grouped_by_field`, but also groups the results by a time interval (based on the `time_bucket_regex`).
-- **`time_bucket_regex` explanation**: This is a date format string specifying how to bucket or group posts by their date. For example, `"%m-%Y"` groups posts by month-year (e.g., `02-2024`) and `"%Y"` groups posts by year (e.g., `2024`).
+- **Purpose**: Similar to `get_complaints_grouped_by_field`, but also groups the results by a time interval (based on the `time_bucket_regex`).
+- **`time_bucket_regex` explanation**: This is a date format string specifying how to bucket or group complaints by their date. For example, `"%m-%Y"` groups complaints by month-year (e.g., `02-2024`) and `"%Y"` groups complaints by year (e.g., `2024`).
 
 **Request:**
 ```json
@@ -577,7 +573,7 @@ Each document in the `posts` collection has the following structure:
 
 **Sample Request:**
 ```sh
-    curl -X POST "http://localhost:8082/get_posts_grouped_by_field_over_time" \
+    curl -X POST "http://localhost:8082/get_complaints_grouped_by_field_over_time" \
     -H "Content-Type: application/json" \
     -d '{
         "start_date": "01-01-2010 00:00:00",
@@ -669,9 +665,9 @@ Each document in the `posts` collection has the following structure:
 
 ---
 
-### **POST /get_posts_grouped_by_sentiment_value**
+### **POST /get_complaints_grouped_by_sentiment_value**
 
-- **Purpose**: Group posts into "buckets" based on their sentiment value. For example, if the `bucket_size` is 0.5, it will group sentiments in the following ranges: `[-1, -0.5), [-0.5, 0), [0, 0.5), [0.5, 1)`.
+- **Purpose**: Group complaints into "buckets" based on their sentiment value. For example, if the `bucket_size` is 0.5, it will group sentiments in the following ranges: `[-1, -0.5), [-0.5, 0), [0, 0.5), [0.5, 1)`.
 - **`bucket_size` explanation**: A numerical interval for grouping sentiment values, e.g. `0.5` creates buckets of width 0.5 each.
 
 **Request:**
@@ -701,7 +697,7 @@ Each document in the `posts` collection has the following structure:
 
 **Sample Request:**
 ```sh
-    curl -X POST "http://localhost:8082/get_posts_grouped_by_sentiment_value" \
+    curl -X POST "http://localhost:8082/get_complaints_grouped_by_sentiment_value" \
     -H "Content-Type: application/json" \
     -d '{
         "start_date": "01-01-2010 00:00:00",
@@ -742,9 +738,9 @@ Each document in the `posts` collection has the following structure:
 
 ---
 
-### **POST /get_posts_sorted_by_fields**
+### **POST /get_complaints_sorted_by_fields**
 
-- **Purpose**: Retrieve posts sorted by one or more specified fields.
+- **Purpose**: Retrieve complaints sorted by one or more specified fields.
 
 **Request:**
 ```json
@@ -756,14 +752,14 @@ Each document in the `posts` collection has the following structure:
 ```
 - **`keys`**: An array of field names to sort by (e.g., `["sentiment", "date"]`).
 - **`ascending_orders`**: A corresponding array of booleans indicating ascending (`true`) or descending (`false`) for each key.
-- **`limit`**: The maximum number of posts to return.
+- **`limit`**: The maximum number of complaints to return.
 
 **Response:**
 ```json
 {
     "success": "bool",
     "message": "string",
-    "posts": [
+    "complaints": [
         {
             "title": "string",
             "source": "string",
@@ -779,7 +775,7 @@ Each document in the `posts` collection has the following structure:
 
 **Sample Request:**
 ```sh
-    curl -X POST "http://localhost:8082/get_posts_sorted_by_fields" \
+    curl -X POST "http://localhost:8082/get_complaints_sorted_by_fields" \
     -H "Content-Type: application/json" \
     -d '{
         "keys": ["sentiment"],
@@ -791,16 +787,16 @@ Each document in the `posts` collection has the following structure:
 **Sample Response:**
 ```json
 {
-    "message": "Post(s) retrieved.",
+    "message": "Complaint(s) retrieved.",
     "success": true,
-    "posts": [
+    "complaints": [
         {
             "date": "17-11-2009 00:00:00",
             "source": "Reddit",
             "category": "Financial",
             "id": "de456",
             "url": "https://example.com/",
-            "description": "This is a description for post #4",
+            "description": "This is a description for complaint #4",
             "title": "The Harold Lloyd Method of Mass Transit Advertising",
             "sentiment": 0.837126,
             "_id": {
@@ -813,7 +809,7 @@ Each document in the `posts` collection has the following structure:
             },
             "sentiment": -0.175837,
             "title": "Hello la, I'm in Singapore for the week and want to go dancing, was wondering Zirca or Zouk, and which days?",
-            "description": "This is a description for post #5",
+            "description": "This is a description for complaint #5",
             "url": "https://example.com/",
             "id": "ef567",
             "category": "Housing",
@@ -826,7 +822,7 @@ Each document in the `posts` collection has the following structure:
             "category": "Transportation",
             "id": "bc234",
             "url": "https://example.com/",
-            "description": "This is a description for post #2",
+            "description": "This is a description for complaint #2",
             "title": "Good article on the Singapore economy: 'Review strategy, take crisis as opportunity '",
             "sentiment": -0.287196,
             "_id": {
@@ -839,7 +835,7 @@ Each document in the `posts` collection has the following structure:
             "category": "Politics",
             "id": "ab123",
             "url": "https://example.com/",
-            "description": "This is a description for post #1",
+            "description": "This is a description for complaint #1",
             "title": "RIP JB Jeyaretnam. Possibly Singapore's greatest citizen.",
             "sentiment": 0.477568,
             "_id": {
@@ -852,7 +848,7 @@ Each document in the `posts` collection has the following structure:
             },
             "sentiment": -0.475928,
             "title": "High-living Singaporean monk faces jail for fraud.",
-            "description": "This is a description for post #3",
+            "description": "This is a description for complaint #3",
             "url": "https://example.com/",
             "id": "cd345",
             "category": "Infrastructure",
@@ -865,11 +861,361 @@ Each document in the `posts` collection has the following structure:
 
 ---
 
-## Service: **db/bulk_uploader**
+## Service: **pages_admin_management**
 
-How to bulk upload?
-1. Run docker services
-```bash
-    docker compose up
+This service provides various endpoints to manage categories and complaints for administrative purposes.
+
+---
+
+### **Collection: `categories`**
+
+Refer to Schema Document for collection definition.
+
+#### **POST /categories/get_all**
+
+**Request:**
+```json
+{
+}
 ```
-2. Run the script in services/db/bulk_uploader/script.ipynb
+
+**Response:**
+```json
+{
+    "success": "bool",
+    "message": "string",
+    "documents": []
+}
+```
+
+**Sample Request:**
+```sh
+curl -X POST "http://localhost:8083/categories/get_all" \
+     -H "Content-Type: application/json"
+```
+
+---
+
+#### **POST /categories/get_by_oid**
+
+**Request:**
+```json
+{
+    "oid": "string"
+}
+```
+
+**Response:**
+```json
+{
+    "success": "bool",
+    "message": "string",
+    "document": {} // Category document or null
+}
+```
+
+**Sample Request:**
+```sh
+curl -X POST "http://localhost:8083/categories/get_by_oid" \
+     -H "Content-Type: application/json" \
+     -d '{
+         "oid": "67b458405b0f29f2e7c47ce8"
+     }'
+```
+
+---
+
+#### **POST /categories/insert_one**
+
+**Request:**
+```json
+{
+    "document": {}
+}
+```
+
+**Response:**
+```json
+{
+    "success": "bool",
+    "message": "string",
+    "_id": "string"  // internal id of MongoDB
+}
+```
+
+**Sample Request:**
+```sh
+curl -X POST http://localhost:8083/categories/insert_one \
+     -H "Content-Type: application/json" \
+     -d '{
+         "document": {
+             "name": "Others",
+             "color": "#FFFFFF"
+         }
+     }'
+```
+
+---
+
+#### **POST /categories/delete_by_oid**
+
+**Request:**
+```json
+{
+    "oid": "string"
+}
+```
+
+**Response:**
+```json
+{
+    "success": "bool",
+    "message": "string",
+    "delete_count": "int"
+}
+```
+
+**Sample Request:**
+```sh
+curl -X POST "http://localhost:8083/categories/delete_by_oid" \
+     -H "Content-Type: application/json" \
+     -d '{
+         "oid": "67b458405b0f29f2e7c47ce8"
+     }'
+```
+
+---
+
+#### **POST /categories/update_by_oid**
+
+**Request:**
+```json
+{
+    "oid": "string",
+    "update_document": {
+        "$set": {
+            "field1": "...",
+            "field2": "...",
+            ...
+        }
+    }
+}
+```
+
+**Response:**
+```json
+{
+    "success": "bool",
+    "message": "string",
+    "matched_count": "int",
+    "modified_count": "int",
+    "upserted_count": "int"
+}
+```
+
+**Sample Request:**
+```sh
+curl -X POST "http://localhost:8083/categories/update_by_oid" \
+     -H "Content-Type: application/json" \
+     -d '{
+         "oid": "67b735dfc9b96625a2f1385c",
+         "update_document": {
+             "$set": {
+                 "color": "#34495A"
+             }
+         }
+     }'
+```
+
+---
+
+### **Collection: `complaints`**
+
+Refer to Schema Document for collection definition.
+
+#### **POST /complaints/get_by_oid**
+
+**Request:**
+```json
+{
+    "oid": "string"
+}
+```
+
+**Response:**
+```json
+{
+    "success": "bool",
+    "message": "string",
+    "document": {} // Complaint document or null
+}
+```
+
+**Sample Request:**
+```sh
+curl -X POST "http://localhost:8083/complaints/get_by_oid" \
+     -H "Content-Type: application/json" \
+     -d '{
+         "oid": "67b458405b0f29f2e7c47ce8"
+     }'
+```
+
+---
+
+#### **POST /complaints/delete_by_oid**
+
+**Request:**
+```json
+{
+    "oid": "string"
+}
+```
+
+**Response:**
+```json
+{
+    "success": "bool",
+    "message": "string",
+    "delete_count": "int"
+}
+```
+
+**Sample Request:**
+```sh
+curl -X POST "http://localhost:8083/complaints/delete_by_oid" \
+     -H "Content-Type: application/json" \
+     -d '{
+         "oid": "67b458405b0f29f2e7c47ce8"
+     }'
+```
+
+---
+
+#### **POST /complaints/search**
+
+**Text field explanation**:  
+Searches for the **existence** of a word in the `title` or `description` of a complaint (case-insensitive). For example, `"this"` will match the word `"this"` but not just the letter `"t"`.
+
+**Pagination explanation**:  
+- Filtered results are sorted by time (decreasing order).  
+- `total_count` of filtered results is returned.  
+- This endpoint will return the slice of documents at index `[page_size * page_number, page_size * (page_number + 1) - 1]` (1-based indexing).
+
+**Request:**
+```json
+{
+    "collection": "string",
+    "filter": {
+        "$text": {
+            "$search": "keyword"
+        },
+        "field1": "field1 value",
+        "field2": "field2 value"
+    },
+    "page_size": "int",
+    "page_number": "int"
+}
+```
+
+**Response:**
+```json
+{
+    "success": "bool",
+    "documents": [],
+    "message": "string",
+    "total_count": "int"
+}
+```
+
+**Sample Request:**
+```sh
+curl -X POST http://localhost:8083/complaints/search \
+     -H "Content-Type: application/json" \
+     -d '{
+         "filter": {
+             "$text": {
+                 "$search": "new"
+             },
+             "category": "Technology"
+         },
+         "page_size": 25,
+         "page_number": 1
+     }'
+```
+
+---
+
+#### **POST /complaints/delete_many_by_oids**
+
+**Request:**
+```json
+{
+    "oids": ["string", "string", ...]
+}
+```
+
+**Response:**
+```json
+{
+    "success": "bool",
+    "message": "string",
+    "delete_count": "int"
+}
+```
+
+**Sample Request:**
+```sh
+curl -X POST "http://localhost:8083/complaints/delete_many_by_oids" \
+     -H "Content-Type: application/json" \
+     -d '{
+         "oids": ["67b458405b0f29f2e7c47ce9", "67b458405b0f29f2e7c47ce7"]
+     }'
+```
+
+---
+
+#### **POST /complaints/update_by_oid**
+
+> **Note**: For the field `date`, it must be a string of format `dd-mm-YYYY HH:MM:SS`.
+
+**Request:**
+```json
+{
+    "oid": "string",
+    "update_document": {
+        "$set": {
+            "field1": "...",
+            "field2": "...",
+            ...
+        }
+    }
+}
+```
+
+**Response:**
+```json
+{
+    "success": "bool",
+    "message": "string",
+    "matched_count": "int",
+    "modified_count": "int",
+    "upserted_count": "int"
+}
+```
+
+**Sample Request:**
+```sh
+curl -X POST "http://localhost:8083/complaints/update_by_oid" \
+     -H "Content-Type: application/json" \
+     -d '{
+         "oid": "67b744f98c61c92b7195e96d",
+         "update_document": {
+             "$set": {
+                 "title": "new title",
+                 "date": "01-01-2025 00:00:00"
+             }
+         }
+     }'
+```
+
+---
