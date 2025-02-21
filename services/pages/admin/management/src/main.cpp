@@ -77,12 +77,12 @@ int main() {
 
     CROW_ROUTE(app, "/complaints/get_by_oid").methods(crow::HTTPMethod::Post)
     ([db, &api_handler, COLLECTION_COMPLAINTS](const crow::request& req) {
-        return api_handler.get_by_oid(req, db, COLLECTION_COMPLAINTS);
+        return api_handler.get_by_oid(req, db, COLLECTION_COMPLAINTS, true);
     });
 
     CROW_ROUTE(app, "/complaints/search").methods(crow::HTTPMethod::Post)
     ([db, &api_handler, COLLECTION_COMPLAINTS](const crow::request& req) {
-        return api_handler.search(req, db, COLLECTION_COMPLAINTS, {"date"}, {false});
+        return api_handler.search(req, db, COLLECTION_COMPLAINTS, {"date"}, {false}, true);
     });
 
     CROW_ROUTE(app, "/complaints/delete_by_oid").methods(crow::HTTPMethod::Post)
@@ -97,7 +97,7 @@ int main() {
 
     CROW_ROUTE(app, "/complaints/update_by_oid").methods(crow::HTTPMethod::Post)
     ([db, &api_handler, COLLECTION_COMPLAINTS](const crow::request& req) {
-        return api_handler.update_by_oid(req, db, COLLECTION_COMPLAINTS);
+        return api_handler.update_by_oid(req, db, COLLECTION_COMPLAINTS, true);
     });
 
     app.port(8083).run();

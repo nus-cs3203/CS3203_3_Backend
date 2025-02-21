@@ -34,7 +34,7 @@ auto ApiHandler::get_all(const crow::request& req, std::shared_ptr<Database> db,
     }
 }
 
-auto ApiHandler::get_by_oid(const crow::request& req, std::shared_ptr<Database> db, const std::string& collection_name) -> crow::response {
+auto ApiHandler::get_by_oid(const crow::request& req, std::shared_ptr<Database> db, const std::string& collection_name, const bool& should_convert_date) -> crow::response {
     try {
         auto body = crow::json::load(req.body);
 
@@ -59,9 +59,13 @@ auto ApiHandler::get_by_oid(const crow::request& req, std::shared_ptr<Database> 
         }
 
         auto document_json = bsoncxx::to_json(result.value());
-        auto document_wvalue = crow::json::load(document_json);
+        crow::json::rvalue document_rvalue = crow::json::load(document_json);
+        crow::json::wvalue document_wvalue = crow::json::load(document_json);
+        if (should_convert_date and document_rvalue.has("date")) {
+            document_wvalue["date"] = utc_unix_timestamp_to_string(document_rvalue["date"]["$date"].i() / 1000, Constants::DATETIME_FORMAT);
+        }
 
-        response_data["document"] = document_wvalue;
+        response_data["document"] = std::move(document_wvalue);
         return make_success_response(200, response_data, "Document successfully");
     }
     catch (const std::exception& e) {
@@ -69,7 +73,7 @@ auto ApiHandler::get_by_oid(const crow::request& req, std::shared_ptr<Database> 
     }
 }
 
-auto ApiHandler::search(const crow::request& req, std::shared_ptr<Database> db, const std::string& collection_name, const std::vector<std::string>& keys, const std::vector<bool>& ascending_orders) -> crow::response {
+auto ApiHandler::search(const crow::request& req, std::shared_ptr<Database> db, const std::string& collection_name, const std::vector<std::string>& keys, const std::vector<bool>& ascending_orders, const bool& should_convert_date) -> crow::response {
     try {
         auto body = crow::json::load(req.body);
 
@@ -107,7 +111,12 @@ auto ApiHandler::search(const crow::request& req, std::shared_ptr<Database> db, 
         std::vector<crow::json::wvalue> documents;
         for (auto&& document: cursor) {
             auto document_json = bsoncxx::to_json(document);
-            documents.push_back(crow::json::load(document_json));
+            crow::json::rvalue document_rvalue = crow::json::load(document_json);
+            crow::json::wvalue document_wvalue = crow::json::load(document_json);
+            if (should_convert_date and document_rvalue.has("date")) {
+                document_wvalue["date"] = utc_unix_timestamp_to_string(document_rvalue["date"]["$date"].i() / 1000, Constants::DATETIME_FORMAT);
+            }
+            documents.push_back(std::move(document_wvalue));
         }
 
         crow::json::wvalue response_data;
@@ -214,12 +223,16 @@ auto ApiHandler::delete_many_by_oids(const crow::request& req, std::shared_ptr<D
     }
 }
 
-auto ApiHandler::update_by_oid(const crow::request& req, std::shared_ptr<Database> db, const std::string& collection_name) -> crow::response {
+auto ApiHandler::update_by_oid(const crow::request& req, std::shared_ptr<Database> db, const std::string& collection_name, const bool& should_convert_date) -> crow::response {
     try {
         auto body = crow::json::load(req.body);
 
         if (!validate_request(body, {"oid", "update_document"})) {
             return make_error_response(400, "Invalid request format");
+        }
+
+        if (!body["update_document"].has("$set")) {
+            return make_error_response(400, "Missing $set key in update_document");
         }
 
         std::string oid_str = body["oid"].s();
@@ -230,6 +243,37 @@ auto ApiHandler::update_by_oid(const crow::request& req, std::shared_ptr<Databas
         );
 
         auto update_document = json_to_bson(body["update_document"]);
+
+        if (should_convert_date && body["update_document"]["$set"].has("date")) {
+            auto date_str = body["update_document"]["$set"]["date"].s();
+            auto date_ts = string_to_utc_unix_timestamp(date_str, Constants::DATETIME_FORMAT) * 1000;
+            bsoncxx::types::b_date b_date_val{std::chrono::milliseconds(date_ts)};
+
+            bsoncxx::builder::basic::document set_builder;
+            auto original_set = update_document.view()["$set"].get_document().value;
+
+            for (auto&& elem : original_set) {
+                if (std::string(elem.key()) == "date") {
+                    set_builder.append(kvp("date", b_date_val));
+                } else {
+                    set_builder.append(kvp(elem.key(), elem.get_value()));
+                }
+            }
+
+            bsoncxx::document::value new_set_doc = set_builder.extract();
+
+            bsoncxx::builder::basic::document update_builder;
+            for (auto&& elem : update_document.view()) {
+                if (std::string(elem.key()) == "$set") {
+                    update_builder.append(kvp("$set", new_set_doc));
+                } else {
+                    update_builder.append(kvp(elem.key(), elem.get_value()));
+                }
+            }
+
+            update_document = update_builder.extract();
+        }
+
 
         auto result = db->update_one(collection_name, filter.view(), update_document.view(), false);
 
