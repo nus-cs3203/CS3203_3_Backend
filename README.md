@@ -534,15 +534,14 @@ Refer to Schema Document for collection definition.
 
 ### **POST /get_complaints_grouped_by_field_over_time**
 
-- **Purpose**: Similar to `get_complaints_grouped_by_field`, but also groups the results by a time interval (based on the `time_bucket_regex`).
-- **`time_bucket_regex` explanation**: This is a date format string specifying how to bucket or group complaints by their date. For example, `"%m-%Y"` groups complaints by month-year (e.g., `02-2024`) and `"%Y"` groups complaints by year (e.g., `2024`).
+- **Purpose**: Similar to `get_complaints_grouped_by_field`, but also groups the results by a time interval. Time interval used is based on `"%m-%Y"` regex of date field.
+- Note: for time interval with no data for that category, default value of 0 is used for count and avg_sentiment.
 
 **Request:**
 ```json
 {
     "start_date": "string",       // format: dd-mm-YYYY HH:MM:SS
     "end_date": "string",         // format: dd-mm-YYYY HH:MM:SS
-    "time_bucket_regex": "string", // e.g. "%m-%Y"
     "group_by_field": "string"
 }
 ```
@@ -552,22 +551,37 @@ Refer to Schema Document for collection definition.
 {
     "success": "bool",
     "message": "string",
-    "result": {
-        "time_bucket_value_1": {
-            "group_value_1": {
-                "count": "int",
-                "avg_sentiment": "float"
-            },
-            "group_value_2": {
-                "count": "int",
-                "avg_sentiment": "float"
-            },
-            ...
+    "result": [
+        {
+            "date": "%m-%Y",
+            "data": {
+                "field1": {
+                    "count": "int",
+                    "avg_sentiment": "double"
+                },
+                "field2": {
+                    "count": "int",
+                    "avg_sentiment": "double"
+                },
+                ...
+            }
         },
-        "time_bucket_value_2": {
-            ...
+        {
+            "date": "%m-%Y",
+            "data": {
+                "field1": {
+                    "count": "int",
+                    "avg_sentiment": "double"
+                },
+                "field2": {
+                    "count": "int",
+                    "avg_sentiment": "double"
+                },
+                ...
+            }
         }
-    }
+        ...
+    ]
 }
 ```
 
@@ -577,89 +591,84 @@ Refer to Schema Document for collection definition.
     -H "Content-Type: application/json" \
     -d '{
         "start_date": "01-01-2010 00:00:00",
-        "end_date": "31-12-2010 23:59:59",
-        "group_by_field": "category",
-        "time_bucket_regex": "%m-%Y"
+        "end_date": "31-03-2010 23:59:59",
+        "group_by_field": "category"
     }'
 ```
 
 **Sample Response:**
 ```json
 {
-    "message": "Analytics result retrieved.",
     "success": true,
-    "result": {
-        "05-2010": {
-            "Retail": {
-                "count": 1,
-                "avg_sentiment": -0.0809918000000000026794566565513378009
-            },
-            "Healthcare": {
-                "count": 2,
-                "avg_sentiment": 0.38060264799999998786006472073495388
-            },
-            "Environmental": {
-                "count": 1,
-                "avg_sentiment": 0.500866342999999991647541719430591911
-            },
-            "Housing": {
-                "count": 1,
-                "avg_sentiment": 0.264428435999999988936792760796379298
+    "message": "Analytics result retrieved.",
+    "result": [
+        {
+            "date": "01-2010",
+            "data": {
+                "Financial": {
+                    "count": 0,
+                    "avg_sentiment": 0
+                },
+                "Infrastructure": {
+                    "count": 0,
+                    "avg_sentiment": 0
+                },
+                "Healthcare": {
+                    "count": 0,
+                    "avg_sentiment": 0
+                },
+                "Food Services": {
+                    "count": 0,
+                    "avg_sentiment": 0
+                },
+                "Social Services": {
+                    "count": 0,
+                    "avg_sentiment": 0
+                },
+                "Retail": {
+                    "count": 0,
+                    "avg_sentiment": 0
+                },
+                "Housing": {
+                    "count": 1,
+                    "avg_sentiment": -0.17583705399999999
+                },
+                "Technology": {
+                    "count": 0,
+                    "avg_sentiment": 0
+                },
+                "Education": {
+                    "count": 0,
+                    "avg_sentiment": 0
+                },
+                "Public Safety": {
+                    "count": 0,
+                    "avg_sentiment": 0
+                },
+                "Transportation": {
+                    "count": 0,
+                    "avg_sentiment": 0
+                },
+                "Environmental": {
+                    "count": 0,
+                    "avg_sentiment": 0
+                },
+                "Employment": {
+                    "count": 0,
+                    "avg_sentiment": 0
+                },
+                "Noise": {
+                    "count": 0,
+                    "avg_sentiment": 0
+                },
+                "Others": {
+                    "count": 0,
+                    "avg_sentiment": 0
+                }
             }
         },
-        "03-2010": {
-            "Public Safety": {
-                "count": 1,
-                "avg_sentiment": 0.267879894999999978999483118968782946
-            }
-        },
-        "06-2010": {
-            "Social Services": {
-                "count": 1,
-                "avg_sentiment": -0.436532213999999973985666201770072803
-            },
-            "Environmental": {
-                "count": 1,
-                "avg_sentiment": 0.245745574999999993881516502369777299
-            },
-            "Transportation": {
-                "count": 1,
-                "avg_sentiment": 0.270746941999999990446923447962035425
-            }
-        },
-        "08-2010": {
-            "Financial": {
-                "count": 1,
-                "avg_sentiment": -0.737510960000000048708557187637779862
-            },
-            "Politics": {
-                "count": 1,
-                "avg_sentiment": -0.198254379000000008348436608685005922
-            },
-            "Housing": {
-                "count": 1,
-                "avg_sentiment": -0.215923077999999990517210335383424535
-            }
-        },
-        "07-2010": {
-            "Recreation": {
-                "count": 2,
-                "avg_sentiment": -0.0774242129999999639800023487623548135
-            }
-        },
-        "09-2010": {
-            "Employment": {
-                "count": 1,
-                "avg_sentiment": 0.696234156000000048436504584969952703
-            }
-        },
-        "01-2010": {
-            "Housing": {
-                "count": 1,
-                "avg_sentiment": -0.175837053999999992637270906925550662
-            }
-        }
-    }
+        ...
+    ]
 }
 ```
 

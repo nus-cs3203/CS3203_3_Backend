@@ -22,7 +22,8 @@ public:
     auto get_complaints_sorted_by_fields(const crow::request& req, std::shared_ptr<Database> db) -> crow::response;
 private:
     auto _get_complaints_grouped_by_field(std::shared_ptr<Database> db, const std::string& group_by_field, const bsoncxx::document::view& filter) -> mongocxx::cursor;
-    auto _get_complaints_grouped_by_field_over_time(std::shared_ptr<Database> db, const std::string& group_by_field, const std::string& time_bucket_regex, const bsoncxx::document::view& filter) -> mongocxx::cursor;
+    
+    auto _get_months_range(std::chrono::system_clock::time_point start_tp, std::chrono::system_clock::time_point end_tp) -> std::vector<std::string>;
     
     auto _get_complaints_grouped_by_sentiment_value(std::shared_ptr<Database> db, const double& bucket_size, const bsoncxx::document::view& filter) -> mongocxx::cursor;
 
