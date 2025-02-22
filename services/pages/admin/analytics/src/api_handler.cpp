@@ -10,6 +10,7 @@
 
 #include <chrono>
 #include <iostream>
+#include <unordered_set>
 #include <vector>
 
 using bsoncxx::builder::basic::kvp;
@@ -22,7 +23,6 @@ auto ApiHandler::get_complaints_grouped_by_field(const crow::request& req, std::
         if (!validate_request(body, {"start_date", "end_date", "group_by_field"})) {
             return make_error_response(400, "Invalid request format");
         }
-        
         auto start_date = json_date_to_bson_date(body["start_date"]);
         auto end_date = json_date_to_bson_date(body["end_date"]);
         
@@ -35,19 +35,9 @@ auto ApiHandler::get_complaints_grouped_by_field(const crow::request& req, std::
             ))
         );
 
-        auto cursor = _get_complaints_grouped_by_field(db, group_by_field, filter);
-
-        crow::json::wvalue result;
-        for (auto&& document: cursor) {
-            auto document_json = bsoncxx::to_json(document);
-            crow::json::rvalue rval_json = crow::json::load(document_json);
-
-            crow::json::wvalue sub_result;
-            sub_result["count"] = rval_json["count"];
-            sub_result["avg_sentiment"] = rval_json["avg_sentiment"];
-            result[rval_json["_id"].s()] = std::move(sub_result);
-        }
-
+        auto cursor = _get_complaints_grouped_by_field_get_cursor(db, group_by_field, filter);
+        auto result = _get_complaints_grouped_by_field_read_cursor(cursor, _get_all_categories(db));
+        
         crow::json::wvalue response_data;
         response_data["result"] = std::move(result);
         return make_success_response(200, response_data, "Analytics result retrieved.");
@@ -57,7 +47,7 @@ auto ApiHandler::get_complaints_grouped_by_field(const crow::request& req, std::
     }
 }
 
-auto ApiHandler::_get_complaints_grouped_by_field(std::shared_ptr<Database> db, const std::string& group_by_field, const bsoncxx::document::view& filter) -> mongocxx::cursor {
+auto ApiHandler::_get_complaints_grouped_by_field_get_cursor(std::shared_ptr<Database> db, const std::string& group_by_field, const bsoncxx::document::view& filter) -> mongocxx::cursor {
     mongocxx::pipeline pipeline{};
 
     pipeline.match(filter);
@@ -80,8 +70,37 @@ auto ApiHandler::_get_complaints_grouped_by_field(std::shared_ptr<Database> db, 
     return cursor;
 }
 
-auto ApiHandler::get_complaints_grouped_by_field_over_time(const crow::request& req, std::shared_ptr<Database> db) -> crow::response
-{
+auto ApiHandler::_get_complaints_grouped_by_field_read_cursor(mongocxx::cursor& cursor, const std::vector<std::string>& categories) -> crow::json::wvalue {
+    std::unordered_set<std::string> added_categories;
+
+    crow::json::wvalue result;
+    for (auto&& document: cursor) {
+        auto document_json = bsoncxx::to_json(document);
+        crow::json::rvalue rval_json = crow::json::load(document_json);
+
+        crow::json::wvalue sub_result;
+        sub_result["count"] = rval_json["count"];
+        sub_result["avg_sentiment"] = rval_json["avg_sentiment"];
+        auto category = rval_json["_id"].s();
+        result[category] = std::move(sub_result);
+        added_categories.insert(category);
+    }
+
+    for (auto &category: categories) {
+        if (added_categories.find(category) != added_categories.end()) {
+            continue;
+        }
+        crow::json::wvalue sub_result;
+        sub_result["count"] = 0;
+        sub_result["avg_sentiment"] = 0;
+        result[category] = std::move(sub_result);
+        added_categories.insert(category);
+    }
+
+    return result;
+}
+
+auto ApiHandler::get_complaints_grouped_by_field_over_time(const crow::request& req, std::shared_ptr<Database> db) -> crow::response{
     try
     {
         auto body = crow::json::load(req.body);
@@ -286,7 +305,7 @@ auto ApiHandler::get_complaints_grouped_by_sentiment_value(const crow::request& 
 
         auto start_date = json_date_to_bson_date(body["start_date"]);
         auto end_date = json_date_to_bson_date(body["end_date"]);
-        
+
         double bucket_size = body["bucket_size"].d();
 
         if (bucket_size <= 0) {
@@ -422,4 +441,15 @@ auto ApiHandler::_get_complaints_sorted_by_fields(std::shared_ptr<Database> db, 
 
     auto cursor = db->find(Constants::COLLECTION_COMPLAINTS, {}, option);
     return cursor;
+}
+
+auto ApiHandler::_get_all_categories(std::shared_ptr<Database> db) -> std::vector<std::string> {
+    std::vector<std::string> categories;
+    auto cursor = db->find(Constants::COLLECTION_CATEGORIES, {});
+    for (auto&& document: cursor) {
+        auto document_json = bsoncxx::to_json(document);
+        crow::json::rvalue rval_json = crow::json::load(document_json);
+        categories.push_back(rval_json["name"].s());
+    }
+    return categories;
 }
