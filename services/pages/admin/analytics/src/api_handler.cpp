@@ -369,16 +369,8 @@ auto ApiHandler::get_complaints_sorted_by_fields(const crow::request& req, std::
         }
         auto limit = body["limit"].i();
 
-        auto cursor = _get_complaints_sorted_by_fields(db, keys, ascending_orders, limit);
-
-        std::vector<crow::json::wvalue> documents;
-        for (auto&& document: cursor) {
-            auto document_json = bsoncxx::to_json(document);
-            crow::json::rvalue rval_json = crow::json::load(document_json);
-            crow::json::wvalue wval_json = crow::json::load(document_json);
-            wval_json["date"] = utc_unix_timestamp_to_string(rval_json["date"]["$date"].i() / 1000, Constants::DATETIME_FORMAT);
-            documents.push_back(std::move(wval_json));
-        }
+        auto cursor = _get_complaints_sorted_by_fields_get_cursor(db, keys, ascending_orders, limit);
+        auto documents = _get_complaints_sorted_by_fields_read_cursor(cursor);
 
         crow::json::wvalue response_data;
         response_data[Constants::COLLECTION_COMPLAINTS] = std::move(documents);
@@ -389,7 +381,7 @@ auto ApiHandler::get_complaints_sorted_by_fields(const crow::request& req, std::
     }
 }
 
-auto ApiHandler::_get_complaints_sorted_by_fields(std::shared_ptr<Database> db, const std::vector<std::string>& keys, const std::vector<bool>& ascending_orders, const int& limit) -> mongocxx::cursor {
+auto ApiHandler::_get_complaints_sorted_by_fields_get_cursor(std::shared_ptr<Database> db, const std::vector<std::string>& keys, const std::vector<bool>& ascending_orders, const int& limit) -> mongocxx::cursor {
     if (keys.size() != ascending_orders.size()) {
         throw std::invalid_argument("keys and ascending_orders vectors must have the same size.");
     }
@@ -408,6 +400,18 @@ auto ApiHandler::_get_complaints_sorted_by_fields(std::shared_ptr<Database> db, 
 
     auto cursor = db->find(Constants::COLLECTION_COMPLAINTS, {}, option);
     return cursor;
+}
+
+auto ApiHandler::_get_complaints_sorted_by_fields_read_cursor(mongocxx::cursor& cursor) -> crow::json::wvalue {
+    std::vector<crow::json::wvalue> documents;
+    for (auto&& document: cursor) {
+        auto document_json = bsoncxx::to_json(document);
+        crow::json::rvalue rval_json = crow::json::load(document_json);
+        crow::json::wvalue wval_json = crow::json::load(document_json);
+        wval_json["date"] = utc_unix_timestamp_to_string(rval_json["date"]["$date"].i() / 1000, Constants::DATETIME_FORMAT);
+        documents.push_back(std::move(wval_json));
+    }
+    return documents;
 }
 
 auto ApiHandler::_get_all_categories(std::shared_ptr<Database> db) -> std::vector<std::string> {

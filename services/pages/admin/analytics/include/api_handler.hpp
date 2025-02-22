@@ -27,7 +27,8 @@ private:
     auto _get_complaints_grouped_by_sentiment_value_get_cursor(std::shared_ptr<Database> db, const double& bucket_size, const bsoncxx::document::view& filter) -> mongocxx::cursor;
     auto _get_complaints_grouped_by_sentiment_value_read_cursor(mongocxx::cursor& cursor, const double& bucket_size) -> crow::json::wvalue;
 
-    auto _get_complaints_sorted_by_fields(std::shared_ptr<Database> db, const std::vector<std::string>& keys, const std::vector<bool>& ascending_orders, const int& limit) -> mongocxx::cursor;
+    auto _get_complaints_sorted_by_fields_get_cursor(std::shared_ptr<Database> db, const std::vector<std::string>& keys, const std::vector<bool>& ascending_orders, const int& limit) -> mongocxx::cursor;
+    auto _get_complaints_sorted_by_fields_read_cursor(mongocxx::cursor& cursor) -> crow::json::wvalue;
 
     auto _get_all_categories(std::shared_ptr<Database> db) -> std::vector<std::string>;
     auto _get_months_range(std::chrono::system_clock::time_point start_tp, std::chrono::system_clock::time_point end_tp) -> std::vector<std::string>;
