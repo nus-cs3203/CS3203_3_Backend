@@ -10,6 +10,7 @@
 
 #include <chrono>
 #include <iostream>
+#include <unordered_set>
 #include <vector>
 
 using bsoncxx::builder::basic::kvp;
@@ -22,15 +23,9 @@ auto ApiHandler::get_complaints_grouped_by_field(const crow::request& req, std::
         if (!validate_request(body, {"start_date", "end_date", "group_by_field"})) {
             return make_error_response(400, "Invalid request format");
         }
+        auto start_date = json_date_to_bson_date(body["start_date"]);
+        auto end_date = json_date_to_bson_date(body["end_date"]);
         
-        auto start_date_str = body["start_date"].s();
-        auto start_date_ts = string_to_utc_unix_timestamp(start_date_str, Constants::DATETIME_FORMAT) * 1000;
-        bsoncxx::types::b_date start_date{std::chrono::milliseconds(start_date_ts)};
-
-        auto end_date_str = body["end_date"].s();
-        auto end_date_ts = string_to_utc_unix_timestamp(end_date_str, Constants::DATETIME_FORMAT) * 1000;
-        bsoncxx::types::b_date end_date{std::chrono::milliseconds(end_date_ts)};
-
         auto group_by_field = body["group_by_field"].s();
 
         bsoncxx::document::value filter = make_document(
@@ -40,19 +35,9 @@ auto ApiHandler::get_complaints_grouped_by_field(const crow::request& req, std::
             ))
         );
 
-        auto cursor = _get_complaints_grouped_by_field(db, group_by_field, filter);
-
-        crow::json::wvalue result;
-        for (auto&& document: cursor) {
-            auto document_json = bsoncxx::to_json(document);
-            crow::json::rvalue rval_json = crow::json::load(document_json);
-
-            crow::json::wvalue sub_result;
-            sub_result["count"] = rval_json["count"];
-            sub_result["avg_sentiment"] = rval_json["avg_sentiment"];
-            result[rval_json["_id"].s()] = std::move(sub_result);
-        }
-
+        auto cursor = _get_complaints_grouped_by_field_get_cursor(db, group_by_field, filter);
+        auto result = _get_complaints_grouped_by_field_read_cursor(cursor, _get_all_categories(db));
+        
         crow::json::wvalue response_data;
         response_data["result"] = std::move(result);
         return make_success_response(200, response_data, "Analytics result retrieved.");
@@ -62,7 +47,7 @@ auto ApiHandler::get_complaints_grouped_by_field(const crow::request& req, std::
     }
 }
 
-auto ApiHandler::_get_complaints_grouped_by_field(std::shared_ptr<Database> db, const std::string& group_by_field, const bsoncxx::document::view& filter) -> mongocxx::cursor {
+auto ApiHandler::_get_complaints_grouped_by_field_get_cursor(std::shared_ptr<Database> db, const std::string& group_by_field, const bsoncxx::document::view& filter) -> mongocxx::cursor {
     mongocxx::pipeline pipeline{};
 
     pipeline.match(filter);
@@ -85,8 +70,37 @@ auto ApiHandler::_get_complaints_grouped_by_field(std::shared_ptr<Database> db, 
     return cursor;
 }
 
-auto ApiHandler::get_complaints_grouped_by_field_over_time(const crow::request& req, std::shared_ptr<Database> db) -> crow::response
-{
+auto ApiHandler::_get_complaints_grouped_by_field_read_cursor(mongocxx::cursor& cursor, const std::vector<std::string>& categories) -> crow::json::wvalue {
+    std::unordered_set<std::string> added_categories;
+
+    crow::json::wvalue result;
+    for (auto&& document: cursor) {
+        auto document_json = bsoncxx::to_json(document);
+        crow::json::rvalue rval_json = crow::json::load(document_json);
+
+        crow::json::wvalue sub_result;
+        sub_result["count"] = rval_json["count"];
+        sub_result["avg_sentiment"] = rval_json["avg_sentiment"];
+        auto category = rval_json["_id"].s();
+        result[category] = std::move(sub_result);
+        added_categories.insert(category);
+    }
+
+    for (auto &category: categories) {
+        if (added_categories.find(category) != added_categories.end()) {
+            continue;
+        }
+        crow::json::wvalue sub_result;
+        sub_result["count"] = 0;
+        sub_result["avg_sentiment"] = 0;
+        result[category] = std::move(sub_result);
+        added_categories.insert(category);
+    }
+
+    return result;
+}
+
+auto ApiHandler::get_complaints_grouped_by_field_over_time(const crow::request& req, std::shared_ptr<Database> db) -> crow::response{
     try
     {
         auto body = crow::json::load(req.body);
@@ -111,110 +125,8 @@ auto ApiHandler::get_complaints_grouped_by_field_over_time(const crow::request& 
             ))
         );
 
-        std::vector<std::string> allCategories;
-        {
-            auto categories_cursor = db->find(Constants::COLLECTION_CATEGORIES, {});
-            for (auto&& doc : categories_cursor)
-            {
-                std::string nameValStr{doc["name"].get_value().get_string().value};
-                allCategories.push_back(nameValStr);
-            }
-        }
-
-        mongocxx::pipeline pipeline{};
-        pipeline.match(filter.view());
-
-        pipeline.group(
-            make_document(
-                kvp("_id",
-                    make_document(
-                        kvp("time_bucket",
-                            make_document(
-                                kvp("$dateToString",
-                                    make_document(
-                                        kvp("format", "%m-%Y"),
-                                        kvp("date", "$date")
-                                    )
-                                )
-                            )
-                        ),
-                        // e.g. "category" = "$category"
-                        kvp(group_by_field, "$" + group_by_field)
-                    )
-                ),
-                kvp("count", make_document(kvp("$sum", 1))),
-                kvp("avg_sentiment", make_document(kvp("$avg", "$sentiment")))
-            )
-        );
-
-        auto cursor = db->aggregate(Constants::COLLECTION_COMPLAINTS, pipeline);
-
-        struct Stats {
-            int count = 0;
-            double avg = 0.0;
-        };
-        std::unordered_map<std::string, std::unordered_map<std::string, Stats>> aggregated;
-
-        for (auto&& document : cursor)
-        {
-            auto doc_json = bsoncxx::to_json(document);
-            auto rval_json = crow::json::load(doc_json);
-            crow::json::wvalue wval_json;
-            wval_json["count"] = rval_json["count"];
-            wval_json["count"] = rval_json["count"];
-
-            // Example structure of doc:
-            // {
-            //   "_id": {
-            //       "time_bucket": "05-2023",
-            //       "category": "Financial"
-            //   },
-            //   "count": 3,
-            //   "avg_sentiment": 0.15
-            // }
-            auto time_bucket_val = rval_json["_id"]["time_bucket"].s();
-            auto group_value     = rval_json["_id"][group_by_field].s();
-
-            auto count_val       = rval_json["count"].i();
-            auto avg_sent_val    = rval_json["avg_sentiment"].d();
-
-            aggregated[time_bucket_val][group_value] = {static_cast<int>(count_val), static_cast<double>(avg_sent_val)};
-        }
-
-        auto start_tp = std::chrono::system_clock::time_point(std::chrono::milliseconds(start_date_ts));
-        auto end_tp   = std::chrono::system_clock::time_point(std::chrono::milliseconds(end_date_ts));
-        auto monthsInRange = _get_months_range(start_tp, end_tp);
-
-        crow::json::wvalue::list resultArray;
-
-        for (auto& monthStr : monthsInRange)
-        {
-            crow::json::wvalue monthObj;
-            monthObj["date"] = monthStr;
-
-            crow::json::wvalue dataObj;
-            for (auto& cat : allCategories)
-            {
-                int theCount = 0;
-                double theAvg = 0.0;
-
-                auto itMonth = aggregated.find(monthStr);
-                if (itMonth != aggregated.end())
-                {
-                    auto itCategory = itMonth->second.find(cat);
-                    if (itCategory != itMonth->second.end())
-                    {
-                        theCount = itCategory->second.count;
-                        theAvg   = itCategory->second.avg;
-                    }
-                }
-
-                dataObj[cat]["count"] = theCount;
-                dataObj[cat]["avg_sentiment"] = theAvg;
-            }
-            monthObj["data"] = std::move(dataObj);
-            resultArray.push_back(std::move(monthObj));
-        }
+        auto cursor = _get_complaints_grouped_by_field_over_time_get_cursor(db, group_by_field, filter);
+        auto resultArray = _get_complaints_grouped_by_field_over_time_read_cursor(cursor, _get_all_categories(db), group_by_field, start_date_ts, end_date_ts);
 
         crow::json::wvalue response_data;
         response_data["result"] = std::move(resultArray);
@@ -228,57 +140,106 @@ auto ApiHandler::get_complaints_grouped_by_field_over_time(const crow::request& 
     }
 }
 
-auto ApiHandler::_get_months_range(std::chrono::system_clock::time_point start_tp, std::chrono::system_clock::time_point end_tp) -> std::vector<std::string>
-{
-    struct YearMonth {
-        int year;
-        int month;
+auto ApiHandler::_get_complaints_grouped_by_field_over_time_get_cursor(std::shared_ptr<Database> db, const std::string& group_by_field, const bsoncxx::document::view& filter) -> mongocxx::cursor {
+    mongocxx::pipeline pipeline{};
+    pipeline.match(filter);
+
+    pipeline.group(
+        make_document(
+            kvp("_id",
+                make_document(
+                    kvp("time_bucket",
+                        make_document(
+                            kvp("$dateToString",
+                                make_document(
+                                    kvp("format", "%m-%Y"),
+                                    kvp("date", "$date")
+                                )
+                            )
+                        )
+                    ),
+                    // e.g. "category" = "$category"
+                    kvp(group_by_field, "$" + group_by_field)
+                )
+            ),
+            kvp("count", make_document(kvp("$sum", 1))),
+            kvp("avg_sentiment", make_document(kvp("$avg", "$sentiment")))
+        )
+    );
+
+    auto cursor = db->aggregate(Constants::COLLECTION_COMPLAINTS, pipeline);
+    return cursor;
+}
+
+auto ApiHandler::_get_complaints_grouped_by_field_over_time_read_cursor(mongocxx::cursor& cursor, const std::vector<std::string>& categories, const std::string& group_by_field, const long long int& start_date_ts, const long long int& end_date_ts) -> crow::json::wvalue::list {
+    struct Stats {
+        int count = 0;
+        double avg = 0.0;
     };
-    
-    // Convert to time_t
-    auto start_time_t = std::chrono::system_clock::to_time_t(start_tp);
-    auto end_time_t   = std::chrono::system_clock::to_time_t(end_tp);
+    std::unordered_map<std::string, std::unordered_map<std::string, Stats>> aggregated;
 
-    // Convert to tm (UTC or local – just be consistent with your parsing logic)
-    std::tm start_tm = *std::gmtime(&start_time_t);
-    std::tm end_tm   = *std::gmtime(&end_time_t);
-
-    // Prepare start / end year-month
-    YearMonth startYM = {start_tm.tm_year + 1900, start_tm.tm_mon + 1};
-    YearMonth endYM   = {end_tm.tm_year + 1900,   end_tm.tm_mon + 1};
-
-    std::vector<std::string> result;
-    // If start > end, return empty
-    if ((startYM.year > endYM.year) 
-        || (startYM.year == endYM.year && startYM.month > endYM.month))
+    for (auto&& document : cursor)
     {
-        return result;
+        auto doc_json = bsoncxx::to_json(document);
+        auto rval_json = crow::json::load(doc_json);
+        crow::json::wvalue wval_json;
+        wval_json["count"] = rval_json["count"];
+        wval_json["count"] = rval_json["count"];
+
+        // Example structure of doc:
+        // {
+        //   "_id": {
+        //       "time_bucket": "05-2023",
+        //       "category": "Financial"
+        //   },
+        //   "count": 3,
+        //   "avg_sentiment": 0.15
+        // }
+        auto time_bucket_val = rval_json["_id"]["time_bucket"].s();
+        auto group_value     = rval_json["_id"][group_by_field].s();
+
+        auto count_val       = rval_json["count"].i();
+        auto avg_sent_val    = rval_json["avg_sentiment"].d();
+
+        aggregated[time_bucket_val][group_value] = {static_cast<int>(count_val), static_cast<double>(avg_sent_val)};
     }
 
-    // Loop year-month from startYM until endYM inclusive
-    int year  = startYM.year;
-    int month = startYM.month;
-    while (true) {
-        // Format "MM-YYYY" 
-        std::ostringstream oss;
-        oss << std::setw(2) << std::setfill('0') << month 
-            << "-" 
-            << year;
-        result.push_back(oss.str());
+    auto start_tp = std::chrono::system_clock::time_point(std::chrono::milliseconds(start_date_ts));
+    auto end_tp   = std::chrono::system_clock::time_point(std::chrono::milliseconds(end_date_ts));
+    auto monthsInRange = _get_months_range(start_tp, end_tp);
 
-        if (year == endYM.year && month == endYM.month) {
-            break;
-        }
+    crow::json::wvalue::list resultArray;
 
-        // Increment month
-        month++;
-        if (month > 12) {
-            month = 1;
-            year++;
+    for (auto& monthStr : monthsInRange)
+    {
+        crow::json::wvalue monthObj;
+        monthObj["date"] = monthStr;
+
+        crow::json::wvalue dataObj;
+        for (auto& cat : categories)
+        {
+            int theCount = 0;
+            double theAvg = 0.0;
+
+            auto itMonth = aggregated.find(monthStr);
+            if (itMonth != aggregated.end())
+            {
+                auto itCategory = itMonth->second.find(cat);
+                if (itCategory != itMonth->second.end())
+                {
+                    theCount = itCategory->second.count;
+                    theAvg   = itCategory->second.avg;
+                }
+            }
+
+            dataObj[cat]["count"] = theCount;
+            dataObj[cat]["avg_sentiment"] = theAvg;
         }
+        monthObj["data"] = std::move(dataObj);
+        resultArray.push_back(std::move(monthObj));
     }
 
-    return result;
+    return resultArray;
 }
 
 auto ApiHandler::get_complaints_grouped_by_sentiment_value(const crow::request& req, std::shared_ptr<Database> db) -> crow::response {
@@ -289,13 +250,8 @@ auto ApiHandler::get_complaints_grouped_by_sentiment_value(const crow::request& 
             return make_error_response(400, "Invalid request format");
         }
 
-        auto start_date_str = body["start_date"].s();
-        auto start_date_ts = string_to_utc_unix_timestamp(start_date_str, Constants::DATETIME_FORMAT) * 1000;
-        bsoncxx::types::b_date start_date{std::chrono::milliseconds(start_date_ts)};
-
-        auto end_date_str = body["end_date"].s();
-        auto end_date_ts = string_to_utc_unix_timestamp(end_date_str, Constants::DATETIME_FORMAT) * 1000;
-        bsoncxx::types::b_date end_date{std::chrono::milliseconds(end_date_ts)};
+        auto start_date = json_date_to_bson_date(body["start_date"]);
+        auto end_date = json_date_to_bson_date(body["end_date"]);
 
         double bucket_size = body["bucket_size"].d();
 
@@ -310,19 +266,8 @@ auto ApiHandler::get_complaints_grouped_by_sentiment_value(const crow::request& 
             ))
         );
 
-        auto cursor = _get_complaints_grouped_by_sentiment_value(db, bucket_size, filter);
-
-        std::vector<crow::json::wvalue> result;
-        for (auto&& doc : cursor) {
-            auto doc_json = bsoncxx::to_json(doc);
-            crow::json::rvalue rval_json = crow::json::load(doc_json);
-
-            crow::json::wvalue sub_result;
-            sub_result["left_bound_inclusive"] = rval_json["_id"];
-            sub_result["right_bound_exclusive"] = rval_json["_id"].d() + bucket_size;
-            sub_result["count"] = rval_json["count"];
-            result.push_back(sub_result);
-        }
+        auto cursor = _get_complaints_grouped_by_sentiment_value_get_cursor(db, bucket_size, filter);
+        auto result = _get_complaints_grouped_by_sentiment_value_read_cursor(cursor, bucket_size);
 
         crow::json::wvalue response_data;
         response_data["result"] = std::move(result);
@@ -333,7 +278,7 @@ auto ApiHandler::get_complaints_grouped_by_sentiment_value(const crow::request& 
     }
 }
 
-auto ApiHandler::_get_complaints_grouped_by_sentiment_value(std::shared_ptr<Database> db, const double &bucket_size, const bsoncxx::document::view& filter) -> mongocxx::cursor {
+auto ApiHandler::_get_complaints_grouped_by_sentiment_value_get_cursor(std::shared_ptr<Database> db, const double &bucket_size, const bsoncxx::document::view& filter) -> mongocxx::cursor {
     mongocxx::pipeline pipeline{};
 
     pipeline.match(filter);
@@ -367,6 +312,37 @@ auto ApiHandler::_get_complaints_grouped_by_sentiment_value(std::shared_ptr<Data
     return cursor;
 }
 
+auto ApiHandler::_get_complaints_grouped_by_sentiment_value_read_cursor(mongocxx::cursor& cursor, const double& bucket_size) -> crow::json::wvalue {
+    std::unordered_set<double> added_left_bounds;
+
+    std::vector<crow::json::wvalue> result;
+    for (auto&& doc : cursor) {
+        auto doc_json = bsoncxx::to_json(doc);
+        crow::json::rvalue rval_json = crow::json::load(doc_json);
+
+        crow::json::wvalue sub_result;
+        sub_result["left_bound_inclusive"] = rval_json["_id"];
+        sub_result["right_bound_exclusive"] = rval_json["_id"].d() + bucket_size;
+        sub_result["count"] = rval_json["count"];
+        result.push_back(sub_result);
+        added_left_bounds.insert(rval_json["_id"].d());
+    }
+
+    for (double left_bound = -1; left_bound < 1.01; left_bound += bucket_size) {
+        if (added_left_bounds.find(left_bound) != added_left_bounds.end()) {
+            continue;
+        }
+        crow::json::wvalue sub_result;
+        sub_result["left_bound_inclusive"] = left_bound;
+        sub_result["right_bound_exclusive"] = left_bound + bucket_size;
+        sub_result["count"] = 0;
+        result.push_back(sub_result);
+        added_left_bounds.insert(left_bound);
+    }
+
+    return result;
+}
+
 auto ApiHandler::get_complaints_sorted_by_fields(const crow::request& req, std::shared_ptr<Database> db) -> crow::response  {
     try {
         auto body = crow::json::load(req.body);
@@ -393,16 +369,8 @@ auto ApiHandler::get_complaints_sorted_by_fields(const crow::request& req, std::
         }
         auto limit = body["limit"].i();
 
-        auto cursor = _get_complaints_sorted_by_fields(db, keys, ascending_orders, limit);
-
-        std::vector<crow::json::wvalue> documents;
-        for (auto&& document: cursor) {
-            auto document_json = bsoncxx::to_json(document);
-            crow::json::rvalue rval_json = crow::json::load(document_json);
-            crow::json::wvalue wval_json = crow::json::load(document_json);
-            wval_json["date"] = utc_unix_timestamp_to_string(rval_json["date"]["$date"].i() / 1000, Constants::DATETIME_FORMAT);
-            documents.push_back(std::move(wval_json));
-        }
+        auto cursor = _get_complaints_sorted_by_fields_get_cursor(db, keys, ascending_orders, limit);
+        auto documents = _get_complaints_sorted_by_fields_read_cursor(cursor);
 
         crow::json::wvalue response_data;
         response_data[Constants::COLLECTION_COMPLAINTS] = std::move(documents);
@@ -413,7 +381,7 @@ auto ApiHandler::get_complaints_sorted_by_fields(const crow::request& req, std::
     }
 }
 
-auto ApiHandler::_get_complaints_sorted_by_fields(std::shared_ptr<Database> db, const std::vector<std::string>& keys, const std::vector<bool>& ascending_orders, const int& limit) -> mongocxx::cursor {
+auto ApiHandler::_get_complaints_sorted_by_fields_get_cursor(std::shared_ptr<Database> db, const std::vector<std::string>& keys, const std::vector<bool>& ascending_orders, const int& limit) -> mongocxx::cursor {
     if (keys.size() != ascending_orders.size()) {
         throw std::invalid_argument("keys and ascending_orders vectors must have the same size.");
     }
@@ -432,4 +400,74 @@ auto ApiHandler::_get_complaints_sorted_by_fields(std::shared_ptr<Database> db, 
 
     auto cursor = db->find(Constants::COLLECTION_COMPLAINTS, {}, option);
     return cursor;
+}
+
+auto ApiHandler::_get_complaints_sorted_by_fields_read_cursor(mongocxx::cursor& cursor) -> crow::json::wvalue {
+    std::vector<crow::json::wvalue> documents;
+    for (auto&& document: cursor) {
+        auto document_json = bsoncxx::to_json(document);
+        crow::json::rvalue rval_json = crow::json::load(document_json);
+        crow::json::wvalue wval_json = crow::json::load(document_json);
+        wval_json["date"] = utc_unix_timestamp_to_string(rval_json["date"]["$date"].i() / 1000, Constants::DATETIME_FORMAT);
+        documents.push_back(std::move(wval_json));
+    }
+    return documents;
+}
+
+auto ApiHandler::_get_all_categories(std::shared_ptr<Database> db) -> std::vector<std::string> {
+    std::vector<std::string> categories;
+    auto cursor = db->find(Constants::COLLECTION_CATEGORIES, {});
+    for (auto&& document: cursor) {
+        auto document_json = bsoncxx::to_json(document);
+        crow::json::rvalue rval_json = crow::json::load(document_json);
+        categories.push_back(rval_json["name"].s());
+    }
+    return categories;
+}
+
+auto ApiHandler::_get_months_range(std::chrono::system_clock::time_point start_tp, std::chrono::system_clock::time_point end_tp) -> std::vector<std::string>
+{
+    struct YearMonth {
+        int year;
+        int month;
+    };
+    
+    auto start_time_t = std::chrono::system_clock::to_time_t(start_tp);
+    auto end_time_t   = std::chrono::system_clock::to_time_t(end_tp);
+
+    std::tm start_tm = *std::gmtime(&start_time_t);
+    std::tm end_tm   = *std::gmtime(&end_time_t);
+
+    YearMonth startYM = {start_tm.tm_year + 1900, start_tm.tm_mon + 1};
+    YearMonth endYM   = {end_tm.tm_year + 1900,   end_tm.tm_mon + 1};
+
+    std::vector<std::string> result;
+    if ((startYM.year > endYM.year) 
+        || (startYM.year == endYM.year && startYM.month > endYM.month))
+    {
+        return result;
+    }
+
+    int year  = startYM.year;
+    int month = startYM.month;
+    while (true) {
+        std::ostringstream oss;
+        oss << std::setw(2) << std::setfill('0') << month 
+            << "-" 
+            << year;
+        result.push_back(oss.str());
+
+        if (year == endYM.year && month == endYM.month) {
+            break;
+        }
+
+        // Increment month
+        month++;
+        if (month > 12) {
+            month = 1;
+            year++;
+        }
+    }
+
+    return result;
 }
