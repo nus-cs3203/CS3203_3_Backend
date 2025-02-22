@@ -6,6 +6,8 @@
 
 auto json_to_bson(const crow::json::rvalue& json_document) -> bsoncxx::document::value;
 
+auto json_date_to_bson_date(const crow::json::rvalue& json_document) -> bsoncxx::types::b_date;
+
 auto validate_request(const crow::json::rvalue& body, std::initializer_list<std::string> required_fields) -> bool;
 
 auto make_error_response(int status_code, const std::string& message) -> crow::response;

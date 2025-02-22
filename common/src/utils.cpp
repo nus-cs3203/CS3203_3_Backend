@@ -1,3 +1,4 @@
+#include "constants.hpp"
 #include "utils.hpp"
 
 #include <bsoncxx/builder/basic/document.hpp>
@@ -67,4 +68,11 @@ auto read_env(const std::string& key, const std::string& default_value) -> std::
         return default_value;
     }
     return static_cast<std::string>(env_var);
+}
+
+auto json_date_to_bson_date(const crow::json::rvalue& json_date) -> bsoncxx::types::b_date {
+    auto date_str = json_date.s();
+    auto date_ts = string_to_utc_unix_timestamp(date_str, Constants::DATETIME_FORMAT) * 1000;
+    bsoncxx::types::b_date date_bson{std::chrono::milliseconds(date_ts)};
+    return date_bson;
 }

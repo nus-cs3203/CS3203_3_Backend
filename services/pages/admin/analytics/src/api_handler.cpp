@@ -23,14 +23,9 @@ auto ApiHandler::get_complaints_grouped_by_field(const crow::request& req, std::
             return make_error_response(400, "Invalid request format");
         }
         
-        auto start_date_str = body["start_date"].s();
-        auto start_date_ts = string_to_utc_unix_timestamp(start_date_str, Constants::DATETIME_FORMAT) * 1000;
-        bsoncxx::types::b_date start_date{std::chrono::milliseconds(start_date_ts)};
-
-        auto end_date_str = body["end_date"].s();
-        auto end_date_ts = string_to_utc_unix_timestamp(end_date_str, Constants::DATETIME_FORMAT) * 1000;
-        bsoncxx::types::b_date end_date{std::chrono::milliseconds(end_date_ts)};
-
+        auto start_date = json_date_to_bson_date(body["start_date"]);
+        auto end_date = json_date_to_bson_date(body["end_date"]);
+        
         auto group_by_field = body["group_by_field"].s();
 
         bsoncxx::document::value filter = make_document(
@@ -289,14 +284,9 @@ auto ApiHandler::get_complaints_grouped_by_sentiment_value(const crow::request& 
             return make_error_response(400, "Invalid request format");
         }
 
-        auto start_date_str = body["start_date"].s();
-        auto start_date_ts = string_to_utc_unix_timestamp(start_date_str, Constants::DATETIME_FORMAT) * 1000;
-        bsoncxx::types::b_date start_date{std::chrono::milliseconds(start_date_ts)};
-
-        auto end_date_str = body["end_date"].s();
-        auto end_date_ts = string_to_utc_unix_timestamp(end_date_str, Constants::DATETIME_FORMAT) * 1000;
-        bsoncxx::types::b_date end_date{std::chrono::milliseconds(end_date_ts)};
-
+        auto start_date = json_date_to_bson_date(body["start_date"]);
+        auto end_date = json_date_to_bson_date(body["end_date"]);
+        
         double bucket_size = body["bucket_size"].d();
 
         if (bucket_size <= 0) {
