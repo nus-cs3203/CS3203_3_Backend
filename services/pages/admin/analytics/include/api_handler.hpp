@@ -15,6 +15,7 @@ public:
     ApiHandler() = default;
 
     auto get_complaints_grouped_by_field(const crow::request& req, std::shared_ptr<Database> db) -> crow::response;
+    
     auto get_complaints_grouped_by_field_over_time(const crow::request& req, std::shared_ptr<Database> db) -> crow::response;
 
     auto get_complaints_grouped_by_sentiment_value(const crow::request& req, std::shared_ptr<Database> db) -> crow::response;
@@ -24,6 +25,10 @@ private:
     auto _get_complaints_grouped_by_field_get_cursor(std::shared_ptr<Database> db, const std::string& group_by_field, const bsoncxx::document::view& filter) -> mongocxx::cursor;
     auto _get_complaints_grouped_by_field_read_cursor(mongocxx::cursor& cursor, const std::vector<std::string>& categories) -> crow::json::wvalue;
     
+    auto _get_complaints_grouped_by_field_over_time_get_cursor(std::shared_ptr<Database> db, const std::string& group_by_field, const bsoncxx::document::view& filter) -> mongocxx::cursor;
+    auto _get_complaints_grouped_by_field_over_time_read_cursor(mongocxx::cursor& cursor, const std::vector<std::string>& categories, const std::string& group_by_field, const long long int& start_date_ts, const long long int& end_date_ts) -> crow::json::wvalue::list;
+
+
     auto _get_complaints_grouped_by_sentiment_value_get_cursor(std::shared_ptr<Database> db, const double& bucket_size, const bsoncxx::document::view& filter) -> mongocxx::cursor;
     auto _get_complaints_grouped_by_sentiment_value_read_cursor(mongocxx::cursor& cursor, const double& bucket_size) -> crow::json::wvalue;
 

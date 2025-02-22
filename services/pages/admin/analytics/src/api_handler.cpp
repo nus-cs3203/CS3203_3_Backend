@@ -125,110 +125,8 @@ auto ApiHandler::get_complaints_grouped_by_field_over_time(const crow::request& 
             ))
         );
 
-        std::vector<std::string> allCategories;
-        {
-            auto categories_cursor = db->find(Constants::COLLECTION_CATEGORIES, {});
-            for (auto&& doc : categories_cursor)
-            {
-                std::string nameValStr{doc["name"].get_value().get_string().value};
-                allCategories.push_back(nameValStr);
-            }
-        }
-
-        mongocxx::pipeline pipeline{};
-        pipeline.match(filter.view());
-
-        pipeline.group(
-            make_document(
-                kvp("_id",
-                    make_document(
-                        kvp("time_bucket",
-                            make_document(
-                                kvp("$dateToString",
-                                    make_document(
-                                        kvp("format", "%m-%Y"),
-                                        kvp("date", "$date")
-                                    )
-                                )
-                            )
-                        ),
-                        // e.g. "category" = "$category"
-                        kvp(group_by_field, "$" + group_by_field)
-                    )
-                ),
-                kvp("count", make_document(kvp("$sum", 1))),
-                kvp("avg_sentiment", make_document(kvp("$avg", "$sentiment")))
-            )
-        );
-
-        auto cursor = db->aggregate(Constants::COLLECTION_COMPLAINTS, pipeline);
-
-        struct Stats {
-            int count = 0;
-            double avg = 0.0;
-        };
-        std::unordered_map<std::string, std::unordered_map<std::string, Stats>> aggregated;
-
-        for (auto&& document : cursor)
-        {
-            auto doc_json = bsoncxx::to_json(document);
-            auto rval_json = crow::json::load(doc_json);
-            crow::json::wvalue wval_json;
-            wval_json["count"] = rval_json["count"];
-            wval_json["count"] = rval_json["count"];
-
-            // Example structure of doc:
-            // {
-            //   "_id": {
-            //       "time_bucket": "05-2023",
-            //       "category": "Financial"
-            //   },
-            //   "count": 3,
-            //   "avg_sentiment": 0.15
-            // }
-            auto time_bucket_val = rval_json["_id"]["time_bucket"].s();
-            auto group_value     = rval_json["_id"][group_by_field].s();
-
-            auto count_val       = rval_json["count"].i();
-            auto avg_sent_val    = rval_json["avg_sentiment"].d();
-
-            aggregated[time_bucket_val][group_value] = {static_cast<int>(count_val), static_cast<double>(avg_sent_val)};
-        }
-
-        auto start_tp = std::chrono::system_clock::time_point(std::chrono::milliseconds(start_date_ts));
-        auto end_tp   = std::chrono::system_clock::time_point(std::chrono::milliseconds(end_date_ts));
-        auto monthsInRange = _get_months_range(start_tp, end_tp);
-
-        crow::json::wvalue::list resultArray;
-
-        for (auto& monthStr : monthsInRange)
-        {
-            crow::json::wvalue monthObj;
-            monthObj["date"] = monthStr;
-
-            crow::json::wvalue dataObj;
-            for (auto& cat : allCategories)
-            {
-                int theCount = 0;
-                double theAvg = 0.0;
-
-                auto itMonth = aggregated.find(monthStr);
-                if (itMonth != aggregated.end())
-                {
-                    auto itCategory = itMonth->second.find(cat);
-                    if (itCategory != itMonth->second.end())
-                    {
-                        theCount = itCategory->second.count;
-                        theAvg   = itCategory->second.avg;
-                    }
-                }
-
-                dataObj[cat]["count"] = theCount;
-                dataObj[cat]["avg_sentiment"] = theAvg;
-            }
-            monthObj["data"] = std::move(dataObj);
-            resultArray.push_back(std::move(monthObj));
-        }
+        auto cursor = _get_complaints_grouped_by_field_over_time_get_cursor(db, group_by_field, filter);
+        auto resultArray = _get_complaints_grouped_by_field_over_time_read_cursor(cursor, _get_all_categories(db), group_by_field, start_date_ts, end_date_ts);
 
         crow::json::wvalue response_data;
         response_data["result"] = std::move(resultArray);
@@ -240,6 +138,108 @@ auto ApiHandler::get_complaints_grouped_by_field_over_time(const crow::request& 
     {
         return make_error_response(500, std::string("Server error: ") + e.what());
     }
+}
+
+auto ApiHandler::_get_complaints_grouped_by_field_over_time_get_cursor(std::shared_ptr<Database> db, const std::string& group_by_field, const bsoncxx::document::view& filter) -> mongocxx::cursor {
+    mongocxx::pipeline pipeline{};
+    pipeline.match(filter);
+
+    pipeline.group(
+        make_document(
+            kvp("_id",
+                make_document(
+                    kvp("time_bucket",
+                        make_document(
+                            kvp("$dateToString",
+                                make_document(
+                                    kvp("format", "%m-%Y"),
+                                    kvp("date", "$date")
+                                )
+                            )
+                        )
+                    ),
+                    // e.g. "category" = "$category"
+                    kvp(group_by_field, "$" + group_by_field)
+                )
+            ),
+            kvp("count", make_document(kvp("$sum", 1))),
+            kvp("avg_sentiment", make_document(kvp("$avg", "$sentiment")))
+        )
+    );
+
+    auto cursor = db->aggregate(Constants::COLLECTION_COMPLAINTS, pipeline);
+    return cursor;
+}
+
+auto ApiHandler::_get_complaints_grouped_by_field_over_time_read_cursor(mongocxx::cursor& cursor, const std::vector<std::string>& categories, const std::string& group_by_field, const long long int& start_date_ts, const long long int& end_date_ts) -> crow::json::wvalue::list {
+    struct Stats {
+        int count = 0;
+        double avg = 0.0;
+    };
+    std::unordered_map<std::string, std::unordered_map<std::string, Stats>> aggregated;
+
+    for (auto&& document : cursor)
+    {
+        auto doc_json = bsoncxx::to_json(document);
+        auto rval_json = crow::json::load(doc_json);
+        crow::json::wvalue wval_json;
+        wval_json["count"] = rval_json["count"];
+        wval_json["count"] = rval_json["count"];
+
+        // Example structure of doc:
+        // {
+        //   "_id": {
+        //       "time_bucket": "05-2023",
+        //       "category": "Financial"
+        //   },
+        //   "count": 3,
+        //   "avg_sentiment": 0.15
+        // }
+        auto time_bucket_val = rval_json["_id"]["time_bucket"].s();
+        auto group_value     = rval_json["_id"][group_by_field].s();
+
+        auto count_val       = rval_json["count"].i();
+        auto avg_sent_val    = rval_json["avg_sentiment"].d();
+
+        aggregated[time_bucket_val][group_value] = {static_cast<int>(count_val), static_cast<double>(avg_sent_val)};
+    }
+
+    auto start_tp = std::chrono::system_clock::time_point(std::chrono::milliseconds(start_date_ts));
+    auto end_tp   = std::chrono::system_clock::time_point(std::chrono::milliseconds(end_date_ts));
+    auto monthsInRange = _get_months_range(start_tp, end_tp);
+
+    crow::json::wvalue::list resultArray;
+
+    for (auto& monthStr : monthsInRange)
+    {
+        crow::json::wvalue monthObj;
+        monthObj["date"] = monthStr;
+
+        crow::json::wvalue dataObj;
+        for (auto& cat : categories)
+        {
+            int theCount = 0;
+            double theAvg = 0.0;
+
+            auto itMonth = aggregated.find(monthStr);
+            if (itMonth != aggregated.end())
+            {
+                auto itCategory = itMonth->second.find(cat);
+                if (itCategory != itMonth->second.end())
+                {
+                    theCount = itCategory->second.count;
+                    theAvg   = itCategory->second.avg;
+                }
+            }
+
+            dataObj[cat]["count"] = theCount;
+            dataObj[cat]["avg_sentiment"] = theAvg;
+        }
+        monthObj["data"] = std::move(dataObj);
+        resultArray.push_back(std::move(monthObj));
+    }
+
+    return resultArray;
 }
 
 auto ApiHandler::get_complaints_grouped_by_sentiment_value(const crow::request& req, std::shared_ptr<Database> db) -> crow::response {
