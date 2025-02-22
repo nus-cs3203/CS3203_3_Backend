@@ -242,59 +242,6 @@ auto ApiHandler::get_complaints_grouped_by_field_over_time(const crow::request& 
     }
 }
 
-auto ApiHandler::_get_months_range(std::chrono::system_clock::time_point start_tp, std::chrono::system_clock::time_point end_tp) -> std::vector<std::string>
-{
-    struct YearMonth {
-        int year;
-        int month;
-    };
-    
-    // Convert to time_t
-    auto start_time_t = std::chrono::system_clock::to_time_t(start_tp);
-    auto end_time_t   = std::chrono::system_clock::to_time_t(end_tp);
-
-    // Convert to tm (UTC or local – just be consistent with your parsing logic)
-    std::tm start_tm = *std::gmtime(&start_time_t);
-    std::tm end_tm   = *std::gmtime(&end_time_t);
-
-    // Prepare start / end year-month
-    YearMonth startYM = {start_tm.tm_year + 1900, start_tm.tm_mon + 1};
-    YearMonth endYM   = {end_tm.tm_year + 1900,   end_tm.tm_mon + 1};
-
-    std::vector<std::string> result;
-    // If start > end, return empty
-    if ((startYM.year > endYM.year) 
-        || (startYM.year == endYM.year && startYM.month > endYM.month))
-    {
-        return result;
-    }
-
-    // Loop year-month from startYM until endYM inclusive
-    int year  = startYM.year;
-    int month = startYM.month;
-    while (true) {
-        // Format "MM-YYYY" 
-        std::ostringstream oss;
-        oss << std::setw(2) << std::setfill('0') << month 
-            << "-" 
-            << year;
-        result.push_back(oss.str());
-
-        if (year == endYM.year && month == endYM.month) {
-            break;
-        }
-
-        // Increment month
-        month++;
-        if (month > 12) {
-            month = 1;
-            year++;
-        }
-    }
-
-    return result;
-}
-
 auto ApiHandler::get_complaints_grouped_by_sentiment_value(const crow::request& req, std::shared_ptr<Database> db) -> crow::response {
     try {
         auto body = crow::json::load(req.body);
@@ -319,19 +266,8 @@ auto ApiHandler::get_complaints_grouped_by_sentiment_value(const crow::request& 
             ))
         );
 
-        auto cursor = _get_complaints_grouped_by_sentiment_value(db, bucket_size, filter);
-
-        std::vector<crow::json::wvalue> result;
-        for (auto&& doc : cursor) {
-            auto doc_json = bsoncxx::to_json(doc);
-            crow::json::rvalue rval_json = crow::json::load(doc_json);
-
-            crow::json::wvalue sub_result;
-            sub_result["left_bound_inclusive"] = rval_json["_id"];
-            sub_result["right_bound_exclusive"] = rval_json["_id"].d() + bucket_size;
-            sub_result["count"] = rval_json["count"];
-            result.push_back(sub_result);
-        }
+        auto cursor = _get_complaints_grouped_by_sentiment_value_get_cursor(db, bucket_size, filter);
+        auto result = _get_complaints_grouped_by_sentiment_value_read_cursor(cursor, bucket_size);
 
         crow::json::wvalue response_data;
         response_data["result"] = std::move(result);
@@ -342,7 +278,7 @@ auto ApiHandler::get_complaints_grouped_by_sentiment_value(const crow::request& 
     }
 }
 
-auto ApiHandler::_get_complaints_grouped_by_sentiment_value(std::shared_ptr<Database> db, const double &bucket_size, const bsoncxx::document::view& filter) -> mongocxx::cursor {
+auto ApiHandler::_get_complaints_grouped_by_sentiment_value_get_cursor(std::shared_ptr<Database> db, const double &bucket_size, const bsoncxx::document::view& filter) -> mongocxx::cursor {
     mongocxx::pipeline pipeline{};
 
     pipeline.match(filter);
@@ -374,6 +310,37 @@ auto ApiHandler::_get_complaints_grouped_by_sentiment_value(std::shared_ptr<Data
 
     auto cursor = db->aggregate(Constants::COLLECTION_COMPLAINTS, pipeline);
     return cursor;
+}
+
+auto ApiHandler::_get_complaints_grouped_by_sentiment_value_read_cursor(mongocxx::cursor& cursor, const double& bucket_size) -> crow::json::wvalue {
+    std::unordered_set<double> added_left_bounds;
+
+    std::vector<crow::json::wvalue> result;
+    for (auto&& doc : cursor) {
+        auto doc_json = bsoncxx::to_json(doc);
+        crow::json::rvalue rval_json = crow::json::load(doc_json);
+
+        crow::json::wvalue sub_result;
+        sub_result["left_bound_inclusive"] = rval_json["_id"];
+        sub_result["right_bound_exclusive"] = rval_json["_id"].d() + bucket_size;
+        sub_result["count"] = rval_json["count"];
+        result.push_back(sub_result);
+        added_left_bounds.insert(rval_json["_id"].d());
+    }
+
+    for (double left_bound = -1; left_bound < 1.01; left_bound += bucket_size) {
+        if (added_left_bounds.find(left_bound) != added_left_bounds.end()) {
+            continue;
+        }
+        crow::json::wvalue sub_result;
+        sub_result["left_bound_inclusive"] = left_bound;
+        sub_result["right_bound_exclusive"] = left_bound + bucket_size;
+        sub_result["count"] = 0;
+        result.push_back(sub_result);
+        added_left_bounds.insert(left_bound);
+    }
+
+    return result;
 }
 
 auto ApiHandler::get_complaints_sorted_by_fields(const crow::request& req, std::shared_ptr<Database> db) -> crow::response  {
@@ -452,4 +419,51 @@ auto ApiHandler::_get_all_categories(std::shared_ptr<Database> db) -> std::vecto
         categories.push_back(rval_json["name"].s());
     }
     return categories;
+}
+
+auto ApiHandler::_get_months_range(std::chrono::system_clock::time_point start_tp, std::chrono::system_clock::time_point end_tp) -> std::vector<std::string>
+{
+    struct YearMonth {
+        int year;
+        int month;
+    };
+    
+    auto start_time_t = std::chrono::system_clock::to_time_t(start_tp);
+    auto end_time_t   = std::chrono::system_clock::to_time_t(end_tp);
+
+    std::tm start_tm = *std::gmtime(&start_time_t);
+    std::tm end_tm   = *std::gmtime(&end_time_t);
+
+    YearMonth startYM = {start_tm.tm_year + 1900, start_tm.tm_mon + 1};
+    YearMonth endYM   = {end_tm.tm_year + 1900,   end_tm.tm_mon + 1};
+
+    std::vector<std::string> result;
+    if ((startYM.year > endYM.year) 
+        || (startYM.year == endYM.year && startYM.month > endYM.month))
+    {
+        return result;
+    }
+
+    int year  = startYM.year;
+    int month = startYM.month;
+    while (true) {
+        std::ostringstream oss;
+        oss << std::setw(2) << std::setfill('0') << month 
+            << "-" 
+            << year;
+        result.push_back(oss.str());
+
+        if (year == endYM.year && month == endYM.month) {
+            break;
+        }
+
+        // Increment month
+        month++;
+        if (month > 12) {
+            month = 1;
+            year++;
+        }
+    }
+
+    return result;
 }
