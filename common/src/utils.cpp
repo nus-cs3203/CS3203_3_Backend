@@ -1,4 +1,5 @@
 #include "constants.hpp"
+#include "database.hpp"
 #include "utils.hpp"
 
 #include <bsoncxx/builder/basic/document.hpp>
@@ -76,3 +77,4 @@ auto json_date_to_bson_date(const crow::json::rvalue& json_date) -> bsoncxx::typ
     bsoncxx::types::b_date date_bson{std::chrono::milliseconds(date_ts)};
     return date_bson;
 }
+
