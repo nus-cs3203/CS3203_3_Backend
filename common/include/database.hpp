@@ -28,6 +28,11 @@ public:
         const mongocxx::options::find& option = {}
     ) -> mongocxx::cursor;
 
+    auto find_all(
+        const std::string& collection_name,
+        const mongocxx::options::find& option = {}
+    ) -> mongocxx::cursor;
+
     auto insert_one(
         const std::string& collection_name,
         const bsoncxx::document::view& document

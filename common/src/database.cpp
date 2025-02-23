@@ -25,6 +25,12 @@ auto Database::find(const std::string& collection_name, const bsoncxx::document:
     return collection.find(filter, option);
 }
 
+auto Database::find_all(const std::string& collection_name, const mongocxx::options::find& option)
+    -> mongocxx::cursor {
+    auto collection = db[collection_name];
+    return collection.find({}, option);
+}
+
 auto Database::insert_one(const std::string& collection_name, const bsoncxx::document::view& document)
     -> bsoncxx::stdx::optional<mongocxx::result::insert_one> {
     auto collection = db[collection_name];

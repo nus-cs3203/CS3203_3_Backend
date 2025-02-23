@@ -36,7 +36,7 @@ auto ApiHandler::get_complaints_grouped_by_field(const crow::request& req, std::
         );
 
         auto cursor = _get_complaints_grouped_by_field_get_cursor(db, group_by_field, filter);
-        auto result = _get_complaints_grouped_by_field_read_cursor(cursor, _get_all_categories(db));
+        auto result = _get_complaints_grouped_by_field_read_cursor(cursor, _get_group_by_field_all_distinct_values(db, group_by_field));
         
         crow::json::wvalue response_data;
         response_data["result"] = std::move(result);
@@ -126,7 +126,7 @@ auto ApiHandler::get_complaints_grouped_by_field_over_time(const crow::request& 
         );
 
         auto cursor = _get_complaints_grouped_by_field_over_time_get_cursor(db, group_by_field, filter);
-        auto resultArray = _get_complaints_grouped_by_field_over_time_read_cursor(cursor, _get_all_categories(db), group_by_field, start_date_ts, end_date_ts);
+        auto resultArray = _get_complaints_grouped_by_field_over_time_read_cursor(cursor, _get_group_by_field_all_distinct_values(db, group_by_field), group_by_field, start_date_ts, end_date_ts);
 
         crow::json::wvalue response_data;
         response_data["result"] = std::move(resultArray);
@@ -414,15 +414,31 @@ auto ApiHandler::_get_complaints_sorted_by_fields_read_cursor(mongocxx::cursor& 
     return documents;
 }
 
-auto ApiHandler::_get_all_categories(std::shared_ptr<Database> db) -> std::vector<std::string> {
-    std::vector<std::string> categories;
-    auto cursor = db->find(Constants::COLLECTION_CATEGORIES, {});
-    for (auto&& document: cursor) {
-        auto document_json = bsoncxx::to_json(document);
-        crow::json::rvalue rval_json = crow::json::load(document_json);
-        categories.push_back(rval_json["name"].s());
+auto ApiHandler::_get_group_by_field_all_distinct_values(std::shared_ptr<Database> db, const std::string& group_by_field) -> std::vector<std::string> {
+    std::unordered_set<std::string> is_added;
+
+    auto collection_name = _get_collection_name_from_group_by_field(group_by_field);
+
+    auto views = db->find_all(collection_name);
+    for (auto &view: views) {
+        std::string val{view["name"].get_value().get_string().value};
+        if (is_added.find(val) == is_added.end()) {
+            is_added.insert(val);
+        }
     }
-    return categories;
+
+    std::vector<std::string> result{is_added.begin(), is_added.end()};
+    return result;
+}
+
+auto ApiHandler::_get_collection_name_from_group_by_field(const std::string& group_by_field) -> std::string {
+    std::string collection_name = "";
+    if (group_by_field == "category") {
+        collection_name = "categories";
+    } else if (group_by_field == "source") {
+        collection_name = "sources";
+    }
+    return collection_name;
 }
 
 auto ApiHandler::_get_months_range(std::chrono::system_clock::time_point start_tp, std::chrono::system_clock::time_point end_tp) -> std::vector<std::string>
