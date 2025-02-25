@@ -34,7 +34,7 @@ struct CORS {
 };
 
 int main() {
-    load_env_file(Constants::ENV_FILE_DEFAULT_PATH);
+    load_env_file();
 
     const std::string MONGO_URI = read_env("MONGO_URI", Constants::MONGO_URI);
     const std::string DB_NAME   = read_env("DB_NAME", Constants::DB_NAME);
@@ -42,6 +42,7 @@ int main() {
     auto db = std::make_shared<Database>(MONGO_URI, DB_NAME);
 
     Reddit reddit = Reddit::create_with_values_from_env();
+    reddit.auth();
     
     crow::App<CORS> app; 
 

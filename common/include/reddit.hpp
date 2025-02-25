@@ -13,6 +13,8 @@ public:
         const std::string& user_agent
     );
 
+    void auth();
+
     static Reddit create_with_values_from_env();
 
 private:
@@ -21,6 +23,8 @@ private:
     std::string reddit_username;
     std::string reddit_password;
     std::string user_agent;
+
+    std::string auth_token;
 };
 
 #endif // REDDIT_H

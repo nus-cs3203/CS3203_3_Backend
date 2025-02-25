@@ -1,6 +1,7 @@
 #ifndef UTILS_H
 #define UTILS_H
 
+#include "constants.hpp"
 #include "database.hpp"
 
 #include <bsoncxx/builder/basic/document.hpp>
@@ -25,6 +26,6 @@ auto string_to_utc_unix_timestamp(const std::string& datetime, const std::string
 
 auto read_env(const std::string& key, const std::string& default_value = "") -> std::string;
 
-void load_env_file(const std::string& filename);
+void load_env_file(const std::string& filename = Constants::ENV_FILE_DEFAULT_PATH);
 
 #endif
