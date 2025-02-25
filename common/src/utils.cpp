@@ -8,6 +8,8 @@
 
 #include <cstdlib>
 #include <iostream>
+#include <fstream>
+#include <sstream>
 
 auto json_to_bson(const crow::json::rvalue& json_document) -> bsoncxx::document::value {
     std::ostringstream oss;
@@ -78,3 +80,21 @@ auto json_date_to_bson_date(const crow::json::rvalue& json_date) -> bsoncxx::typ
     return date_bson;
 }
 
+void load_env_file(const std::string& filename) {
+    std::ifstream file(filename);
+    if (!file.is_open()) {
+        std::cerr << "Could not find or open .env file!" << std::endl;
+        return;
+    }
+
+    std::string line;
+    while (std::getline(file, line)) {
+        if (line.empty() || line[0] == '#') continue; // Ignore comments
+        std::istringstream iss(line);
+        std::string key, value;
+        if (std::getline(iss, key, '=') && std::getline(iss, value)) {
+            setenv(key.c_str(), value.c_str(), 1); // Set environment variable
+        }
+    }
+    file.close();
+}

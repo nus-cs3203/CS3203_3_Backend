@@ -60,3 +60,4 @@ CMakeUserPresets.json
 /libs
 /release
 /.vscode
+.env
