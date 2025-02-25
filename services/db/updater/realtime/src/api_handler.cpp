@@ -1,5 +1,7 @@
 #include "api_handler.hpp"
 
+#include <cpr/cpr.h> 
+
 auto ApiHandler::reddit_perform_update(const crow::request& req, std::shared_ptr<Database> db, const std::string& collection_name) -> crow::response {
     try {
         // auto body = crow::json::load(req.body);

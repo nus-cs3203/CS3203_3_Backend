@@ -24,6 +24,14 @@ set(COMMON_DIR ${CMAKE_SOURCE_DIR}/common)
 find_package(Boost REQUIRED)
 find_package(Threads REQUIRED)
 
+include(FetchContent)
+FetchContent_Declare(
+    cpr
+    GIT_REPOSITORY https://github.com/libcpr/cpr.git
+    GIT_TAG 1.11.2  
+)
+FetchContent_MakeAvailable(cpr)
+
 add_subdirectory(services/db/db_manager)
 add_subdirectory(services/db/updater/realtime)
 add_subdirectory(services/pages/admin/analytics)
