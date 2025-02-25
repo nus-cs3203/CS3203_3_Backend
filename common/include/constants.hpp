@@ -11,6 +11,8 @@ namespace Constants {
     const std::string COLLECTION_CATEGORIES = "categories";
     const std::string COLLECTION_SOURCES = "sources";
     const std::string COLLECTION_COMPLAINTS = "complaints";
+
+    const std::string ENV_FILE_DEFAULT_PATH = "./.env";
 }
 
 #endif // CONSTANTS_HPP
