@@ -1,5 +1,6 @@
 #include "api_handler.hpp"
 #include "constants.hpp"
+#include "reddit.hpp"
 
 #include <bsoncxx/builder/basic/document.hpp>
 #include <bsoncxx/json.hpp>
@@ -33,10 +34,14 @@ struct CORS {
 };
 
 int main() {
+    load_env_file(Constants::ENV_FILE_DEFAULT_PATH);
+
     const std::string MONGO_URI = read_env("MONGO_URI", Constants::MONGO_URI);
     const std::string DB_NAME   = read_env("DB_NAME", Constants::DB_NAME);
 
     auto db = std::make_shared<Database>(MONGO_URI, DB_NAME);
+
+    Reddit reddit = Reddit::create_with_values_from_env();
     
     crow::App<CORS> app; 
 
