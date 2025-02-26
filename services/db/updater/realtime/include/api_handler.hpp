@@ -2,6 +2,7 @@
 #define API_HANDLER_H
 
 #include "database.hpp"
+#include "reddit.hpp"
 #include "utils.hpp"
 
 #include <bsoncxx/json.hpp>
@@ -14,8 +15,7 @@ class ApiHandler {
 public:
     ApiHandler() = default;
 
-    auto reddit_perform_update(const crow::request& req, std::shared_ptr<Database> db, const std::string& collection_name) -> crow::response;
-
+    auto reddit_perform_realtime_update(const crow::request& req, std::shared_ptr<Database> db, std::shared_ptr<Reddit> reddit, const std::string& subreddit, const std::string& collection_name) -> crow::response;
 private:
 
 };
