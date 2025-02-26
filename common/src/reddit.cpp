@@ -31,7 +31,7 @@ Reddit Reddit::create_with_values_from_env() {
     );
 }
 
-std::string Reddit::get_access_token() {
+std::string Reddit::_get_access_token() {
     cpr::Authentication auth{reddit_api_id, reddit_api_secret, cpr::AuthMode::BASIC};
     cpr::Payload token_payload{
         {"grant_type", "password"},
@@ -63,7 +63,7 @@ std::string Reddit::get_access_token() {
 std::vector<crow::json::wvalue> Reddit::get_posts(const std::string& subreddit, const int& limit, const long long int& start_utc_ts, const long long int& end_utc_ts) {
     cpr::Header base_headers{{"User-Agent", user_agent}};
     cpr::Header oauth_headers = base_headers;
-    std::string access_token = get_access_token();
+    std::string access_token = _get_access_token();
     oauth_headers["Authorization"] = "bearer " + access_token;
 
     auto listing_response = cpr::Get(
@@ -203,8 +203,42 @@ std::vector<crow::json::wvalue> Reddit::get_posts(const std::string& subreddit, 
             }
         }
         single_post["comments"] = joined_comments;
-
+        
         posts_array.push_back(single_post);
     }
     return posts_array;
+}
+
+std::vector<crow::json::wvalue> Reddit::get_complaints_from_posts(std::vector<crow::json::wvalue> posts) {
+    crow::json::wvalue request_body;
+    request_body["posts"] = std::move(posts);
+
+    std::string analytics_request_str = request_body.dump();
+
+    auto analytics_resp = cpr::Post(
+        cpr::Url{"https://stub_analytics_api/complaints_analysis"},
+        cpr::Body{analytics_request_str},
+        cpr::Header{{"Content-Type", "application/json"}}
+    );
+
+    if (analytics_resp.status_code != 200) {
+        throw std::runtime_error("Failed to retrieve data from analytics. Status code: " + std::to_string(analytics_resp.status_code));
+    }
+
+    auto analytics_json = crow::json::load(analytics_resp.text);
+    if (!analytics_json || !analytics_json.has("complaints")) {
+        throw std::runtime_error("Analytics response missing 'complaints'");
+    }
+
+    auto complaints = analytics_json["complaints"];
+    if (complaints.t() != crow::json::type::List) {
+        throw std::runtime_error("'complaints' is not an array.");
+    }
+
+    std::vector<crow::json::wvalue> result;
+    for (auto& complaint_rval: complaints.lo()) {
+        crow::json::wvalue complaint_wval{complaint_rval};
+        result.push_back(complaint_wval);
+    }
+    return result;
 }
