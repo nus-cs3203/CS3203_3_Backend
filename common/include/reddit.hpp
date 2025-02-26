@@ -1,7 +1,10 @@
 #ifndef REDDIT_H
 #define REDDIT_H
 
+#include "crow.h"
+
 #include <string>
+#include <vector>
 
 class Reddit {
 public:
@@ -13,7 +16,9 @@ public:
         const std::string& user_agent
     );
 
-    void auth();
+    std::string get_access_token();
+
+    std::vector<crow::json::wvalue> get_posts(const std::string& subreddit, const int& limit, const long long int& start_utc_ts, const long long int& end_utc_ts);
 
     static Reddit create_with_values_from_env();
 
@@ -23,8 +28,6 @@ private:
     std::string reddit_username;
     std::string reddit_password;
     std::string user_agent;
-
-    std::string auth_token;
 };
 
 #endif // REDDIT_H
