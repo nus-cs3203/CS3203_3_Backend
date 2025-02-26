@@ -41,8 +41,7 @@ int main() {
 
     auto db = std::make_shared<Database>(MONGO_URI, DB_NAME);
 
-    Reddit reddit = Reddit::create_with_values_from_env();
-    reddit.auth();
+    std::shared_ptr<Reddit> reddit = std::make_shared<Reddit>(Reddit::create_with_values_from_env());
     
     crow::App<CORS> app; 
 
@@ -50,11 +49,11 @@ int main() {
 
     ApiHandler api_handler;
 
-    const auto COLLECTION_CATEGORIES = Constants::COLLECTION_CATEGORIES;
+    auto COLLECTION_COMPLAINTS = Constants::COLLECTION_CATEGORIES;
 
-    CROW_ROUTE(app, "/reddit/perform_update").methods(crow::HTTPMethod::Post)
-    ([db, &api_handler, COLLECTION_CATEGORIES](const crow::request& req) {
-        return api_handler.reddit_perform_update(req, db, COLLECTION_CATEGORIES);
+    CROW_ROUTE(app, "/updater/realtime/complaints_analytics/reddit/singapore").methods(crow::HTTPMethod::Post)
+    ([db, reddit, COLLECTION_COMPLAINTS, &api_handler](const crow::request& req) {
+        return api_handler.perform_realtime_update_complaints_analytics_from_reddit(req, db, reddit, "singapore", COLLECTION_COMPLAINTS);
     });
 
     app.port(8084).run();

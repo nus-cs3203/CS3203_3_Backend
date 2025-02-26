@@ -19,7 +19,7 @@
 #include <string>
 #include <iostream>
 
-auto ApiHandler::reddit_perform_realtime_update(const crow::request& req, std::shared_ptr<Database> db, std::shared_ptr<Reddit> reddit, const std::string& subreddit, const std::string& collection_name) -> crow::response {
+auto ApiHandler::perform_realtime_update_complaints_analytics_from_reddit(const crow::request& req, std::shared_ptr<Database> db, std::shared_ptr<Reddit> reddit, const std::string& subreddit, const std::string& collection_name) -> crow::response {
     try {
         auto utc_ts_now = get_utc_timestamp_now();
         auto utc_ts_one_day_ago = get_utc_timestamp_one_day_ago();
