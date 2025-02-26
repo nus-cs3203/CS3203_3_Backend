@@ -31,16 +31,16 @@ auto Database::find_all(const std::string& collection_name, const mongocxx::opti
     return collection.find({}, option);
 }
 
-auto Database::insert_one(const std::string& collection_name, const bsoncxx::document::view& document)
+auto Database::insert_one(const std::string& collection_name, const bsoncxx::document::view& document, const mongocxx::options::insert& option)
     -> bsoncxx::stdx::optional<mongocxx::result::insert_one> {
     auto collection = db[collection_name];
-    return collection.insert_one(document);
+    return collection.insert_one(document, option);
 }
 
-auto Database::insert_many(const std::string& collection_name, const std::vector<bsoncxx::document::value>& documents)
+auto Database::insert_many(const std::string& collection_name, const std::vector<bsoncxx::document::value>& documents, const mongocxx::options::insert& option)
     -> bsoncxx::stdx::optional<mongocxx::result::insert_many> {
     auto collection = db[collection_name];
-    return collection.insert_many(documents);
+    return collection.insert_many(documents, option);
 }
 
 auto Database::delete_one(const std::string& collection_name, const bsoncxx::document::view& filter)

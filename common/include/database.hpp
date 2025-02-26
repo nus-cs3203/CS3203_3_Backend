@@ -35,12 +35,14 @@ public:
 
     auto insert_one(
         const std::string& collection_name,
-        const bsoncxx::document::view& document
+        const bsoncxx::document::view& document,
+        const mongocxx::options::insert& option = {}
     ) -> bsoncxx::stdx::optional<mongocxx::result::insert_one>;
 
     auto insert_many(
         const std::string& collection_name,
-        const std::vector<bsoncxx::document::value>& documents
+        const std::vector<bsoncxx::document::value>& documents,
+        const mongocxx::options::insert& option = {}
     ) -> bsoncxx::stdx::optional<mongocxx::result::insert_many>;
 
     auto delete_one(
