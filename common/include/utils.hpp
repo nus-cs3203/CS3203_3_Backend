@@ -28,4 +28,8 @@ auto read_env(const std::string& key, const std::string& default_value = "") -> 
 
 void load_env_file(const std::string& filename = Constants::ENV_FILE_DEFAULT_PATH);
 
+auto get_utc_timestamp_now() -> long long int;
+
+auto get_utc_timestamp_one_day_ago() -> long long int;
+
 #endif

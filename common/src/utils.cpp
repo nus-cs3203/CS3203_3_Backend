@@ -6,6 +6,7 @@
 #include <bsoncxx/json.hpp>
 #include "crow.h"
 
+#include <chrono>
 #include <cstdlib>
 #include <iostream>
 #include <fstream>
@@ -97,4 +98,14 @@ void load_env_file(const std::string& filename) {
         }
     }
     file.close();
+}
+
+auto get_utc_timestamp_now() -> long long int {
+    return std::chrono::duration_cast<std::chrono::seconds>(
+               std::chrono::system_clock::now().time_since_epoch())
+        .count();
+}
+
+auto get_utc_timestamp_one_day_ago() -> long long int {
+    return get_utc_timestamp_now() - 86400;
 }
