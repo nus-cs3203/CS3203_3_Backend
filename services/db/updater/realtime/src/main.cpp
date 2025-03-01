@@ -49,7 +49,7 @@ int main() {
 
     ApiHandler api_handler;
 
-    auto COLLECTION_COMPLAINTS = Constants::COLLECTION_CATEGORIES;
+    auto COLLECTION_COMPLAINTS = Constants::COLLECTION_COMPLAINTS;
 
     CROW_ROUTE(app, "/updater/realtime/complaints_analytics/reddit/singapore").methods(crow::HTTPMethod::Post)
     ([db, reddit, COLLECTION_COMPLAINTS, &api_handler](const crow::request& req) {
