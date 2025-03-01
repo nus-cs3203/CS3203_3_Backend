@@ -42,3 +42,13 @@ services:
       - "8083:8083"
     environment:
       <<: *common_env
+  db_realtime_updater:
+    build:
+      context: .
+      dockerfile: ./services/db/updater/realtime/Dockerfile
+    depends_on:
+      - mongo
+    ports:
+      - "8084:8084"
+    environment:
+      <<: *common_env
