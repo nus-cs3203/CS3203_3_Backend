@@ -4,6 +4,7 @@ set(SRC_FILES
     src/main.cpp
     src/api_handler.cpp
     ${COMMON_DIR}/src/constants.cpp
+    ${COMMON_DIR}/src/cors.cpp
     ${COMMON_DIR}/src/database.cpp
     ${COMMON_DIR}/src/reddit.cpp
     ${COMMON_DIR}/src/utils.cpp
