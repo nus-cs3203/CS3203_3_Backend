@@ -1,6 +1,8 @@
 #ifndef DATABASE_H
 #define DATABASE_H
 
+#include "env_manager.hpp"
+
 #include <bsoncxx/builder/basic/document.hpp>
 #include <bsoncxx/json.hpp>
 #include "crow.h"
@@ -15,6 +17,8 @@ public:
         const std::string& uri, 
         const std::string& db_name
     );
+
+    auto static create_from_env() -> Database;
 
     auto find_one(
         const std::string& collection_name,
@@ -84,6 +88,8 @@ private:
     mongocxx::instance instance; 
     mongocxx::client client;
     mongocxx::database db;
+
+    static EnvManager env_manager;
 };
 
 #endif

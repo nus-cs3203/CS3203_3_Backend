@@ -1,8 +1,6 @@
 #include "api_handler.hpp"
-#include "constants.hpp"
 #include "cors.hpp"
 #include "database.hpp"
-#include "utils.hpp"
 
 #include <bsoncxx/builder/basic/document.hpp>
 #include <bsoncxx/json.hpp>
@@ -16,10 +14,7 @@
 #include <memory>
 
 int main() {
-    const std::string MONGO_URI = read_env("MONGO_URI", Constants::MONGO_URI);
-    const std::string DB_NAME   = read_env("DB_NAME", Constants::DB_NAME);
-
-    auto db = std::make_shared<Database>(MONGO_URI, DB_NAME);
+    auto db = std::make_shared<Database>(Database::create_from_env());
     
     crow::App<CORS> app; 
 

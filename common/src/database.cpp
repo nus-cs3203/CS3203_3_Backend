@@ -1,4 +1,6 @@
+#include "constants.hpp"
 #include "database.hpp"
+#include "env_manager.hpp"
 
 #include <bsoncxx/builder/basic/document.hpp>
 #include <bsoncxx/json.hpp>
@@ -12,6 +14,14 @@ Database::Database(
     const std::string& uri, 
     const std::string& db_name
 ) : instance{}, client{mongocxx::uri{uri}}, db{client[db_name]} {}
+
+EnvManager Database::env_manager = EnvManager();
+
+auto Database::create_from_env() -> Database {
+    auto MONGO_URI = env_manager.read_env("MONGO_URI", Constants::MONGO_URI);
+    auto DB_NAME = env_manager.read_env("DB_NAME", Constants::DB_NAME);
+    return Database(MONGO_URI, DB_NAME);
+}
 
 auto Database::find_one(const std::string& collection_name, const bsoncxx::document::view& filter, const mongocxx::options::find& option)
     -> bsoncxx::stdx::optional<bsoncxx::document::value> {

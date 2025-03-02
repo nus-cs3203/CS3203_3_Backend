@@ -15,12 +15,7 @@
 #include <memory>
 
 int main() {
-    load_env_file();
-
-    const std::string MONGO_URI = read_env("MONGO_URI", Constants::MONGO_URI);
-    const std::string DB_NAME   = read_env("DB_NAME", Constants::DB_NAME);
-
-    auto db = std::make_shared<Database>(MONGO_URI, DB_NAME);
+    auto db = std::make_shared<Database>(Database::create_from_env());
 
     std::shared_ptr<Reddit> reddit = std::make_shared<Reddit>(Reddit::create_with_values_from_env());
     
