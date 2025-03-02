@@ -23,6 +23,8 @@ set(COMMON_DIR ${CMAKE_SOURCE_DIR}/common)
 
 find_package(Boost REQUIRED)
 find_package(Threads REQUIRED)
+find_package(mongocxx REQUIRED)
+find_package(bsoncxx REQUIRED)
 
 include(FetchContent)
 FetchContent_Declare(
@@ -32,7 +34,6 @@ FetchContent_Declare(
 )
 FetchContent_MakeAvailable(cpr)
 
-add_subdirectory(services/db/db_manager)
 add_subdirectory(services/db/updater/realtime)
 add_subdirectory(services/pages/admin/analytics)
 add_subdirectory(services/pages/admin/management)

@@ -1,24 +1,13 @@
 set(DB_UPDATER_REALTIME "db_updater_realtime")
 
-set(SRC_FILES
-    src/main.cpp
-    src/api_handler.cpp
-    ${COMMON_DIR}/src/constants.cpp
-    ${COMMON_DIR}/src/cors.cpp
-    ${COMMON_DIR}/src/database.cpp
-    ${COMMON_DIR}/src/env_manager.cpp
-    ${COMMON_DIR}/src/reddit.cpp
-    ${COMMON_DIR}/src/utils.cpp
+file(GLOB SRC_FILES
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/*.cpp
+    ${COMMON_DIR}/src/*.cpp
 )
 
 include_directories(${CMAKE_CURRENT_SOURCE_DIR}/includes/)
 include_directories(${CMAKE_CURRENT_SOURCE_DIR}/include)
 include_directories(${COMMON_DIR}/include)
-
-find_package(Boost REQUIRED) 
-find_package(Threads REQUIRED)  
-find_package(mongocxx REQUIRED)
-find_package(bsoncxx REQUIRED)
 
 set(CMAKE_INSTALL_RPATH_USE_LINK_PATH TRUE)
 
@@ -34,6 +23,7 @@ target_include_directories(${DB_UPDATER_REALTIME}
                            PRIVATE 
                            ${CROW_INCLUDE_DIR}
                            ${Boost_INCLUDE_DIRS}
+                           cpr::cpr
 )
 
 target_link_libraries(${DB_UPDATER_REALTIME} 
