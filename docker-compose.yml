@@ -10,18 +10,6 @@ services:
     container_name: my_mongo
     ports:
       - "27017:27017"
-  db_manager:
-    build:
-      context: .
-      dockerfile: ./services/db/db_manager/Dockerfile
-    depends_on:
-      - mongo
-    ports:
-      - "8081:8081"
-    profiles:
-      - db
-    environment:
-      <<: *common_env
   page_admin_analytics:
     build:
       context: .
