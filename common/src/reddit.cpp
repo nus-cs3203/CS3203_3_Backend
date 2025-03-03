@@ -215,7 +215,7 @@ std::vector<crow::json::wvalue> Reddit::get_complaints_from_posts(std::vector<cr
 
     std::string analytics_request_str = request_body.dump();
     auto analytics_resp = cpr::Post(
-        cpr::Url{"0.0.0.0:8000/process_complaints"},
+        cpr::Url{"http://host.docker.internal:8000/process_complaints"},
         cpr::Body{analytics_request_str},
         cpr::Header{{"Content-Type", "application/json"}}
     );

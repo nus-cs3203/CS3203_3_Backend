@@ -61,4 +61,5 @@ CMakeUserPresets.json
 /release
 /.vscode
 .env
+.docker.env
 .DS_store

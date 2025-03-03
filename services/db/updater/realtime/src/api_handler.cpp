@@ -25,7 +25,7 @@ auto ApiHandler::perform_realtime_update_complaints_analytics_from_reddit(const 
     try {
         auto utc_ts_now = get_utc_timestamp_now();
         auto utc_ts_one_day_ago = get_utc_timestamp_one_day_ago();
-        auto posts = reddit->get_posts(subreddit, 100, utc_ts_one_day_ago, utc_ts_now);
+        auto posts = reddit->get_posts(subreddit, 10, utc_ts_one_day_ago, utc_ts_now);
         auto complaints = reddit->get_complaints_from_posts(posts);
 
         std::vector<bsoncxx::document::value> complaint_docs;
