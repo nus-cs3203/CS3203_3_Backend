@@ -7,10 +7,10 @@ services:
     ports:
       - "27017:27017"
 
-  page_admin_analytics:
+  analytics:
     build:
       context: .
-      dockerfile: ./services/pages/admin/analytics/Dockerfile
+      dockerfile: ./services/analytics/Dockerfile
     depends_on:
       - mongo
     ports:
@@ -18,10 +18,10 @@ services:
     env_file:
       - .docker.env
 
-  page_admin_management:
+  management:
     build:
       context: .
-      dockerfile: ./services/pages/admin/management/Dockerfile
+      dockerfile: ./services/management/Dockerfile
     depends_on:
       - mongo
     ports:
@@ -29,10 +29,10 @@ services:
     env_file:
       - .docker.env
 
-  db_realtime_updater:
+  updater:
     build:
       context: .
-      dockerfile: ./services/db/updater/realtime/Dockerfile
+      dockerfile: ./services/updater/Dockerfile
     depends_on:
       - mongo
     ports:

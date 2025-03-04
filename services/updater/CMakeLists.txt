@@ -1,4 +1,4 @@
-set(DB_UPDATER_REALTIME "db_updater_realtime")
+set(UPDATER_EXECUTABLE_NAME "updater")
 
 file(GLOB SRC_FILES
     ${CMAKE_CURRENT_SOURCE_DIR}/src/*.cpp
@@ -17,16 +17,16 @@ else()
     set(CMAKE_INSTALL_RPATH "$ORIGIN/../lib")
 endif()
 
-add_executable(${DB_UPDATER_REALTIME} ${SRC_FILES})
+add_executable(${UPDATER_EXECUTABLE_NAME} ${SRC_FILES})
 
-target_include_directories(${DB_UPDATER_REALTIME}
+target_include_directories(${UPDATER_EXECUTABLE_NAME}
                            PRIVATE 
                            ${CROW_INCLUDE_DIR}
                            ${Boost_INCLUDE_DIRS}
                            cpr::cpr
 )
 
-target_link_libraries(${DB_UPDATER_REALTIME} 
+target_link_libraries(${UPDATER_EXECUTABLE_NAME} 
                       ${CROW_LIBRARY} 
                       Threads::Threads 
                       ${Boost_LIBRARIES}
@@ -35,4 +35,17 @@ target_link_libraries(${DB_UPDATER_REALTIME}
                       cpr::cpr
 )
 
-install(TARGETS ${DB_UPDATER_REALTIME} DESTINATION bin)
+if(APPLE)
+    set_target_properties(${UPDATER_EXECUTABLE_NAME} PROPERTIES
+        BUILD_WITH_INSTALL_RPATH TRUE
+        INSTALL_RPATH "@loader_path/../lib"
+        MACOSX_RPATH 1
+    )
+else()
+    set_target_properties(${UPDATER_EXECUTABLE_NAME} PROPERTIES
+        BUILD_WITH_INSTALL_RPATH TRUE
+        INSTALL_RPATH "$ORIGIN/../lib"
+    )
+endif()
+
+install(TARGETS ${UPDATER_EXECUTABLE_NAME} DESTINATION bin)
