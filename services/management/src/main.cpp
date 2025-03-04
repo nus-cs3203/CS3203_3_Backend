@@ -50,11 +50,23 @@ int main() {
         return api_handler.update_by_oid(req, db, COLLECTION_CATEGORIES);
     });
 
+    const auto COLLECTION_POSTS = Constants::COLLECTION_POSTS;
+    
+    CROW_ROUTE(app, "/posts/get_by_daterange").methods(crow::HTTPMethod::Post)
+    ([db, &api_handler, COLLECTION_POSTS](const crow::request& req) {
+        return api_handler.get_by_daterange(req, db, COLLECTION_POSTS);
+    });
+
     const auto COLLECTION_COMPLAINTS = Constants::COLLECTION_COMPLAINTS;
 
     CROW_ROUTE(app, "/complaints/get_by_oid").methods(crow::HTTPMethod::Post)
     ([db, &api_handler, COLLECTION_COMPLAINTS](const crow::request& req) {
         return api_handler.get_by_oid(req, db, COLLECTION_COMPLAINTS, true);
+    });
+
+    CROW_ROUTE(app, "/complaints/get_by_daterange").methods(crow::HTTPMethod::Post)
+    ([db, &api_handler, COLLECTION_COMPLAINTS](const crow::request& req) {
+        return api_handler.get_by_daterange(req, db, COLLECTION_COMPLAINTS);
     });
 
     CROW_ROUTE(app, "/complaints/search").methods(crow::HTTPMethod::Post)

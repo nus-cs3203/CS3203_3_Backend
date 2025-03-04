@@ -66,12 +66,52 @@ auto ApiHandler::get_by_oid(const crow::request& req, std::shared_ptr<Database> 
         }
 
         response_data["document"] = std::move(document_wvalue);
-        return make_success_response(200, response_data, "Document successfully");
+        return make_success_response(200, response_data, "Retrieved document successfully");
     }
     catch (const std::exception& e) {
         return make_error_response(500, std::string("Server error: ") + e.what());
     }
 }
+
+auto ApiHandler::get_by_daterange(const crow::request& req, std::shared_ptr<Database> db, const std::string& collection_name) -> crow::response {
+    try {
+        auto body = crow::json::load(req.body);
+
+        if (!validate_request(body, {"start_date", "end_date"})) {
+            return make_error_response(400, "Invalid request format");
+        }
+
+        auto start_date = json_date_to_bson_date(body["start_date"]);
+        auto end_date = json_date_to_bson_date(body["end_date"]);
+
+        bsoncxx::document::value filter = make_document(
+            kvp("date", make_document(
+                kvp("$gte", start_date),
+                kvp("$lte", end_date)
+            ))
+        );
+
+        auto cursor = db->find(collection_name, filter);
+        std::vector<crow::json::wvalue> documents;
+        for (auto&& document: cursor) {
+            auto document_json = bsoncxx::to_json(document);
+            crow::json::rvalue document_rvalue = crow::json::load(document_json);
+            crow::json::wvalue document_wvalue = crow::json::load(document_json);
+            if (document_rvalue.has("date")) {
+                document_wvalue["date"] = utc_unix_timestamp_to_string(document_rvalue["date"]["$date"].i() / 1000, Constants::DATETIME_FORMAT);
+            }
+            documents.push_back(std::move(document_wvalue));
+        }
+
+        crow::json::wvalue response_data;
+        response_data[collection_name] = std::move(documents);
+        return make_success_response(200, response_data, "Retrieved documents successfully");
+    }
+    catch (const std::exception& e) {
+        return make_error_response(500, std::string("Server error: ") + e.what());
+    }
+}
+
 
 auto ApiHandler::search(const crow::request& req, std::shared_ptr<Database> db, const std::string& collection_name, const std::vector<std::string>& keys, const std::vector<bool>& ascending_orders, const bool& should_convert_date) -> crow::response {
     try {
