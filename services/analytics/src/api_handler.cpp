@@ -16,6 +16,40 @@
 using bsoncxx::builder::basic::kvp;
 using bsoncxx::builder::basic::make_document;
 
+auto ApiHandler::get_category_analytics_by_name(const crow::request& req, std::shared_ptr<Database> db) -> crow::response {
+    try {
+        auto body = crow::json::load(req.body);
+
+        if (!validate_request(body, {"name"})) {
+            return make_error_response(400, "Invalid request format");
+        }
+        auto name = body["name"].s();
+
+        bsoncxx::document::value filter = make_document(
+            kvp("name", name)
+        );
+
+        auto result = db->find_one(Constants::COLLECTION_CATEGORY_ANALYTICS, filter);
+
+        crow::json::wvalue response_data;
+        response_data["document"] = {};
+
+        if (!result.has_value()) {
+            return make_success_response(200, response_data, "No matching category_analytics found");
+        }
+
+        auto document_json = bsoncxx::to_json(result.value());
+        auto document_rvalue = crow::json::load(document_json);
+
+        response_data["document"] = document_rvalue;
+        return make_success_response(200, response_data, "Retrieved analytics successfully");
+    
+    }
+    catch (const std::exception& e) {
+        return make_error_response(500, std::string("Server error: ") + e.what());
+    }
+}
+
 auto ApiHandler::get_complaints_grouped_by_field(const crow::request& req, std::shared_ptr<Database> db) -> crow::response {
     try {
         auto body = crow::json::load(req.body);

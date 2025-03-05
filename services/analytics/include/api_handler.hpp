@@ -14,6 +14,8 @@ class ApiHandler {
 public:
     ApiHandler() = default;
 
+    auto get_category_analytics_by_name(const crow::request& req, std::shared_ptr<Database> db) -> crow::response;
+
     auto get_complaints_grouped_by_field(const crow::request& req, std::shared_ptr<Database> db) -> crow::response;
     
     auto get_complaints_grouped_by_field_over_time(const crow::request& req, std::shared_ptr<Database> db) -> crow::response;

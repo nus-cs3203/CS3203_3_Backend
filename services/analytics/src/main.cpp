@@ -22,6 +22,11 @@ int main() {
 
     ApiHandler api_handler;
 
+    CROW_ROUTE(app, "/get_category_analytics_by_name").methods(crow::HTTPMethod::Post)
+    ([db, &api_handler](const crow::request& req) {
+        return api_handler.get_category_analytics_by_name(req, db);
+    });
+
     CROW_ROUTE(app, "/get_complaints_grouped_by_sentiment_value").methods(crow::HTTPMethod::Post)
     ([db, &api_handler](const crow::request& req) {
         return api_handler.get_complaints_grouped_by_sentiment_value(req, db);
