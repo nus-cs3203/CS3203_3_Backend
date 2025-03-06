@@ -50,6 +50,132 @@ auto ApiHandler::get_category_analytics_by_name(const crow::request& req, std::s
     }
 }
 
+auto ApiHandler::get_complaints_statistics(const crow::request& req, std::shared_ptr<Database> db) -> crow::response {
+    try {
+        auto body = crow::json::load(req.body);
+
+        if (!validate_request(body, {"filter"})) {
+            return make_error_response(400, "Invalid request format");
+        }
+
+        auto filter_json = body["filter"];
+        auto filter_bson = _create_complaints_filter(filter_json); 
+
+        auto cursor = _get_complaints_statistics_cursor(db, filter_bson.view());
+        auto result = _read_complaints_statistics_cursor(cursor);
+        
+        crow::json::wvalue response_data;
+        response_data["result"] = std::move(result);
+        return make_success_response(200, response_data, "Analytics result retrieved.");
+    }
+    catch (const std::exception& e) {
+        return make_error_response(500, std::string("Server error: ") + e.what());
+    }
+}
+
+auto ApiHandler::_create_complaints_filter(const crow::json::rvalue& json) -> bsoncxx::document::value {
+    bsoncxx::builder::basic::document filter_builder{};
+
+    if (json.has("keyword")) {
+        auto keyword = json["keyword"].s();
+        filter_builder.append(
+            kvp("$text", 
+                make_document(
+                    kvp("$search", static_cast<std::string>(keyword))
+                )
+            )
+        );
+    }
+
+    if (json.has("category")) {
+        auto category = json["category"].s();
+        filter_builder.append(kvp("category", static_cast<std::string>(category)));
+    }
+
+    if (json.has("source")) {
+        auto source = json["source"].s();
+        filter_builder.append(kvp("source", static_cast<std::string>(source)));
+    }
+
+    if (json.has("start_date")) {
+        auto start_date = json_date_to_bson_date(json["start_date"]);
+        filter_builder.append(
+            kvp("date", 
+                make_document(
+                    kvp("$gte", start_date)
+                )
+            )
+        );
+    }
+
+    if (json.has("end_date")) {
+        auto end_date = json_date_to_bson_date(json["end_date"]);
+        filter_builder.append(
+            kvp("date", 
+                make_document(
+                    kvp("$lte", end_date)
+                )
+            )
+        );
+    }
+
+    if (json.has("min_sentiment")) {
+        auto min_sentiment = json["min_sentiment"].d();
+        filter_builder.append(
+            kvp("sentiment", 
+                make_document(
+                    kvp("$gte", min_sentiment)
+                )
+            )
+        );
+    }
+
+    if (json.has("max_sentiment")) {
+        auto max_sentiment = json["max_sentiment"].d();
+        filter_builder.append(
+            kvp("sentiment", 
+                make_document(
+                    kvp("$lte", max_sentiment)
+                )
+            )
+        );
+    }
+    
+    return filter_builder.extract();
+}
+
+auto ApiHandler::_get_complaints_statistics_cursor(std::shared_ptr<Database> db,  const bsoncxx::document::view& filter) -> mongocxx::cursor {
+    mongocxx::pipeline pipeline{};
+
+    pipeline.match(filter);
+
+    pipeline.group(
+        make_document(
+            kvp("_id", bsoncxx::types::b_null()),
+            kvp("count", make_document(kvp("$sum", 1))),
+            kvp("avg_sentiment", make_document(kvp("$avg", "$sentiment")))
+        )
+    );
+
+    auto cursor = db->aggregate(Constants::COLLECTION_COMPLAINTS, pipeline);
+    return cursor;
+}
+
+auto ApiHandler::_read_complaints_statistics_cursor(mongocxx::cursor& cursor) -> crow::json::wvalue {
+    crow::json::wvalue result;
+    result["count"] = 0;
+    result["avg_sentiment"] = 0;
+    for (auto&& document: cursor) {
+        auto document_json = bsoncxx::to_json(document);
+        crow::json::rvalue rval_json = crow::json::load(document_json);
+        result["count"] = rval_json["count"];
+        result["avg_sentiment"] = rval_json["avg_sentiment"];
+    }
+    return result;
+}
+
+
+
 auto ApiHandler::get_complaints_grouped_by_field(const crow::request& req, std::shared_ptr<Database> db) -> crow::response {
     try {
         auto body = crow::json::load(req.body);
