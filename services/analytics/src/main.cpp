@@ -32,6 +32,11 @@ int main() {
         return api_handler.get_complaints_statistics(req, db);
     });
 
+    CROW_ROUTE(app, "/get_complaints_statistics_over_time").methods(crow::HTTPMethod::Post)
+    ([db, &api_handler](const crow::request& req) {
+        return api_handler.get_complaints_statistics_over_time(req, db);
+    });
+
     CROW_ROUTE(app, "/get_complaints_grouped_by_sentiment_value").methods(crow::HTTPMethod::Post)
     ([db, &api_handler](const crow::request& req) {
         return api_handler.get_complaints_grouped_by_sentiment_value(req, db);

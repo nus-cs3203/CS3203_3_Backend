@@ -113,3 +113,13 @@ auto get_utc_timestamp_one_day_ago() -> long long int {
 auto create_empty_crow_json_rvalue() -> crow::json::rvalue {
     return crow::json::load("{}");
 }
+
+auto extract_month_from_timestamp_str(std::string timestamp) -> int {
+    // dd-mm-YYYY HH:MM:SS
+    return stoi(timestamp.substr(3, 2));
+}
+
+auto extract_year_from_timestamp_str(std::string timestamp) -> int {
+    // dd-mm-YYYY HH:MM:SS
+    return stoi(timestamp.substr(6, 4));
+}

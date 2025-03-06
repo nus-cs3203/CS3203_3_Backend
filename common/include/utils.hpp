@@ -34,4 +34,8 @@ auto get_utc_timestamp_one_day_ago() -> long long int;
 
 auto create_empty_crow_json_rvalue() -> crow::json::rvalue;
 
+auto extract_month_from_timestamp_str(std::string timestamp) -> int;
+
+auto extract_year_from_timestamp_str(std::string timestamp) -> int;
+
 #endif
