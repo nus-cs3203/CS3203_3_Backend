@@ -97,328 +97,7 @@ How to initialize the database?
 
 ---
 
-## Service: db_manager
-
-The API for db_manager closely follows MongoDB semantics (insert_one, insert_many, find_one, find, delete_one, delete_many, update_one, update_many). You can read this documentation to understand their specific behaviors further: [MongoDB C++ Driver Documentation](https://www.mongodb.com/docs/languages/cpp/cpp-driver/current/get-started/).
-
----
-
-### **POST /insert_one**
-
-**Request:**
-```json
-{
-    "collection": "string",
-    "document": "json"
-}
-```
-
-**Response:**
-```json
-{
-    "success": "bool",
-    "message": "string",
-    "_id": "string" // internal id of MongoDB
-}
-```
-
-**Sample:**
-```sh
-curl -X POST http://localhost:8081/insert_one \
-     -H "Content-Type: application/json" \
-     -d '{
-         "collection": "new_users",
-         "document": {
-             "name": "Bob",
-             "age": 30,
-             "email": "bob@example.com"
-         }
-     }'
-```
-
----
-
-### **POST /insert_many**
-
-**Request:**
-```json
-{
-    "collection": "string",
-    "documents": ["json"]
-}
-```
-
-**Response:**
-```json
-{
-    "success": "bool",
-    "message": "string",
-    "inserted_count": "int"
-}
-```
-
-**Sample:**
-```sh
-curl -X POST http://localhost:8081/insert_many \
-     -H "Content-Type: application/json" \
-     -d '{
-         "collection": "new_users",
-         "documents": [
-             {
-                 "name": "Bob",
-                 "age": 30,
-                 "email": "bob@example.com"
-             },
-             {
-                 "name": "Bob2",
-                 "age": 30,
-                 "email": "bob@example.com"
-             }
-         ]
-     }'
-```
-
----
-
-### **POST /find_one**
-
-**Request:**
-```json
-{
-    "collection": "string",
-    "filter": "json"
-}
-```
-
-**Response:**
-```json
-{
-    "success": "bool",
-    "message": "string",
-    "document": "..."
-}
-```
-
-**Sample:**
-```sh
-curl -X POST http://localhost:8081/find_one \
-     -H "Content-Type: application/json" \
-     -d '{
-         "collection": "new_users",
-         "filter": {
-             "name": "Bob",
-             "age": 30,
-             "email": "bob@example.com"
-         }
-     }'
-```
-
-**How to use MongoDB ID:**
-```sh
-curl -X POST http://localhost:8081/find_one \
-     -H "Content-Type: application/json" \
-     -d '{
-         "collection": "new_users",
-         "filter": {
-             "_id": {"oid": "67a2a5febaee6bb9b807d841"}
-         }
-     }'
-```
-
----
-
-### **POST /find**
-
-**Request:**
-```json
-{
-    "collection": "string",
-    "filter": "json"
-}
-```
-
-**Response:**
-```json
-{
-    "success": "bool",
-    "documents": [],
-    "message": "string"
-}
-```
-
-**Sample:**
-```sh
-curl -X POST http://localhost:8081/find \
-     -H "Content-Type: application/json" \
-     -d '{
-         "collection": "new_users",
-         "filter": {
-             "name": "Bob",
-             "age": 30,
-             "email": "bob@example.com"
-         }
-     }'
-```
-
----
-
-### **POST /delete_one**
-
-**Request:**
-```json
-{
-    "collection": "string",
-    "filter": "json"
-}
-```
-
-**Response:**
-```json
-{
-    "success": "bool",
-    "message": "string",
-    "deleted_count": "int"
-}
-```
-
-**Sample:**
-```sh
-curl -X POST http://localhost:8081/delete_one \
-     -H "Content-Type: application/json" \
-     -d '{
-         "collection": "new_users",
-         "filter": {
-             "name": "Bob",
-             "age": 30,
-             "email": "bob@example.com"
-         }
-     }'
-```
-
----
-
-### **POST /delete_many**
-
-**Request:**
-```json
-{
-    "collection": "string",
-    "filter": "json"
-}
-```
-
-**Response:**
-```json
-{
-    "success": "bool",
-    "count": "int",
-    "message": "string"
-}
-```
-
-**Sample:**
-```sh
-curl -X POST http://localhost:8081/delete_many \
-     -H "Content-Type: application/json" \
-     -d '{
-         "collection": "new_users",
-         "filter": {
-             "name": "Bob2"
-         }
-     }'
-```
-
----
-
-### **POST /update_one**
-
-**Request:**
-```json
-{
-    "collection": "string",
-    "filter": "json",
-    "update_document": "json"
-}
-```
-
-**Response:**
-```json
-{
-    "success": "bool",
-    "matched_count": "int",
-    "modified_count": "int",
-    "upserted_count": "int",
-    "message": "string"
-}
-```
-
-**Sample:**
-```sh
-curl -X POST http://localhost:8081/update_one \
-     -H "Content-Type: application/json" \
-     -d '{
-         "collection": "new_users",
-         "filter": {
-             "name": "Bob",
-             "age": 30,
-             "email": "bob@example.com"
-         },
-         "update_document": {
-             "$set": {
-                 "name": "Bob2",
-                 "age": 30,
-                 "email": "bob@example.com"
-             }
-         },
-         "upsert": "bool"
-     }'
-```
-
----
-
-### **POST /update_many**
-
-**Request:**
-```json
-{
-    "collection": "string",
-    "filter": "json",
-    "update_document": "json"
-}
-```
-
-**Response:**
-```json
-{
-    "success": "bool",
-    "matched_count": "int",
-    "modified_count": "int",
-    "upserted_count": "int",
-    "message": "string"
-}
-```
-
-**Sample:**
-```sh
-curl -X POST http://localhost:8081/update_many \
-     -H "Content-Type: application/json" \
-     -d '{
-         "collection": "new_users",
-         "filter": {
-             "name": "Bob"
-         },
-         "update_document": {
-             "$set": {
-                 "name": "Bob2",
-                 "age": 30,
-                 "email": "bob@example.com"
-             }
-         },
-         "upsert": "bool"
-     }'
-```
-
-## Service: **pages_admin_analytics**
+## Service: **analytics**
 
 This service provides analytics for the `complaints` collection.
 
@@ -749,19 +428,30 @@ Refer to Schema Document for collection definition.
 
 ### **POST /get_complaints_sorted_by_fields**
 
-- **Purpose**: Retrieve complaints sorted by one or more specified fields.
+- **Purpose**: Retrieve complaints sorted by one or more specified fields, with an optional filter for narrowing down results.
+- **Filter logic**: Accepts a `filter` field identical to the one in [`/get_complaints_statistics`](#post-get_complaints_statistics). All filter fields are optional.
 
 **Request:**
 ```json
 {
     "keys": ["string"],
     "ascending_orders": ["bool"],
-    "limit": "int"
+    "limit": "int",
+    "filter": {
+        "keyword": "string",        // (optional) Title or selftext contains this keyword (case-insensitive)
+        "source": "string",         // (optional) Source of complaint, e.g. "Reddit"
+        "category": "string",       // (optional) Category of complaint, e.g. "Housing"
+        "start_date": "string",     // (optional) format: dd-mm-YYYY HH:MM:SS
+        "end_date": "string",       // (optional) format: dd-mm-YYYY HH:MM:SS
+        "min_sentiment": "double",  // (optional)
+        "max_sentiment": "double"   // (optional)
+    }
 }
 ```
 - **`keys`**: An array of field names to sort by (e.g., `["sentiment", "date"]`).
 - **`ascending_orders`**: A corresponding array of booleans indicating ascending (`true`) or descending (`false`) for each key.
 - **`limit`**: The maximum number of complaints to return.
+- **`filter`** (optional): Provides optional filtering criteria. If omitted, no filtering is applied.
 
 **Response:**
 ```json
@@ -775,7 +465,227 @@ Refer to Schema Document for collection definition.
             "category": "string",
             "date": "dd-mm-YYYY HH:MM:SS",
             "sentiment": "float",
-            "_id": {"$oid": "string"}
+            "_id": {
+                "$oid": "string"
+            }
+        },
+        ...
+    ]
+}
+```
+
+**Sample Request (no filter):**
+```sh
+curl -X POST "http://localhost:8082/get_complaints_sorted_by_fields" \
+-H "Content-Type: application/json" \
+-d '{
+    "keys": ["sentiment"],
+    "ascending_orders": [false],
+    "limit": 5
+}'
+```
+
+**Sample Request (with filter):**
+```sh
+curl -X POST "http://localhost:8082/get_complaints_sorted_by_fields" \
+-H "Content-Type: application/json" \
+-d '{
+    "keys": ["sentiment"],
+    "ascending_orders": [false],
+    "limit": 5,
+    "filter": {
+        "category": "Housing",
+        "start_date": "01-01-2023 00:00:00",
+        "end_date": "01-02-2023 23:59:59"
+    }
+}'
+```
+
+---
+
+### **POST /get_category_analytics_by_name**
+
+- **Purpose**: Retrieve analytics for a given category name, returning various metrics such as current score, forecasted score, sentiment labels, key concerns, and more.
+
+**Request:**
+```json
+{
+    "name": "string"
+}
+```
+
+**Response:**
+```json
+{
+    "message": "string",
+    "success": "bool",
+    "document": {
+        "_id": {
+            "$oid": "string"
+        },
+        "name": "string",
+        "suggestions": ["string", ...],
+        "keywords_per_category": ["string", ...],
+        "summary": "string",
+        "forecasted_score": "float",
+        "current_score": "float",
+        "current_label": "string",
+        "key_concerns": ["string", ...],
+        "forecasted_label": "string"
+    }
+}
+```
+
+**Sample Request:**
+```sh
+curl -X POST "http://localhost:8082/get_category_analytics_by_name" \
+-H "Content-Type: application/json" \
+-d '{
+    "name": "Housing"
+}'
+```
+
+**Sample Response:**
+```json
+{
+    "message": "Retrieved analytics successfully",
+    "success": true,
+    "document": {
+        "_id": {
+            "$oid": "67c809fd56d1c1ad9a72939e"
+        },
+        "name": "Transportation",
+        "suggestions": [
+            "Reduce congestion",
+            "Improve public transport",
+            "Subsidize fares"
+        ],
+        "keywords_per_category": [
+            "cars",
+            "pollution",
+            "MRT"
+        ],
+        "summary": "Concerns about transportation persist among citizens.",
+        "forecasted_score": 0.5398,
+        "current_score": 0.5714,
+        "current_label": "positive",
+        "key_concerns": [
+            "Poor infrastructure"
+        ],
+        "forecasted_label": "positive"
+    }
+}
+```
+
+---
+
+### **POST /get_complaints_statistics**
+
+- **Purpose**: Retrieve the total count of complaints and average sentiment, based on optional filters.
+
+**Request:**
+```json
+{
+    "filter": {
+        "keyword": "string",        // (optional) Title or selftext contains this keyword (case-insensitive)
+        "source": "string",         // (optional) Source of complaint, e.g. "Reddit"
+        "category": "string",       // (optional) Category of complaint, e.g. "Housing"
+        "start_date": "string",     // (optional) format: dd-mm-YYYY HH:MM:SS
+        "end_date": "string",       // (optional) format: dd-mm-YYYY HH:MM:SS
+        "min_sentiment": "double",  // (optional)
+        "max_sentiment": "double"   // (optional)
+    }
+}
+```
+> **Note**: The `filter` field itself is optional, and any field inside `filter` is also optional. For example, you can provide an empty filter like `"filter": {}`.
+
+**Response:**
+```json
+{
+    "success": "bool",
+    "message": "string",
+    "result": {
+        "count": "int",
+        "avg_sentiment": "float"
+    }
+}
+```
+
+**Sample Requests:**
+```sh
+curl -X POST "http://localhost:8082/get_complaints_statistics" \
+-H "Content-Type: application/json" \
+-d '{}'
+```
+```sh
+curl -X POST "http://localhost:8082/get_complaints_statistics" \
+-H "Content-Type: application/json" \
+-d '{
+    "filter": {
+        "category": "Housing"
+    }
+}'
+```
+```sh
+curl -X POST "http://localhost:8082/get_complaints_statistics" \
+-H "Content-Type: application/json" \
+-d '{
+    "filter": {
+        "category": "Housing",
+        "start_date": "01-01-2023 00:00:00",
+        "end_date":  "02-01-2023 00:00:00"
+    }
+}'
+```
+
+**Sample Response:**
+```json
+{
+    "success": true,
+    "message": "Analytics result retrieved.",
+    "result": {
+        "count": 1,
+        "avg_sentiment": -0.815503
+    }
+}
+```
+
+---
+
+### **POST /get_complaints_statistics_over_time**
+
+- **Purpose**: Retrieve count and average sentiment for complaints over a time range, optionally filtered. Results are grouped by `"%m-%Y"` (month-year) buckets.
+
+**Request:**
+```json
+{
+    "start_date": "string",   // format: dd-mm-YYYY HH:MM:SS
+    "end_date": "string",     // format: dd-mm-YYYY HH:MM:SS
+    "filter": {
+        "keyword": "string",        // (optional) 
+        "source": "string",         // (optional)
+        "category": "string",       // (optional)
+        "start_date": "string",     // (optional) format: dd-mm-YYYY HH:MM:SS
+        "end_date": "string",       // (optional) format: dd-mm-YYYY HH:MM:SS
+        "min_sentiment": "double",  // (optional)
+        "max_sentiment": "double"   // (optional)
+    }
+}
+```
+> **Note**: Fields in `filter` are optional. If omitted, no filtering is applied to that field.
+
+**Response:**
+```json
+{
+    "success": "bool",
+    "message": "string",
+    "result": [
+        {
+            "date": "string",  // month-year, e.g. "1-2023"
+            "data": {
+                "count": "int",
+                "avg_sentiment": "float"
+            }
         },
         ...
     ]
@@ -784,85 +694,51 @@ Refer to Schema Document for collection definition.
 
 **Sample Request:**
 ```sh
-    curl -X POST "http://localhost:8082/get_complaints_sorted_by_fields" \
-    -H "Content-Type: application/json" \
-    -d '{
-        "keys": ["sentiment"],
-        "ascending_orders": [false],
-        "limit": 5
-    }'
+curl -X POST "http://localhost:8082/get_complaints_statistics_over_time" \
+-H "Content-Type: application/json" \
+-d '{
+    "start_date": "01-01-2023 00:00:00",
+    "end_date": "01-03-2023 00:00:00"
+}'
+```
+```sh
+curl -X POST "http://localhost:8082/get_complaints_statistics_over_time" \
+-H "Content-Type: application/json" \
+-d '{
+    "start_date": "01-01-2023 00:00:00",
+    "end_date": "01-03-2023 00:00:00",
+    "filter": {
+        "category": "Housing"
+    }
+}'
 ```
 
 **Sample Response:**
 ```json
 {
-    "message": "Complaint(s) retrieved.",
     "success": true,
-    "complaints": [
+    "message": "Analytics result retrieved.",
+    "result": [
         {
-            "date": "17-11-2009 00:00:00",
-            "source": "Reddit",
-            "category": "Financial",
-            "id": "de456",
-            "url": "https://example.com/",
-            "description": "This is a description for complaint #4",
-            "title": "The Harold Lloyd Method of Mass Transit Advertising",
-            "sentiment": 0.837126,
-            "_id": {
-                "$oid": "67aeded9b5bc2d9932255caa"
-            }
-        },
-        {
-            "_id": {
-                "$oid": "67aeded9b5bc2d9932255cab"
+            "data": {
+                "avg_sentiment": 0,
+                "count": 0
             },
-            "sentiment": -0.175837,
-            "title": "Hello la, I'm in Singapore for the week and want to go dancing, was wondering Zirca or Zouk, and which days?",
-            "description": "This is a description for complaint #5",
-            "url": "https://example.com/",
-            "id": "ef567",
-            "category": "Housing",
-            "source": "Reddit",
-            "date": "12-01-2010 00:00:00"
+            "date": "1-2023"
         },
         {
-            "date": "22-10-2008 00:00:00",
-            "source": "Reddit",
-            "category": "Transportation",
-            "id": "bc234",
-            "url": "https://example.com/",
-            "description": "This is a description for complaint #2",
-            "title": "Good article on the Singapore economy: 'Review strategy, take crisis as opportunity '",
-            "sentiment": -0.287196,
-            "_id": {
-                "$oid": "67aeded9b5bc2d9932255ca8"
+            "date": "2-2023",
+            "data": {
+                "count": 0,
+                "avg_sentiment": 0
             }
         },
         {
-            "date": "30-09-2008 00:00:00",
-            "source": "Reddit",
-            "category": "Politics",
-            "id": "ab123",
-            "url": "https://example.com/",
-            "description": "This is a description for complaint #1",
-            "title": "RIP JB Jeyaretnam. Possibly Singapore's greatest citizen.",
-            "sentiment": 0.477568,
-            "_id": {
-                "$oid": "67aeded9b5bc2d9932255ca7"
-            }
-        },
-        {
-            "_id": {
-                "$oid": "67aeded9b5bc2d9932255ca9"
+            "data": {
+                "avg_sentiment": 0,
+                "count": 0
             },
-            "sentiment": -0.475928,
-            "title": "High-living Singaporean monk faces jail for fraud.",
-            "description": "This is a description for complaint #3",
-            "url": "https://example.com/",
-            "id": "cd345",
-            "category": "Infrastructure",
-            "source": "Reddit",
-            "date": "09-10-2009 00:00:00"
+            "date": "3-2023"
         }
     ]
 }
@@ -870,7 +746,7 @@ Refer to Schema Document for collection definition.
 
 ---
 
-## Service: **pages_admin_management**
+## Service: **management**
 
 This service provides various endpoints to manage categories and complaints for administrative purposes.
 
@@ -1224,6 +1100,68 @@ curl -X POST "http://localhost:8083/complaints/update_by_oid" \
                  "date": "01-01-2025 00:00:00"
              }
          }
+     }'
+```
+
+---
+
+#### **POST /complaints/get_by_daterange**
+
+**Request:**
+```json
+{
+    "start_date": "string", // dd-mm-YYYY HH:MM:SS
+    "end_date": "string" // dd-mm-YYYY HH:MM:SS
+}
+```
+
+**Response:**
+```json
+{
+    "posts": "[]post" // Check collection: posts schema for field details
+}
+```
+
+**Sample Request:**
+```sh
+curl -X POST "http://localhost:8083/complaints/get_by_daterange" \
+     -H "Content-Type: application/json" \
+     -d '{
+        "start_date": "01-01-2023 00:00:00",
+        "end_date": "01-01-2023 23:59:59"
+     }'
+```
+
+---
+
+### **Collection: `posts`**
+
+Refer to Schema Document for collection definition.
+
+#### **POST /posts/get_by_daterange**
+
+**Request:**
+```json
+{
+    "start_date": "string", // dd-mm-YYYY HH:MM:SS
+    "end_date": "string" // dd-mm-YYYY HH:MM:SS
+}
+```
+
+**Response:**
+```json
+{
+    "complaints": "[]complaint" // Check collection: complaint schema for field details
+}
+```
+
+**Sample Request:**
+```sh
+curl -X POST "http://localhost:8083/posts/get_by_daterange" \
+     -H "Content-Type: application/json" \
+     -d '{
+        "start_date": "01-01-2022 00:00:00",
+        "end_date": "01-01-2022 23:59:59"
      }'
 ```
 

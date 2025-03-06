@@ -17,12 +17,16 @@ if(POLICY CMP0167)
     cmake_policy(SET CMP0167 NEW)
 endif()
 
+set(CMAKE_MACOSX_RPATH 1)
+
 set(EXECUTABLE_NAME "CS3203_BACKEND")
 
 set(COMMON_DIR ${CMAKE_SOURCE_DIR}/common)
 
 find_package(Boost REQUIRED)
 find_package(Threads REQUIRED)
+find_package(mongocxx REQUIRED)
+find_package(bsoncxx REQUIRED)
 
 include(FetchContent)
 FetchContent_Declare(
@@ -32,7 +36,6 @@ FetchContent_Declare(
 )
 FetchContent_MakeAvailable(cpr)
 
-add_subdirectory(services/db/db_manager)
-add_subdirectory(services/db/updater/realtime)
-add_subdirectory(services/pages/admin/analytics)
-add_subdirectory(services/pages/admin/management)
+add_subdirectory(services/updater)
+add_subdirectory(services/analytics)
+add_subdirectory(services/management)

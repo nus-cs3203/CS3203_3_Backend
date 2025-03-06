@@ -8,9 +8,12 @@ namespace Constants {
 
     const std::string MONGO_URI = "mongodb://127.0.0.1:27017";
     const std::string DB_NAME = "CS3203";
+    
     const std::string COLLECTION_CATEGORIES = "categories";
     const std::string COLLECTION_SOURCES = "sources";
+    const std::string COLLECTION_POSTS = "posts";
     const std::string COLLECTION_COMPLAINTS = "complaints";
+    const std::string COLLECTION_CATEGORY_ANALYTICS = "category_analytics";
 
     const std::string ENV_FILE_DEFAULT_PATH = "./.env";
 }
