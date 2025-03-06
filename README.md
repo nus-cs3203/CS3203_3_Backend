@@ -155,6 +155,16 @@ Refer to Schema Document for collection definition.
     }'
 ```
 
+```sh
+    curl -X POST "http://localhost:8082/get_complaints_grouped_by_field" \
+    -H "Content-Type: application/json" \
+    -d '{
+        "start_date": "01-01-2010 00:00:00",
+        "end_date": "31-12-2010 23:59:59",
+        "group_by_field": "category"
+    }'
+```
+
 **Sample Response:**
 ```json
 {
@@ -429,6 +439,7 @@ Refer to Schema Document for collection definition.
 ### **POST /get_complaints_sorted_by_fields**
 
 - **Purpose**: Retrieve complaints sorted by one or more specified fields.
+- Now optionally accept filter field. Filted field logic is identical as /get_complaints_statistics filter field logic.
 
 **Request:**
 ```json
@@ -471,6 +482,22 @@ Refer to Schema Document for collection definition.
         "limit": 5
     }'
 ```
+
+```sh
+    curl -X POST "http://localhost:8082/get_complaints_sorted_by_fields" \
+    -H "Content-Type: application/json" \
+    -d '{
+        "keys": ["sentiment"],
+        "ascending_orders": [false],
+        "limit": 5,
+        "filter": {
+            "category": "Housing",
+            "start_date": "01-01-2023 00:00:00",
+            "end_date": "01-02-2023 23:59:59"
+        }
+    }'
+```
+
 
 **Sample Response:**
 ```json
@@ -542,6 +569,248 @@ Refer to Schema Document for collection definition.
             "category": "Infrastructure",
             "source": "Reddit",
             "date": "09-10-2009 00:00:00"
+        }
+    ]
+}
+```
+--
+
+### **POST /get_category_analytics_by_name**
+
+- **Purpose**: Retrieve analytics for a given category name, returning various metrics such as current score, forecasted score, sentiment labels, key concerns, and more.
+
+**Request:**
+```json
+{
+    "name": "string"
+}
+```
+
+**Response:**
+```json
+{
+    "message": "string",
+    "success": "bool",
+    "document": {
+        "_id": {
+            "$oid": "string"
+        },
+        "name": "string",
+        "suggestions": ["string", ...],
+        "keywords_per_category": ["string", ...],
+        "summary": "string",
+        "forecasted_score": "float",
+        "current_score": "float",
+        "current_label": "string",
+        "key_concerns": ["string", ...],
+        "forecasted_label": "string"
+    }
+}
+```
+
+**Sample Request:**
+```sh
+curl -X POST "http://localhost:8082/get_category_analytics_by_name" \
+-H "Content-Type: application/json" \
+-d '{
+    "name": "Housing"
+}'
+```
+
+**Sample Response:**
+```json
+{
+    "message": "Retrieved analytics successfully",
+    "success": true,
+    "document": {
+        "_id": {
+            "$oid": "67c809fd56d1c1ad9a72939e"
+        },
+        "name": "Transportation",
+        "suggestions": [
+            "Reduce congestion",
+            "Improve public transport",
+            "Subsidize fares"
+        ],
+        "keywords_per_category": [
+            "cars",
+            "pollution",
+            "MRT"
+        ],
+        "summary": "Concerns about transportation persist among citizens.",
+        "forecasted_score": 0.5398,
+        "current_score": 0.5714,
+        "current_label": "positive",
+        "key_concerns": [
+            "Poor infrastructure"
+        ],
+        "forecasted_label": "positive"
+    }
+}
+```
+
+---
+
+### **POST /get_complaints_statistics**
+
+- **Purpose**: Retrieve the total count of complaints and average sentiment, based on optional filters.
+
+**Request:**
+```json
+{
+    "filter": {
+        "keyword": "string",        // (optional) Title or selftext contains this keyword (case-insensitive)
+        "source": "string",         // (optional) Source of complaint, e.g. "Reddit"
+        "category": "string",       // (optional) Category of complaint, e.g. "Housing"
+        "start_date": "string",     // (optional) format: dd-mm-YYYY HH:MM:SS
+        "end_date": "string",       // (optional) format: dd-mm-YYYY HH:MM:SS
+        "min_sentiment": "double",  // (optional)
+        "max_sentiment": "double"   // (optional)
+    }
+}
+```
+> **Note**: The `filter` field itself is optional, and any field inside `filter` is also optional. For example, you can provide an empty filter like `"filter": {}`.
+
+**Response:**
+```json
+{
+    "success": "bool",
+    "message": "string",
+    "result": {
+        "count": "int",
+        "avg_sentiment": "float"
+    }
+}
+```
+
+**Sample Requests:**
+```sh
+curl -X POST "http://localhost:8082/get_complaints_statistics" \
+-H "Content-Type: application/json" \
+-d '{}'
+```
+```sh
+curl -X POST "http://localhost:8082/get_complaints_statistics" \
+-H "Content-Type: application/json" \
+-d '{
+    "filter": {
+        "category": "Housing"
+    }
+}'
+```
+```sh
+curl -X POST "http://localhost:8082/get_complaints_statistics" \
+-H "Content-Type: application/json" \
+-d '{
+    "filter": {
+        "category": "Housing",
+        "start_date": "01-01-2023 00:00:00",
+        "end_date":  "02-01-2023 00:00:00"
+    }
+}'
+```
+
+**Sample Response:**
+```json
+{
+    "success": true,
+    "message": "Analytics result retrieved.",
+    "result": {
+        "count": 1,
+        "avg_sentiment": -0.815503
+    }
+}
+```
+
+---
+
+### **POST /get_complaints_statistics_over_time**
+
+- **Purpose**: Retrieve count and average sentiment for complaints over a time range, optionally filtered. Results are grouped by `"%m-%Y"` (month-year) buckets.
+
+**Request:**
+```json
+{
+    "start_date": "string",   // format: dd-mm-YYYY HH:MM:SS
+    "end_date": "string",     // format: dd-mm-YYYY HH:MM:SS
+    "filter": {
+        "keyword": "string",        // (optional) 
+        "source": "string",         // (optional)
+        "category": "string",       // (optional)
+        "start_date": "string",     // (optional) format: dd-mm-YYYY HH:MM:SS
+        "end_date": "string",       // (optional) format: dd-mm-YYYY HH:MM:SS
+        "min_sentiment": "double",  // (optional)
+        "max_sentiment": "double"   // (optional)
+    }
+}
+```
+> **Note**: Fields in `filter` are optional. If omitted, no filtering is applied to that field.
+
+**Response:**
+```json
+{
+    "success": "bool",
+    "message": "string",
+    "result": [
+        {
+            "date": "string",  // month-year, e.g. "1-2023"
+            "data": {
+                "count": "int",
+                "avg_sentiment": "float"
+            }
+        },
+        ...
+    ]
+}
+```
+
+**Sample Request:**
+```sh
+curl -X POST "http://localhost:8082/get_complaints_statistics_over_time" \
+-H "Content-Type: application/json" \
+-d '{
+    "start_date": "01-01-2023 00:00:00",
+    "end_date": "01-03-2023 00:00:00"
+}'
+```
+```sh
+curl -X POST "http://localhost:8082/get_complaints_statistics_over_time" \
+-H "Content-Type: application/json" \
+-d '{
+    "start_date": "01-01-2023 00:00:00",
+    "end_date": "01-03-2023 00:00:00",
+    "filter": {
+        "category": "Housing"
+    }
+}'
+```
+
+**Sample Response:**
+```json
+{
+    "success": true,
+    "message": "Analytics result retrieved.",
+    "result": [
+        {
+            "data": {
+                "avg_sentiment": 0,
+                "count": 0
+            },
+            "date": "1-2023"
+        },
+        {
+            "date": "2-2023",
+            "data": {
+                "count": 0,
+                "avg_sentiment": 0
+            }
+        },
+        {
+            "data": {
+                "avg_sentiment": 0,
+                "count": 0
+            },
+            "date": "3-2023"
         }
     ]
 }
