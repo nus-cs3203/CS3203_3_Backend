@@ -18,18 +18,22 @@ public:
 
     auto get_complaints_statistics(const crow::request& req, std::shared_ptr<Database> db) -> crow::response;
 
+    auto get_complaints_sorted_by_fields(const crow::request& req, std::shared_ptr<Database> db) -> crow::response;
+
     auto get_complaints_grouped_by_field(const crow::request& req, std::shared_ptr<Database> db) -> crow::response;
 
     auto get_complaints_grouped_by_field_over_time(const crow::request& req, std::shared_ptr<Database> db) -> crow::response;
 
     auto get_complaints_grouped_by_sentiment_value(const crow::request& req, std::shared_ptr<Database> db) -> crow::response;
 
-    auto get_complaints_sorted_by_fields(const crow::request& req, std::shared_ptr<Database> db) -> crow::response;
 private:
     auto _create_filter_complaints(const crow::json::rvalue& json) -> bsoncxx::document::value;
     
     auto _create_aggregate_pipeline_complaints_statistics(const bsoncxx::document::view& filter) -> mongocxx::pipeline;
     auto _read_cursor_complaints_statistics(mongocxx::cursor& cursor) -> crow::json::wvalue;
+
+    auto _create_find_option_complaints_sorted_by_fields(bsoncxx::builder::basic::document& sort_builder, const std::vector<std::string>& keys, const std::vector<bool>& ascending_orders, const int& limit) -> mongocxx::options::find;
+    auto _read_cursor_complaints_sorted_by_fields(mongocxx::cursor& cursor) -> crow::json::wvalue;
 
     auto _get_complaints_grouped_by_field_get_cursor(std::shared_ptr<Database> db, const std::string& group_by_field, const bsoncxx::document::view& filter) -> mongocxx::cursor;
     auto _get_complaints_grouped_by_field_read_cursor(mongocxx::cursor& cursor, const std::vector<std::string>& categories) -> crow::json::wvalue;
@@ -39,9 +43,6 @@ private:
 
     auto _get_complaints_grouped_by_sentiment_value_get_cursor(std::shared_ptr<Database> db, const double& bucket_size, const bsoncxx::document::view& filter) -> mongocxx::cursor;
     auto _get_complaints_grouped_by_sentiment_value_read_cursor(mongocxx::cursor& cursor, const double& bucket_size) -> crow::json::wvalue;
-
-    auto _create_find_option_complaints_sorted_by_fields(bsoncxx::builder::basic::document& sort_builder, const std::vector<std::string>& keys, const std::vector<bool>& ascending_orders, const int& limit) -> mongocxx::options::find;
-    auto _read_cursor_complaints_sorted_by_fields(mongocxx::cursor& cursor) -> crow::json::wvalue;
 
     auto _get_group_by_field_all_distinct_values(std::shared_ptr<Database> db, const std::string& group_by_field) -> std::vector<std::string>;
     auto _get_collection_name_from_group_by_field(const std::string& group_by_field) -> std::string;
