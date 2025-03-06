@@ -155,16 +155,6 @@ Refer to Schema Document for collection definition.
     }'
 ```
 
-```sh
-    curl -X POST "http://localhost:8082/get_complaints_grouped_by_field" \
-    -H "Content-Type: application/json" \
-    -d '{
-        "start_date": "01-01-2010 00:00:00",
-        "end_date": "31-12-2010 23:59:59",
-        "group_by_field": "category"
-    }'
-```
-
 **Sample Response:**
 ```json
 {
@@ -511,7 +501,7 @@ curl -X POST "http://localhost:8082/get_complaints_sorted_by_fields" \
 }'
 ```
 
---
+---
 
 ### **POST /get_category_analytics_by_name**
 
