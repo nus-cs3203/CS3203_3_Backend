@@ -438,20 +438,30 @@ Refer to Schema Document for collection definition.
 
 ### **POST /get_complaints_sorted_by_fields**
 
-- **Purpose**: Retrieve complaints sorted by one or more specified fields.
-- Now optionally accept filter field. Filted field logic is identical as /get_complaints_statistics filter field logic.
+- **Purpose**: Retrieve complaints sorted by one or more specified fields, with an optional filter for narrowing down results.
+- **Filter logic**: Accepts a `filter` field identical to the one in [`/get_complaints_statistics`](#post-get_complaints_statistics). All filter fields are optional.
 
 **Request:**
 ```json
 {
     "keys": ["string"],
     "ascending_orders": ["bool"],
-    "limit": "int"
+    "limit": "int",
+    "filter": {
+        "keyword": "string",        // (optional) Title or selftext contains this keyword (case-insensitive)
+        "source": "string",         // (optional) Source of complaint, e.g. "Reddit"
+        "category": "string",       // (optional) Category of complaint, e.g. "Housing"
+        "start_date": "string",     // (optional) format: dd-mm-YYYY HH:MM:SS
+        "end_date": "string",       // (optional) format: dd-mm-YYYY HH:MM:SS
+        "min_sentiment": "double",  // (optional)
+        "max_sentiment": "double"   // (optional)
+    }
 }
 ```
 - **`keys`**: An array of field names to sort by (e.g., `["sentiment", "date"]`).
 - **`ascending_orders`**: A corresponding array of booleans indicating ascending (`true`) or descending (`false`) for each key.
 - **`limit`**: The maximum number of complaints to return.
+- **`filter`** (optional): Provides optional filtering criteria. If omitted, no filtering is applied.
 
 **Response:**
 ```json
@@ -465,114 +475,42 @@ Refer to Schema Document for collection definition.
             "category": "string",
             "date": "dd-mm-YYYY HH:MM:SS",
             "sentiment": "float",
-            "_id": {"$oid": "string"}
+            "_id": {
+                "$oid": "string"
+            }
         },
         ...
     ]
 }
 ```
 
-**Sample Request:**
+**Sample Request (no filter):**
 ```sh
-    curl -X POST "http://localhost:8082/get_complaints_sorted_by_fields" \
-    -H "Content-Type: application/json" \
-    -d '{
-        "keys": ["sentiment"],
-        "ascending_orders": [false],
-        "limit": 5
-    }'
+curl -X POST "http://localhost:8082/get_complaints_sorted_by_fields" \
+-H "Content-Type: application/json" \
+-d '{
+    "keys": ["sentiment"],
+    "ascending_orders": [false],
+    "limit": 5
+}'
 ```
 
+**Sample Request (with filter):**
 ```sh
-    curl -X POST "http://localhost:8082/get_complaints_sorted_by_fields" \
-    -H "Content-Type: application/json" \
-    -d '{
-        "keys": ["sentiment"],
-        "ascending_orders": [false],
-        "limit": 5,
-        "filter": {
-            "category": "Housing",
-            "start_date": "01-01-2023 00:00:00",
-            "end_date": "01-02-2023 23:59:59"
-        }
-    }'
+curl -X POST "http://localhost:8082/get_complaints_sorted_by_fields" \
+-H "Content-Type: application/json" \
+-d '{
+    "keys": ["sentiment"],
+    "ascending_orders": [false],
+    "limit": 5,
+    "filter": {
+        "category": "Housing",
+        "start_date": "01-01-2023 00:00:00",
+        "end_date": "01-02-2023 23:59:59"
+    }
+}'
 ```
 
-
-**Sample Response:**
-```json
-{
-    "message": "Complaint(s) retrieved.",
-    "success": true,
-    "complaints": [
-        {
-            "date": "17-11-2009 00:00:00",
-            "source": "Reddit",
-            "category": "Financial",
-            "id": "de456",
-            "url": "https://example.com/",
-            "description": "This is a description for complaint #4",
-            "title": "The Harold Lloyd Method of Mass Transit Advertising",
-            "sentiment": 0.837126,
-            "_id": {
-                "$oid": "67aeded9b5bc2d9932255caa"
-            }
-        },
-        {
-            "_id": {
-                "$oid": "67aeded9b5bc2d9932255cab"
-            },
-            "sentiment": -0.175837,
-            "title": "Hello la, I'm in Singapore for the week and want to go dancing, was wondering Zirca or Zouk, and which days?",
-            "description": "This is a description for complaint #5",
-            "url": "https://example.com/",
-            "id": "ef567",
-            "category": "Housing",
-            "source": "Reddit",
-            "date": "12-01-2010 00:00:00"
-        },
-        {
-            "date": "22-10-2008 00:00:00",
-            "source": "Reddit",
-            "category": "Transportation",
-            "id": "bc234",
-            "url": "https://example.com/",
-            "description": "This is a description for complaint #2",
-            "title": "Good article on the Singapore economy: 'Review strategy, take crisis as opportunity '",
-            "sentiment": -0.287196,
-            "_id": {
-                "$oid": "67aeded9b5bc2d9932255ca8"
-            }
-        },
-        {
-            "date": "30-09-2008 00:00:00",
-            "source": "Reddit",
-            "category": "Politics",
-            "id": "ab123",
-            "url": "https://example.com/",
-            "description": "This is a description for complaint #1",
-            "title": "RIP JB Jeyaretnam. Possibly Singapore's greatest citizen.",
-            "sentiment": 0.477568,
-            "_id": {
-                "$oid": "67aeded9b5bc2d9932255ca7"
-            }
-        },
-        {
-            "_id": {
-                "$oid": "67aeded9b5bc2d9932255ca9"
-            },
-            "sentiment": -0.475928,
-            "title": "High-living Singaporean monk faces jail for fraud.",
-            "description": "This is a description for complaint #3",
-            "url": "https://example.com/",
-            "id": "cd345",
-            "category": "Infrastructure",
-            "source": "Reddit",
-            "date": "09-10-2009 00:00:00"
-        }
-    ]
-}
-```
 --
 
 ### **POST /get_category_analytics_by_name**
