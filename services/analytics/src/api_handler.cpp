@@ -54,15 +54,15 @@ auto ApiHandler::get_complaints_statistics(const crow::request& req, std::shared
     try {
         auto body = crow::json::load(req.body);
 
-        if (!validate_request(body, {"filter"})) {
-            return make_error_response(400, "Invalid request format");
+        crow::json::rvalue filter_json = create_empty_crow_json_rvalue();
+        if (body.has("filter")) {
+            filter_json = body["filter"];
         }
+        auto filter_bson = _create_filter_complaints(filter_json); 
 
-        auto filter_json = body["filter"];
-        auto filter_bson = _create_complaints_filter(filter_json); 
-
-        auto cursor = _get_complaints_statistics_cursor(db, filter_bson.view());
-        auto result = _read_complaints_statistics_cursor(cursor);
+        auto pipeline = _create_aggregate_pipeline_complaints_statistics(filter_bson.view());
+        auto cursor = db->aggregate(Constants::COLLECTION_COMPLAINTS, pipeline);
+        auto result = _read_cursor_complaints_statistics(cursor);
         
         crow::json::wvalue response_data;
         response_data["result"] = std::move(result);
@@ -73,7 +73,7 @@ auto ApiHandler::get_complaints_statistics(const crow::request& req, std::shared
     }
 }
 
-auto ApiHandler::_create_complaints_filter(const crow::json::rvalue& json) -> bsoncxx::document::value {
+auto ApiHandler::_create_filter_complaints(const crow::json::rvalue& json) -> bsoncxx::document::value {
     bsoncxx::builder::basic::document filter_builder{};
 
     if (json.has("keyword")) {
@@ -144,7 +144,7 @@ auto ApiHandler::_create_complaints_filter(const crow::json::rvalue& json) -> bs
     return filter_builder.extract();
 }
 
-auto ApiHandler::_get_complaints_statistics_cursor(std::shared_ptr<Database> db,  const bsoncxx::document::view& filter) -> mongocxx::cursor {
+auto ApiHandler::_create_aggregate_pipeline_complaints_statistics(const bsoncxx::document::view& filter) -> mongocxx::pipeline {
     mongocxx::pipeline pipeline{};
 
     pipeline.match(filter);
@@ -157,11 +157,10 @@ auto ApiHandler::_get_complaints_statistics_cursor(std::shared_ptr<Database> db,
         )
     );
 
-    auto cursor = db->aggregate(Constants::COLLECTION_COMPLAINTS, pipeline);
-    return cursor;
+    return pipeline;
 }
 
-auto ApiHandler::_read_complaints_statistics_cursor(mongocxx::cursor& cursor) -> crow::json::wvalue {
+auto ApiHandler::_read_cursor_complaints_statistics(mongocxx::cursor& cursor) -> crow::json::wvalue {
     crow::json::wvalue result;
     result["count"] = 0;
     result["avg_sentiment"] = 0;
@@ -174,6 +173,84 @@ auto ApiHandler::_read_complaints_statistics_cursor(mongocxx::cursor& cursor) ->
     return result;
 }
 
+auto ApiHandler::get_complaints_sorted_by_fields(const crow::request& req, std::shared_ptr<Database> db) -> crow::response  {
+    try {
+        auto body = crow::json::load(req.body);
+
+        if (!validate_request(body, {"keys", "ascending_orders", "limit"})) {
+            return make_error_response(400, "Invalid request format");
+        }
+        if (body["keys"].t() != crow::json::type::List) {
+            return make_error_response(400, "Invalid format: 'keys' must be an array");
+        }
+        if (body["ascending_orders"].t() != crow::json::type::List) {
+            return make_error_response(400, "Invalid format: 'ascending_orders' must be an array");
+        }
+        
+        std::vector<std::string> keys;
+        auto keys_json = body["keys"];
+        for (const auto& key: keys_json.lo()) {
+            keys.push_back(static_cast<std::string>(key.s())); 
+        }
+
+        std::vector<bool> ascending_orders;
+        auto ascending_orders_json = body["ascending_orders"];
+        for (const auto& ascending_order: ascending_orders_json.lo()) {
+            ascending_orders.push_back(ascending_order.b());
+        }
+
+        auto limit = body["limit"].i();
+
+        crow::json::rvalue filter_json = create_empty_crow_json_rvalue();
+        if (body.has("filter")) {
+            filter_json = body["filter"];
+        }
+        auto filter_bson = _create_filter_complaints(filter_json); 
+
+        bsoncxx::builder::basic::document sort_builder{};
+        auto find_option = _create_find_option_complaints_sorted_by_fields(sort_builder, keys, ascending_orders, limit);
+        auto cursor = db->find(Constants::COLLECTION_COMPLAINTS, filter_bson.view(), find_option);
+        auto documents = _read_cursor_complaints_sorted_by_fields(cursor);
+
+        crow::json::wvalue response_data;
+        response_data[Constants::COLLECTION_COMPLAINTS] = std::move(documents);
+        return make_success_response(200, response_data, "Complaint(s) retrieved.");
+    }
+    catch (const std::exception& e) {
+        return make_error_response(500, std::string("Server error: ") + e.what());
+    }
+}
+
+auto ApiHandler::_create_find_option_complaints_sorted_by_fields(bsoncxx::builder::basic::document& sort_builder, const std::vector<std::string>& keys, const std::vector<bool>& ascending_orders, const int& limit) -> mongocxx::options::find {
+    if (keys.size() != ascending_orders.size()) {
+        throw std::invalid_argument("keys and ascending_orders vectors must have the same size.");
+    }
+
+    mongocxx::options::find option;
+
+    for (int i = 0; i < keys.size(); ++i) {
+        std::string key = keys[i];
+        int direction = ascending_orders[i] ? 1 : -1;
+        sort_builder.append(kvp(key, direction));
+    }
+    option.sort(sort_builder.view());
+
+    option.limit(limit);
+
+    return option;
+}
+
+auto ApiHandler::_read_cursor_complaints_sorted_by_fields(mongocxx::cursor& cursor) -> crow::json::wvalue {
+    std::vector<crow::json::wvalue> documents;
+    for (auto&& document: cursor) {
+        auto document_json = bsoncxx::to_json(document);
+        crow::json::rvalue rval_json = crow::json::load(document_json);
+        crow::json::wvalue wval_json = crow::json::load(document_json);
+        wval_json["date"] = utc_unix_timestamp_to_string(rval_json["date"]["$date"].i() / 1000, Constants::DATETIME_FORMAT);
+        documents.push_back(std::move(wval_json));
+    }
+    return documents;
+}
 
 
 auto ApiHandler::get_complaints_grouped_by_field(const crow::request& req, std::shared_ptr<Database> db) -> crow::response {
@@ -501,77 +578,6 @@ auto ApiHandler::_get_complaints_grouped_by_sentiment_value_read_cursor(mongocxx
     }
 
     return result;
-}
-
-auto ApiHandler::get_complaints_sorted_by_fields(const crow::request& req, std::shared_ptr<Database> db) -> crow::response  {
-    try {
-        auto body = crow::json::load(req.body);
-
-        if (!validate_request(body, {"keys", "ascending_orders", "limit"})) {
-            return make_error_response(400, "Invalid request format");
-        }
-        if (body["keys"].t() != crow::json::type::List) {
-            return make_error_response(400, "Invalid format: 'keys' must be an array");
-        }
-        if (body["ascending_orders"].t() != crow::json::type::List) {
-            return make_error_response(400, "Invalid format: 'ascending_orders' must be an array");
-        }
-        
-        std::vector<std::string> keys;
-        auto keys_json = body["keys"];
-        for (const auto& key: keys_json.lo()) {
-            keys.push_back(static_cast<std::string>(key.s())); 
-        }
-        std::vector<bool> ascending_orders;
-        auto ascending_orders_json = body["ascending_orders"];
-        for (const auto& ascending_order: ascending_orders_json.lo()) {
-            ascending_orders.push_back(ascending_order.b());
-        }
-        auto limit = body["limit"].i();
-
-        auto cursor = _get_complaints_sorted_by_fields_get_cursor(db, keys, ascending_orders, limit);
-        auto documents = _get_complaints_sorted_by_fields_read_cursor(cursor);
-
-        crow::json::wvalue response_data;
-        response_data[Constants::COLLECTION_COMPLAINTS] = std::move(documents);
-        return make_success_response(200, response_data, "Complaint(s) retrieved.");
-    }
-    catch (const std::exception& e) {
-        return make_error_response(500, std::string("Server error: ") + e.what());
-    }
-}
-
-auto ApiHandler::_get_complaints_sorted_by_fields_get_cursor(std::shared_ptr<Database> db, const std::vector<std::string>& keys, const std::vector<bool>& ascending_orders, const int& limit) -> mongocxx::cursor {
-    if (keys.size() != ascending_orders.size()) {
-        throw std::invalid_argument("keys and ascending_orders vectors must have the same size.");
-    }
-
-    mongocxx::options::find option;
-
-    bsoncxx::builder::basic::document sort_builder{};
-    for (int i = 0; i < keys.size(); ++i) {
-        std::string key = keys[i];
-        int direction = ascending_orders[i] ? 1 : -1;
-        sort_builder.append(kvp(key, direction));
-    }
-    option.sort(sort_builder.view());
-
-    option.limit(limit);
-
-    auto cursor = db->find(Constants::COLLECTION_COMPLAINTS, {}, option);
-    return cursor;
-}
-
-auto ApiHandler::_get_complaints_sorted_by_fields_read_cursor(mongocxx::cursor& cursor) -> crow::json::wvalue {
-    std::vector<crow::json::wvalue> documents;
-    for (auto&& document: cursor) {
-        auto document_json = bsoncxx::to_json(document);
-        crow::json::rvalue rval_json = crow::json::load(document_json);
-        crow::json::wvalue wval_json = crow::json::load(document_json);
-        wval_json["date"] = utc_unix_timestamp_to_string(rval_json["date"]["$date"].i() / 1000, Constants::DATETIME_FORMAT);
-        documents.push_back(std::move(wval_json));
-    }
-    return documents;
 }
 
 auto ApiHandler::_get_group_by_field_all_distinct_values(std::shared_ptr<Database> db, const std::string& group_by_field) -> std::vector<std::string> {

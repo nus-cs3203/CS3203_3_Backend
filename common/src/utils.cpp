@@ -109,3 +109,7 @@ auto get_utc_timestamp_now() -> long long int {
 auto get_utc_timestamp_one_day_ago() -> long long int {
     return get_utc_timestamp_now() - 86400;
 }
+
+auto create_empty_crow_json_rvalue() -> crow::json::rvalue {
+    return crow::json::load("{}");
+}
