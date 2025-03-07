@@ -14,6 +14,7 @@ namespace Constants {
     const std::string COLLECTION_POSTS = "posts";
     const std::string COLLECTION_COMPLAINTS = "complaints";
     const std::string COLLECTION_CATEGORY_ANALYTICS = "category_analytics";
+    const std::string COLLECTION_USERS = "users";
 
     const std::string ENV_FILE_DEFAULT_PATH = "./.env";
 }
