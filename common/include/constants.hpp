@@ -16,6 +16,10 @@ namespace Constants {
     const std::string COLLECTION_CATEGORY_ANALYTICS = "category_analytics";
     const std::string COLLECTION_USERS = "users";
 
+    const std::string USERS_ROLE_CITIZEN = "CITIZEN";
+    const std::string USERS_ROLE_ADMIN = "ADMIN";
+    const std::string USERS_ROLE_SUPER_ADMIN = "SUPER_ADMIN";
+
     const std::string ENV_FILE_DEFAULT_PATH = "./.env";
 }
 
