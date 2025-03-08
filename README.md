@@ -1167,8 +1167,7 @@ curl -X POST "http://localhost:8083/posts/get_by_daterange" \
 
 ---
 
-```md
-# Service: **user**
+## Service: **user**
 
 This service provides user management endpoints, including account creation (`signup`), authentication (`login`), and profile retrieval.
 
@@ -1312,7 +1311,6 @@ curl -X POST "http://localhost:8085/get_profile_by_oid" \
             "$oid": "67cc161e272d605a7902a4e2"
         },
         "name": "test",
-        "password": "test",
         "role": "CITIZEN",
         "email": "test"
     }
