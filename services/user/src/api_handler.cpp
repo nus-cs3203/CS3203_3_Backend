@@ -114,8 +114,14 @@ auto ApiHandler::get_profile_by_oid(const crow::request& req, std::shared_ptr<Da
         auto document_json = bsoncxx::to_json(result.value());
         auto document_rvalue = crow::json::load(document_json);
 
+        crow::json::wvalue document_wvalue;
+        document_wvalue["_id"] = document_rvalue["_id"];
+        document_wvalue["name"] = document_rvalue["name"];
+        document_wvalue["email"] = document_rvalue["email"];
+        document_wvalue["role"] = document_rvalue["role"];
+
         crow::json::wvalue response_data;
-        response_data["profile"] = document_rvalue;
+        response_data["profile"] = std::move(document_wvalue);
         return make_success_response(200, response_data, "Account retrieved successfully");
     }
     catch (const std::exception& e) {
