@@ -25,8 +25,8 @@ std::string JwtManager::get_user_role_from_token(const std::string &token) {
             .with_issuer("auth0");
         verifier.verify(decoded);
 
-        auto roleClaim = decoded.get_payload_claim("role").as_string();
-        return roleClaim;
+        auto role = decoded.get_payload_claim("role").as_string();
+        return role;
     } catch (const std::exception &e) {
         throw std::runtime_error(std::string("Token verification failed: ") + e.what());
     }

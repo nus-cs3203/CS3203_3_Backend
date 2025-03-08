@@ -16,6 +16,8 @@ public:
 
     std::string get_user_role_from_token(const std::string &token);
 
+    // TODO: create a decorator function to add protection to API path e.g. func(handle_api, role_level)
+
 private:
     std::string jwt_secret;
 

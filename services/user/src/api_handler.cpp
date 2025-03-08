@@ -53,7 +53,7 @@ auto ApiHandler::signup(const crow::request& req, std::shared_ptr<Database> db) 
     }
 }
 
-auto ApiHandler::login(const crow::request& req, std::shared_ptr<Database> db) -> crow::response {
+auto ApiHandler::login(const crow::request& req, std::shared_ptr<Database> db, std::shared_ptr<JwtManager> jwt_manager) -> crow::response {
     try {
         auto body = crow::json::load(req.body);
 
@@ -74,12 +74,18 @@ auto ApiHandler::login(const crow::request& req, std::shared_ptr<Database> db) -
         if (!result.has_value()) {
             return make_error_response(401, "Account does not exist");
         }
-        
+
+        auto document_json = bsoncxx::to_json(result.value());
+        auto document_rvalue = crow::json::load(document_json);
+        auto role = static_cast<std::string>(document_rvalue["role"].s());
+
+        auto jwt = jwt_manager->generate_token(role);
+
         crow::json::wvalue response_data;
+        response_data["jwt"] = jwt;
         return make_success_response(200, response_data, "Login successful");
     }
     catch (const std::exception& e) {
         return make_error_response(500, std::string("Server error: ") + e.what());
     }
 }
-
