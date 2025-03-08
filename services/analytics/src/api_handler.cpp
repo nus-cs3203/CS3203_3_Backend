@@ -10,9 +10,10 @@
 
 #include <chrono>
 #include <iostream>
+#include <map>
+#include <set>
 #include <unordered_set>
 #include <vector>
-#include <set>
 
 using bsoncxx::builder::basic::kvp;
 using bsoncxx::builder::basic::make_document;
@@ -280,8 +281,7 @@ auto ApiHandler::get_complaints_statistics_over_time(const crow::request& req, s
         auto documents = _read_cursor_complaints_statistics_over_time(cursor);
 
         auto month_range = _create_month_range(start_month, start_year, end_month, end_year);
-        documents = _remove_irrelevant_month_year_complaints_statistics_over_time(documents, month_range);
-        documents = _fill_missing_month_year_complaints_statistics_over_time(documents, month_range);
+        documents = _format_documents_complaints_statistics_over_time(documents, month_range);
 
         crow::json::wvalue response_data;
         response_data["result"] = std::move(documents);
@@ -313,11 +313,7 @@ auto ApiHandler::_read_cursor_complaints_statistics_over_time(mongocxx::cursor& 
     std::vector<crow::json::wvalue> documents;
     for (auto&& document: cursor) {
         auto document_json = bsoncxx::to_json(document);
-        crow::json::rvalue rval_json = crow::json::load(document_json);
-        crow::json::wvalue wval_json;
-        wval_json["date"] = std::to_string(rval_json["_id"]["month"].i()) + "-" + std::to_string(rval_json["_id"]["year"].i());
-        wval_json["data"]["count"] = rval_json["count"].i();
-        wval_json["data"]["avg_sentiment"] = rval_json["avg_sentiment"].d();
+        crow::json::wvalue wval_json = crow::json::load(document_json);
         documents.push_back(std::move(wval_json));
     }
     return documents;
@@ -351,53 +347,44 @@ auto ApiHandler::_create_month_range(const int& start_month, const int& start_ye
     return result;
 }
 
-auto ApiHandler::_remove_irrelevant_month_year_complaints_statistics_over_time(std::vector<crow::json::wvalue>& documents, const std::vector<std::pair<int, int>>& month_range) -> std::vector<crow::json::wvalue> {
-    std::set<std::pair<int, int>> is_relevant;
-    for (auto &[month, year]: month_range) {
-        is_relevant.insert({month, year});
-    }
+auto ApiHandler::_format_documents_complaints_statistics_over_time(std::vector<crow::json::wvalue>& documents, const std::vector<std::pair<int, int>>& month_range) -> std::vector<crow::json::wvalue> {
+    struct Statistics {
+        int count;
+        double avg_sentiment;
+    };
+    
+    std::map<std::pair<int, int>, Statistics> mapper;
 
-    std::vector<crow::json::wvalue> filtered_documents;
     for (auto &doc_wval_json: documents) {
         crow::json::rvalue doc_rval_json = crow::json::load(doc_wval_json.dump());
-        auto date = static_cast<std::string>(doc_rval_json["date"].s());
-        int month = stoi(date.substr(0, 2));
-        int year = stoi(date.substr(3, 4));
-        
-        if (is_relevant.find({month, year}) != is_relevant.end()) {
-            filtered_documents.push_back(std::move(doc_wval_json));
-        }
+
+        int month = doc_rval_json["_id"]["month"].i();
+        int year = doc_rval_json["_id"]["year"].i();
+
+        int count = doc_rval_json["count"].i();
+        double avg_sentiment = doc_rval_json["avg_sentiment"].d();
+
+        mapper[{month, year}] = Statistics{count, avg_sentiment};
     }
 
-    return filtered_documents;
-}
-
-
-auto ApiHandler::_fill_missing_month_year_complaints_statistics_over_time(std::vector<crow::json::wvalue>& documents, const std::vector<std::pair<int, int>>& month_range) -> std::vector<crow::json::wvalue> {
-    std::set<std::pair<int, int>> exists;
-    for (auto &doc_wval_json: documents) {
-        crow::json::rvalue doc_rval_json = crow::json::load(doc_wval_json.dump());
-        auto date = static_cast<std::string>(doc_rval_json["date"].s());
-        int month = stoi(date.substr(0, 2));
-        int year = stoi(date.substr(3, 4));
-        exists.insert({month, year});
-    }
-
-    for (auto &[month, year]: month_range) {
-        if (exists.find({month, year}) != exists.end()) {
-            continue;
+    std::vector<crow::json::wvalue> result;
+    for (const auto &[month, year]: month_range) {
+        Statistics stat;
+        if (mapper.find({month, year}) != mapper.end()) {
+            stat.count = mapper[{month, year}].count;
+            stat.avg_sentiment = mapper[{month, year}].avg_sentiment;
         }
-        exists.insert({month, year});
 
         crow::json::wvalue wval_json;
-        wval_json["date"] = std::to_string(month) + "-" + std::to_string(year);
-        wval_json["data"]["count"] = 0;
-        wval_json["data"]["avg_sentiment"] = 0;
-        documents.push_back(std::move(wval_json));
+        wval_json["date"] = create_month_year_str(month, year);
+        wval_json["data"]["count"] = stat.count;
+        wval_json["data"]["avg_sentiment"] = stat.avg_sentiment;
+        result.push_back(std::move(wval_json));
     }
 
-    return documents;
+    return result;
 }
+
 
 auto ApiHandler::get_complaints_grouped_by_field(const crow::request& req, std::shared_ptr<Database> db) -> crow::response {
     try {

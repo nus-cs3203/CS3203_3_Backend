@@ -38,4 +38,6 @@ auto extract_month_from_timestamp_str(std::string timestamp) -> int;
 
 auto extract_year_from_timestamp_str(std::string timestamp) -> int;
 
+auto create_month_year_str(const int& month, const int& year) -> std::string;
+
 #endif
