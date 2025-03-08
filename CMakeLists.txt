@@ -36,6 +36,13 @@ FetchContent_Declare(
 )
 FetchContent_MakeAvailable(cpr)
 
+FetchContent_Declare(
+    jwt-cpp
+    GIT_REPOSITORY https://github.com/Thalhammer/jwt-cpp.git
+    GIT_TAG v0.7.0
+)
+FetchContent_MakeAvailable(jwt-cpp)
+
 add_subdirectory(services/analytics)
 add_subdirectory(services/management)
 add_subdirectory(services/updater)
