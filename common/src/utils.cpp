@@ -123,3 +123,14 @@ auto extract_year_from_timestamp_str(std::string timestamp) -> int {
     // dd-mm-YYYY HH:MM:SS
     return stoi(timestamp.substr(6, 4));
 }
+
+auto create_month_year_str(const int& month, const int& year) -> std::string {
+    std::string month_str;
+    if (month < 10) {
+        month_str = "0" + std::to_string(month);
+    } else {
+        month_str = std::to_string(month);
+    }
+    std::string year_str = std::to_string(year);
+    return month_str + "-" + year_str;
+} 

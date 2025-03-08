@@ -38,8 +38,7 @@ private:
     auto _read_cursor_complaints_statistics_over_time(mongocxx::cursor& cursor) -> std::vector<crow::json::wvalue>;
 
     auto _create_month_range(const int& start_month, const int& start_year, const int& end_month, const int& end_year) -> std::vector<std::pair<int, int>>;
-    auto _remove_irrelevant_month_year_complaints_statistics_over_time(std::vector<crow::json::wvalue>& documents, const std::vector<std::pair<int, int>>& month_range) -> std::vector<crow::json::wvalue>;
-    auto _fill_missing_month_year_complaints_statistics_over_time(std::vector<crow::json::wvalue>& documents, const std::vector<std::pair<int, int>>& month_range) -> std::vector<crow::json::wvalue>;
+    auto _format_documents_complaints_statistics_over_time(std::vector<crow::json::wvalue>& documents, const std::vector<std::pair<int, int>>& month_range) -> std::vector<crow::json::wvalue>;
 
     auto _create_find_option_complaints_sorted_by_fields(bsoncxx::builder::basic::document& sort_builder, const std::vector<std::string>& keys, const std::vector<bool>& ascending_orders, const int& limit) -> mongocxx::options::find;
     auto _read_cursor_complaints_sorted_by_fields(mongocxx::cursor& cursor) -> std::vector<crow::json::wvalue>;
