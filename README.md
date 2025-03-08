@@ -1287,7 +1287,6 @@ curl -X POST "http://localhost:8085/login" \
             "$oid": "string"
         },
         "name": "string",
-        "password": "string",
         "role": "string",
         "email": "string"
     }
