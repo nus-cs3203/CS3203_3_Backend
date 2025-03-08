@@ -1166,3 +1166,155 @@ curl -X POST "http://localhost:8083/posts/get_by_daterange" \
 ```
 
 ---
+
+```md
+# Service: **user**
+
+This service provides user management endpoints, including account creation (`signup`), authentication (`login`), and profile retrieval.
+
+---
+
+### **POST /signup**
+
+- **Purpose**: Create a new user account.
+
+**Request:**
+```json
+{
+    "name": "string",
+    "email": "string",
+    "password": "string"
+}
+```
+
+**Response (Success):**
+```json
+{
+    "message": "Account created successfully.",
+    "success": true
+}
+```
+
+**Response (Failure, HTTP Code 401)**:
+```json
+{
+    "message": "Email already in use.",
+    "success": false
+}
+```
+
+**Sample Request:**
+```sh
+curl -X POST "http://localhost:8085/signup" \
+     -H "Content-Type: application/json" \
+     -d '{
+         "name": "test",
+         "email": "test",
+         "password": "test"
+     }'
+```
+
+**Sample Response (Success):**
+```json
+{
+    "message": "Account created successfully.",
+    "success": true
+}
+```
+
+---
+
+### **POST /login**
+
+- **Purpose**: Authenticate an existing user with `email` and `password`.
+
+**Request:**
+```json
+{
+    "email": "string",
+    "password": "string"
+}
+```
+
+**Response:**
+```json
+{
+    "message": "Login successful",
+    "success": true,
+    "jwt": "string"
+}
+```
+
+**Sample Request:**
+```sh
+curl -X POST "http://localhost:8085/login" \
+     -H "Content-Type: application/json" \
+     -d '{
+         "email": "test",
+         "password": "test"
+     }'
+```
+
+**Sample Response:**
+```json
+{
+    "message": "Login successful",
+    "success": true,
+    "jwt": "eyJhbGciOiJIUzI1Ni..."
+}
+```
+
+---
+
+### **POST /get_profile_by_oid**
+
+- **Purpose**: Retrieve a user's profile by their unique ID (`oid`).
+
+**Request:**
+```json
+{
+    "oid": "string"
+}
+```
+
+**Response:**
+```json
+{
+    "success": true,
+    "message": "Account retrieved successfully",
+    "profile": {
+        "_id": {
+            "$oid": "string"
+        },
+        "name": "string",
+        "role": "string",
+        "email": "string"
+    }
+}
+```
+
+**Sample Request:**
+```sh
+curl -X POST "http://localhost:8085/get_profile_by_oid" \
+     -H "Content-Type: application/json" \
+     -d '{
+         "oid": "67cc161e272d605a7902a4e2"
+     }'
+```
+
+**Sample Response:**
+```json
+{
+    "success": true,
+    "message": "Account retrieved successfully",
+    "profile": {
+        "_id": {
+            "$oid": "67cc161e272d605a7902a4e2"
+        },
+        "name": "test",
+        "password": "test",
+        "role": "CITIZEN",
+        "email": "test"
+    }
+}
+```

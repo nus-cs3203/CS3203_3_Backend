@@ -1,6 +1,7 @@
 #include "api_handler.hpp"
 #include "constants.hpp"
 #include "cors.hpp"
+#include "jwt_manager.hpp"
 #include "database.hpp"
 
 #include <bsoncxx/builder/basic/document.hpp>
@@ -16,6 +17,7 @@
 
 int main() {
     auto db = std::make_shared<Database>(Database::create_from_env());
+    auto jwt_manager = std::make_shared<JwtManager>(JwtManager());
     
     crow::App<CORS> app; 
 
@@ -29,8 +31,13 @@ int main() {
     });
 
     CROW_ROUTE(app, "/login").methods(crow::HTTPMethod::Post)
-    ([db, &api_handler](const crow::request& req) {
-        return api_handler.login(req, db);
+    ([db, &api_handler, &jwt_manager](const crow::request& req) {
+        return api_handler.login(req, db, jwt_manager);
+    });
+
+    CROW_ROUTE(app, "/get_profile_by_oid").methods(crow::HTTPMethod::Post)
+    ([db, &api_handler, &jwt_manager](const crow::request& req) {
+        return api_handler.get_profile_by_oid(req, db);
     });
 
     app.port(8085).run();

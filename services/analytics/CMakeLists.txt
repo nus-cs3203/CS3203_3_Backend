@@ -24,6 +24,7 @@ target_link_libraries(${ANALYTICS_EXECUTABLE_NAME}
                       mongo::mongocxx_shared
                       mongo::bsoncxx_shared
                       cpr::cpr
+                      jwt-cpp
 )
 
 if(APPLE)
