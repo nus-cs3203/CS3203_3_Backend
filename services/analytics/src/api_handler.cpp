@@ -9,7 +9,6 @@
 #include <mongocxx/uri.hpp>
 
 #include <chrono>
-#include <format>
 #include <iostream>
 #include <map>
 #include <set>
