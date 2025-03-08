@@ -39,3 +39,15 @@ services:
       - "8084:8084"
     env_file:
       - .docker.env
+
+  user:
+    build:
+      context: .
+      dockerfile: ./services/user/Dockerfile
+    depends_on:
+      - mongo
+    ports:
+      - "8085:8085"
+    env_file:
+      - .docker.env
+
