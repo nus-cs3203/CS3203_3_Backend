@@ -20,16 +20,19 @@ auto ApiHandler::signup(const crow::request& req, std::shared_ptr<Database> db) 
     try {
         auto body = crow::json::load(req.body);
 
-        if (!validate_request(body, {"email", "password"})) {
+        if (!validate_request(body, {"name", "email", "password"})) {
             return make_error_response(400, "Invalid request format");
         }
 
+        auto name = body["name"].s();
         auto email = body["email"].s();
         auto password = body["password"].s();
 
         auto document = make_document(
+            kvp("name", name),
             kvp("email", email),
-            kvp("password", password)
+            kvp("password", password),
+            kvp("role", Constants::USERS_ROLE_CITIZEN)
         );
 
         try {
