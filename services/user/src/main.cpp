@@ -34,7 +34,12 @@ int main() {
     ([db, &api_handler, &jwt_manager](const crow::request& req) {
         return api_handler.login(req, db, jwt_manager);
     });
-    
+
+    CROW_ROUTE(app, "/get_profile_by_oid").methods(crow::HTTPMethod::Post)
+    ([db, &api_handler, &jwt_manager](const crow::request& req) {
+        return api_handler.get_profile_by_oid(req, db);
+    });
+
     app.port(8085).run();
     return 0;
 }
