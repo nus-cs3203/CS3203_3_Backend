@@ -1194,7 +1194,7 @@ This service provides user management endpoints, including account creation (`si
 }
 ```
 
-**Response (Failure, HTTP Code 401)**:
+**Response (Failure, HTTP Code 409)**:
 ```json
 {
     "message": "Email already in use.",
@@ -1240,7 +1240,8 @@ curl -X POST "http://localhost:8085/signup" \
 {
     "message": "Login successful",
     "success": true,
-    "jwt": "string"
+    "jwt": "string",
+    "oid": "string"
 }
 ```
 
@@ -1259,7 +1260,8 @@ curl -X POST "http://localhost:8085/login" \
 {
     "message": "Login successful",
     "success": true,
-    "jwt": "eyJhbGciOiJIUzI1Ni..."
+    "jwt": "eyJhbGciOiJIUzI1Ni...",
+    "oid": "67cc41c912d9edad01064ac4"
 }
 ```
 

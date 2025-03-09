@@ -77,11 +77,15 @@ auto ApiHandler::login(const crow::request& req, std::shared_ptr<Database> db, s
 
         auto document_json = bsoncxx::to_json(result.value());
         auto document_rvalue = crow::json::load(document_json);
+        
+        auto oid = document_rvalue["_id"]["$oid"].s();
+
         auto role = static_cast<std::string>(document_rvalue["role"].s());
 
         auto jwt = jwt_manager->generate_token(role);
 
         crow::json::wvalue response_data;
+        response_data["oid"] = oid;
         response_data["jwt"] = jwt;
         return make_success_response(200, response_data, "Login successful");
     }
