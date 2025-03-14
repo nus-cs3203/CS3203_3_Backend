@@ -25,7 +25,7 @@ auto ManagementApiStrategy::process_request_func_get_one_by_oid(const crow::requ
     return std::make_tuple(filter, option);
 }
 
-auto ManagementApiStrategy::process_response_func_get_one_by_oid(const bsoncxx::document::value& doc) -> crow::json::wvalue {
+auto ManagementApiStrategy::process_response_func_get_one(const bsoncxx::document::value& doc) -> crow::json::wvalue {
     crow::json::wvalue response_data;
     auto doc_json = bsoncxx::to_json(doc);
     auto doc_rval = crow::json::load(doc_json);
@@ -34,3 +34,24 @@ auto ManagementApiStrategy::process_response_func_get_one_by_oid(const bsoncxx::
     return response_data;
 }
 
+auto ManagementApiStrategy::process_request_func_get_all(const crow::request& req) -> std::tuple<bsoncxx::document::value, mongocxx::options::find> {    
+    auto filter = make_document();
+    mongocxx::options::find option;
+
+    return std::make_tuple(filter, option);
+}
+
+auto ManagementApiStrategy::process_response_func_get(mongocxx::cursor& cursor) -> crow::json::wvalue {
+    crow::json::wvalue response_data;
+
+    std::vector<crow::json::wvalue> documents;
+    for (auto&& doc: cursor) {
+        auto doc_json = bsoncxx::to_json(doc);
+        auto doc_rval = crow::json::load(doc_json);
+        auto pased_doc_wval = BaseApiStrategyUtils::parse_database_json_to_response_json(doc_rval);
+        documents.push_back(std::move(pased_doc_wval));
+    }
+
+    response_data["documents"] = std::move(documents);
+    return response_data;
+}

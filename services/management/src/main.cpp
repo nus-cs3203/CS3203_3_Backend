@@ -30,10 +30,10 @@ int main() {
 
     const auto COLLECTION_CATEGORIES = Constants::COLLECTION_CATEGORIES;
 
-    // CROW_ROUTE(app, "/categories/get_all").methods(crow::HTTPMethod::Post)
-    // ([db, &api_handler, COLLECTION_CATEGORIES](const crow::request& req) {
-    //     return api_handler.get_all(req, db, COLLECTION_CATEGORIES);
-    // });
+    CROW_ROUTE(app, "/categories/get_all").methods(crow::HTTPMethod::Post)
+    ([db_manager, &management_api_handler, COLLECTION_CATEGORIES](const crow::request& req) {
+        return management_api_handler.get_all(req, db_manager, COLLECTION_CATEGORIES);
+    });
 
     CROW_ROUTE(app, "/categories/get_by_oid").methods(crow::HTTPMethod::Post)
     ([db_manager, &management_api_handler, COLLECTION_CATEGORIES](const crow::request& req) {
@@ -62,12 +62,12 @@ int main() {
     //     return api_handler.get_by_daterange(req, db, COLLECTION_POSTS);
     // });
 
-    // const auto COLLECTION_COMPLAINTS = Constants::COLLECTION_COMPLAINTS;
+    const auto COLLECTION_COMPLAINTS = Constants::COLLECTION_COMPLAINTS;
 
-    // CROW_ROUTE(app, "/complaints/get_by_oid").methods(crow::HTTPMethod::Post)
-    // ([db, &api_handler, COLLECTION_COMPLAINTS](const crow::request& req) {
-    //     return api_handler.get_by_oid(req, db, COLLECTION_COMPLAINTS, true);
-    // });
+    CROW_ROUTE(app, "/complaints/get_by_oid").methods(crow::HTTPMethod::Post)
+    ([db_manager, &management_api_handler, COLLECTION_COMPLAINTS](const crow::request& req) {
+        return management_api_handler.get_one_by_oid(req, db_manager, COLLECTION_COMPLAINTS);
+    });
 
     // CROW_ROUTE(app, "/complaints/get_by_daterange").methods(crow::HTTPMethod::Post)
     // ([db, &api_handler, COLLECTION_COMPLAINTS](const crow::request& req) {

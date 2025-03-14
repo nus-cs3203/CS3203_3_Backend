@@ -44,7 +44,7 @@ auto BaseApiHandler::find(
     std::shared_ptr<DatabaseManager> db_manager, 
     const std::string& collection_name, 
     std::function<std::tuple<bsoncxx::document::value, mongocxx::options::find>(const crow::request&)> process_request_func,
-    std::function<crow::json::wvalue(const mongocxx::cursor&)> process_response_func
+    std::function<crow::json::wvalue(mongocxx::cursor&)> process_response_func
 ) -> crow::response {
     try {
 
@@ -56,7 +56,7 @@ auto BaseApiHandler::find(
 
         auto response_data = process_response_func(cursor);
         
-        return BaseApiStrategyUtils::make_success_response(200, response_data, "Retrieved document successfully");
+        return BaseApiStrategyUtils::make_success_response(200, response_data, "Retrieved documents successfully");
     }
     catch (const std::exception& e) {
         return BaseApiStrategyUtils::make_error_response(500, std::string("Server error: ") + e.what());
