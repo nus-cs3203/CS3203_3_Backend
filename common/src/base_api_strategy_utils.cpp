@@ -49,23 +49,44 @@ auto BaseApiStrategyUtils::parse_database_json_to_response_json(const crow::json
 auto BaseApiStrategyUtils::parse_request_json_to_database_bson(const crow::json::rvalue& rval_json) -> bsoncxx::document::value {
     bsoncxx::builder::basic::document doc_builder;
     for (const auto& field: rval_json) {
-        auto doc_key = static_cast<std::string>(field.key());
-        const auto& value = field; 
-        
-        if (doc_key == "date" or doc_key == "from_date" or doc_key == "start_date") {
-            auto unix_ts_val = string_to_utc_unix_timestamp(static_cast<std::string>(value.s()), Constants::DATETIME_FORMAT) * 1000;
-            bsoncxx::types::b_date b_date_val{std::chrono::milliseconds(unix_ts_val)};
-            auto doc_val = b_date_val;
-            doc_builder.append(kvp(doc_key, doc_val));
-        } else if (value.t() == crow::json::type::Object) {
-            auto doc_val = std::move(parse_request_json_to_database_bson(value));
-            doc_builder.append(kvp(doc_key, doc_val));
+        auto key = static_cast<std::string>(field.key());
+        auto value = field;
+
+        if (value.t() == crow::json::type::Object) {
+            auto doc_value = std::move(parse_request_json_to_database_bson(value));
+            doc_builder.append(kvp(key, doc_value));
+        } else if (value.t() == crow::json::type::String) {
+            if (DATE_FIELDS.find(key) != DATE_FIELDS.end()) {
+                auto unix_ts_val = string_to_utc_unix_timestamp(static_cast<std::string>(value.s()), Constants::DATETIME_FORMAT) * 1000;
+                bsoncxx::types::b_date doc_val{std::chrono::milliseconds(unix_ts_val)};
+                doc_builder.append(kvp(key, doc_val));
+            } else {
+                auto doc_val = value.s();
+                doc_builder.append(kvp(key, doc_val));
+            }
+        } else if (value.t() == crow::json::type::Number) {
+            if (value.nt() == crow::json::num_type::Signed_integer or value.nt() == crow::json::num_type::Unsigned_integer) {
+                auto doc_value = value.i();
+                doc_builder.append(kvp(key, doc_value));
+            } else if (value.nt() == crow::json::num_type::Floating_point or value.nt() == crow::json::num_type::Double_precision_floating_point) {
+                auto doc_value = value.d();
+                doc_builder.append(kvp(key, doc_value));
+            } else {
+                throw std::runtime_error("Number is not signed integer, unsigned integer, floating or double! It may be null!");
+            }
+        } else if (value.t() == crow::json::type::True or value.t() == crow::json::type::False) {
+            auto doc_value = value.b();
+            doc_builder.append(kvp(key, doc_value));
+        } else if (value.t() == crow::json::type::List) {
+            bsoncxx::builder::basic::array arr_builder;
+            for (const auto& sub_rval_json: value.lo()) {
+                auto doc_val = std::move(parse_request_json_to_database_bson(sub_rval_json));
+                arr_builder.append(doc_val);
+            }
+            bsoncxx::array::value arr_val = arr_builder.extract();
+            doc_builder.append(kvp(key, bsoncxx::types::b_array{arr_val.view()}));
         } else {
-            std::ostringstream oss;
-            oss << value;
-            std::string json_str = oss.str();
-            auto doc_val =  bsoncxx::from_json(json_str);
-            doc_builder.append(kvp(doc_key, doc_val));
+            throw std::runtime_error("Unrecognized crow::json::rvalue type!");
         }
     }
     return doc_builder.extract();

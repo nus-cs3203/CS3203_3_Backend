@@ -17,6 +17,9 @@ namespace ManagementApiStrategy {
 
     auto process_request_func_get_all(const crow::request& req) -> std::tuple<bsoncxx::document::value, mongocxx::options::find>; 
     auto process_response_func_get(mongocxx::cursor& cursor) -> crow::json::wvalue;
+
+    auto process_request_func_get_by_daterange(const crow::request& req) -> std::tuple<bsoncxx::document::value, mongocxx::options::find>; 
+
 }
 
 #endif

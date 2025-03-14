@@ -22,3 +22,11 @@ auto ManagementApiHandler::get_all(
 ) -> crow::response {
     return ManagementApiHandler::find(req, db_manager, collection_name, ManagementApiStrategy::process_request_func_get_all, ManagementApiStrategy::process_response_func_get);
 }
+
+auto ManagementApiHandler::get_by_daterange(
+    const crow::request& req, 
+    std::shared_ptr<DatabaseManager> db_manager, 
+    const std::string& collection_name
+) -> crow::response {
+    return ManagementApiHandler::find(req, db_manager, collection_name, ManagementApiStrategy::process_request_func_get_by_daterange, ManagementApiStrategy::process_response_func_get);
+}

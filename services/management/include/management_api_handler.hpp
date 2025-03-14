@@ -22,6 +22,12 @@ public:
         std::shared_ptr<DatabaseManager> db_manager, 
         const std::string& collection_name
     ) -> crow::response;
+
+    auto get_by_daterange(
+        const crow::request& req, 
+        std::shared_ptr<DatabaseManager> db_manager, 
+        const std::string& collection_name
+    ) -> crow::response;
 private:
 };
 

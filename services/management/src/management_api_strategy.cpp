@@ -1,5 +1,6 @@
 #include "base_api_strategy_utils.hpp"
 #include "management_api_strategy.hpp"
+#include "utils.hpp"
 
 #include <bsoncxx/json.hpp>
 #include "crow.h"
@@ -54,4 +55,23 @@ auto ManagementApiStrategy::process_response_func_get(mongocxx::cursor& cursor) 
 
     response_data["documents"] = std::move(documents);
     return response_data;
+}
+
+auto ManagementApiStrategy::process_request_func_get_by_daterange(const crow::request& req) -> std::tuple<bsoncxx::document::value, mongocxx::options::find> {
+    BaseApiStrategyUtils::validate_fields(req, {"start_date", "end_date"});
+
+    auto body = crow::json::load(req.body);
+    auto start_date = json_date_to_bson_date(body["start_date"]);
+    auto end_date = json_date_to_bson_date(body["end_date"]);
+
+    bsoncxx::document::value filter = make_document(
+        kvp("date", make_document(
+            kvp("$gte", start_date),
+            kvp("$lte", end_date)
+        ))
+    );
+
+    mongocxx::options::find option;
+
+    return std::make_tuple(filter, option);
 }

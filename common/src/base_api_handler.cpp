@@ -19,7 +19,6 @@ auto BaseApiHandler::find_one(
         std::function<crow::json::wvalue(const bsoncxx::document::value&)> process_response_func
     ) -> crow::response {
     try {
-
         auto filter_and_option = process_request_func(req);
         auto filter = std::get<0>(filter_and_option);
         auto option = std::get<1>(filter_and_option);
@@ -47,7 +46,6 @@ auto BaseApiHandler::find(
     std::function<crow::json::wvalue(mongocxx::cursor&)> process_response_func
 ) -> crow::response {
     try {
-
         auto filter_and_option = process_request_func(req);
         auto filter = std::get<0>(filter_and_option);
         auto option = std::get<1>(filter_and_option);
@@ -57,6 +55,33 @@ auto BaseApiHandler::find(
         auto response_data = process_response_func(cursor);
         
         return BaseApiStrategyUtils::make_success_response(200, response_data, "Retrieved documents successfully");
+    }
+    catch (const std::exception& e) {
+        return BaseApiStrategyUtils::make_error_response(500, std::string("Server error: ") + e.what());
+    }
+}
+
+auto BaseApiHandler::insert_one(
+    const crow::request& req, 
+    std::shared_ptr<DatabaseManager> db_manager, 
+    const std::string& collection_name, 
+    std::function<std::tuple<bsoncxx::document::value, mongocxx::options::insert>(const crow::request&)> process_request_func,
+    std::function<crow::json::wvalue(const mongocxx::result::insert_one&)> process_response_func
+) -> crow::response {
+    try {
+        auto document_and_option = process_request_func(req);
+        auto document = std::get<0>(document_and_option);
+        auto option = std::get<1>(document_and_option);
+
+        auto result = db_manager->insert_one(collection_name, document, option);
+
+        if (!result.has_value()) {
+            throw std::runtime_error("Insertion failed!");
+        }
+
+        auto response_data = process_response_func(result.value());
+        
+        return BaseApiStrategyUtils::make_success_response(200, response_data, "Retrieved document successfully");
     }
     catch (const std::exception& e) {
         return BaseApiStrategyUtils::make_error_response(500, std::string("Server error: ") + e.what());

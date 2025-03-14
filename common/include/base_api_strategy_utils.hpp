@@ -5,6 +5,7 @@
 #include "crow.h"
 
 #include <string>
+#include <unordered_set>
 
 namespace BaseApiStrategyUtils {
     void validate_fields(const crow::request& req, std::initializer_list<std::string> required_fields);
@@ -12,6 +13,8 @@ namespace BaseApiStrategyUtils {
     auto parse_request_json_to_database_bson(const crow::json::rvalue& rval_json) -> bsoncxx::document::value;
     auto make_error_response(int status_code, const std::string& message) -> crow::response;
     auto make_success_response(int status_code, crow::json::wvalue data, const std::string& message) -> crow::response;
+
+    const std::unordered_set<std::string> DATE_FIELDS = {"date", "from_date", "to_date", "start_date", "end_date"};
 }
 
 #endif
