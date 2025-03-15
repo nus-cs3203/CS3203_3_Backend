@@ -92,6 +92,19 @@ auto BaseApiStrategyUtils::parse_request_json_to_database_bson(const crow::json:
     return doc_builder.extract();
 }
 
+auto BaseApiStrategyUtils::parse_oid_str_to_oid_bson(const std::string& oid_str) -> bsoncxx::document::value {
+    bsoncxx::oid oid{oid_str};
+    return make_document(
+        kvp("_id", oid)
+    );
+}
+
+auto BaseApiStrategyUtils::parse_date_str_to_date_bson(const std::string& date_str) -> bsoncxx::types::b_date {
+    auto date_ts = string_to_utc_unix_timestamp(date_str, Constants::DATETIME_FORMAT) * 1000;
+    bsoncxx::types::b_date date_bson{std::chrono::milliseconds(date_ts)};
+    return date_bson;
+}
+
 auto BaseApiStrategyUtils::make_error_response(int status_code, const std::string& message) -> crow::response {
     crow::json::wvalue res;
     res["success"] = false;

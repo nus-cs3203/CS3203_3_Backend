@@ -14,7 +14,8 @@ using bsoncxx::builder::basic::make_document;
 auto ManagementApiStrategy::process_request_func_get_one_by_oid(const crow::request& req) -> std::tuple<bsoncxx::document::value, mongocxx::options::find> {
     BaseApiStrategyUtils::validate_fields(req, {"oid"});
 
-    auto filter = _parse_oid(req, "oid");
+    auto body = crow::json::load(req.body);
+    auto filter = BaseApiStrategyUtils::parse_oid_str_to_oid_bson(body["oid"].s());
 
     mongocxx::options::find option;
 
@@ -56,8 +57,8 @@ auto ManagementApiStrategy::process_request_func_get_by_daterange(const crow::re
     BaseApiStrategyUtils::validate_fields(req, {"start_date", "end_date"});
 
     auto body = crow::json::load(req.body);
-    auto start_date = json_date_to_bson_date(body["start_date"]);
-    auto end_date = json_date_to_bson_date(body["end_date"]);
+    auto start_date = BaseApiStrategyUtils::parse_date_str_to_date_bson(body["start_date"].s());
+    auto end_date = BaseApiStrategyUtils::parse_date_str_to_date_bson(body["end_date"].s());
 
     bsoncxx::document::value filter = make_document(
         kvp("date", make_document(
@@ -75,18 +76,10 @@ auto ManagementApiStrategy::process_request_func_get_by_daterange(const crow::re
 auto ManagementApiStrategy::process_request_func_delete_one_by_oid(const crow::request& req) -> std::tuple<bsoncxx::document::value, mongocxx::options::delete_options> {
     BaseApiStrategyUtils::validate_fields(req, {"oid"});
 
-    auto filter = _parse_oid(req, "oid");
+    auto body = crow::json::load(req.body);
+    auto filter = BaseApiStrategyUtils::parse_oid_str_to_oid_bson(body["oid"].s());
 
     mongocxx::options::delete_options option;
 
     return std::make_tuple(filter, option);
-}
-
-auto ManagementApiStrategy::_parse_oid(const crow::request& req, const std::string& key) -> bsoncxx::document::value {
-    auto body = crow::json::load(req.body);
-    std::string oid_str = body[key].s();
-    bsoncxx::oid oid{oid_str};
-    return make_document(
-        kvp("_id", oid)
-    );
 }

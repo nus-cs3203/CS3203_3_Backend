@@ -13,7 +13,8 @@ namespace BaseApiStrategyUtils {
     auto parse_request_json_to_database_bson(const crow::json::rvalue& rval_json) -> bsoncxx::document::value;
     auto make_error_response(int status_code, const std::string& message) -> crow::response;
     auto make_success_response(int status_code, crow::json::wvalue data, const std::string& message) -> crow::response;
-
+    auto parse_oid_str_to_oid_bson(const std::string& oid_str) -> bsoncxx::document::value;
+    auto parse_date_str_to_date_bson(const std::string& date_str) -> bsoncxx::types::b_date;
     const std::unordered_set<std::string> DATE_FIELDS = {"date", "from_date", "to_date", "start_date", "end_date"};
 }
 
