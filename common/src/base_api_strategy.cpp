@@ -37,3 +37,14 @@ auto BaseApiStrategy::process_response_func_delete_one(const mongocxx::result::d
 auto BaseApiStrategy::process_response_func_delete_many(const mongocxx::result::delete_result& result) -> crow::json::wvalue {
     return process_response_func_delete_one(result);
 }
+
+auto BaseApiStrategy::process_response_func_update_one(const mongocxx::result::update& result) -> crow::json::wvalue {
+    crow::json::wvalue response_data;
+    auto matched_count = result.matched_count();
+    auto modified_count = result.modified_count();
+    auto upserted_count = result.upserted_count();
+    response_data["matched_count"] = matched_count;
+    response_data["modified_count"] = modified_count;
+    response_data["upserted_count"] = upserted_count;
+    return response_data;
+}

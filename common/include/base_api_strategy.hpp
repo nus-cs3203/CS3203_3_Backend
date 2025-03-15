@@ -17,6 +17,8 @@ namespace BaseApiStrategy {
 
     auto process_response_func_delete_one(const mongocxx::result::delete_result& result) -> crow::json::wvalue;
     auto process_response_func_delete_many(const mongocxx::result::delete_result& result) -> crow::json::wvalue;
+
+    auto process_response_func_update_one(const mongocxx::result::update& result) -> crow::json::wvalue;
 }
 
 #endif

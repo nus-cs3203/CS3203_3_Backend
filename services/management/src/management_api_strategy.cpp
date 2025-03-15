@@ -112,3 +112,16 @@ auto ManagementApiStrategy::process_request_func_delete_many_by_oids(const crow:
 
     return std::make_tuple(filter, option);
 }
+
+auto ManagementApiStrategy::process_request_func_update_one_by_oid(const crow::request& req) -> std::tuple<bsoncxx::document::value, bsoncxx::document::value, mongocxx::options::update> {
+    BaseApiStrategyUtils::validate_fields(req, {"oid", "update_document"});
+
+    auto body = crow::json::load(req.body);
+    auto filter = BaseApiStrategyUtils::parse_oid_str_to_oid_bson(body["oid"].s());
+
+    auto update_doc = BaseApiStrategyUtils::parse_request_json_to_database_bson(body["update_document"]);
+
+    mongocxx::options::update option;
+
+    return std::make_tuple(filter, update_doc, option);
+}

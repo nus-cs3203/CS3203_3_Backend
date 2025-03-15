@@ -41,6 +41,12 @@ public:
         const std::string& collection_name
     ) -> crow::response;
 
+    auto update_one_by_oid(
+        const crow::request& req, 
+        std::shared_ptr<DatabaseManager> db_manager, 
+        const std::string& collection_name
+    ) -> crow::response;
+
 private:
 };
 

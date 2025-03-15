@@ -133,3 +133,27 @@ auto BaseApiHandler::delete_many(
         return BaseApiStrategyUtils::make_error_response(500, std::string("Server error: ") + e.what());
     }
 }
+
+auto BaseApiHandler::update_one(
+    const crow::request& req, 
+    std::shared_ptr<DatabaseManager> db_manager, 
+    const std::string& collection_name, 
+    std::function<std::tuple<bsoncxx::document::value, bsoncxx::document::value, mongocxx::options::update>(const crow::request&)> process_request_func,
+    std::function<crow::json::wvalue(const mongocxx::result::update&)> process_response_func
+) -> crow::response {
+    try {
+        auto filter_and_update_doc_and_option = process_request_func(req);
+        auto filter = std::get<0>(filter_and_update_doc_and_option);
+        auto update_doc = std::get<1>(filter_and_update_doc_and_option);
+        auto option = std::get<2>(filter_and_update_doc_and_option);
+
+        auto result = db_manager->update_one(collection_name, filter, update_doc, option);
+
+        auto response_data = process_response_func(result.value());
+        
+        return BaseApiStrategyUtils::make_success_response(200, response_data, "Server processed update request successfully.");
+    }
+    catch (const std::exception& e) {
+        return BaseApiStrategyUtils::make_error_response(500, std::string("Server error: ") + e.what());
+    }
+}

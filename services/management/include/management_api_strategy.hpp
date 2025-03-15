@@ -23,6 +23,8 @@ namespace ManagementApiStrategy {
     auto process_request_func_delete_one_by_oid(const crow::request& req) -> std::tuple<bsoncxx::document::value, mongocxx::options::delete_options>; 
     auto process_request_func_delete_many_by_oids(const crow::request& req) -> std::tuple<bsoncxx::document::value, mongocxx::options::delete_options>; 
 
+    auto process_request_func_update_one_by_oid(const crow::request& req) -> std::tuple<bsoncxx::document::value, bsoncxx::document::value, mongocxx::options::update>; 
+
     auto _parse_oid(const crow::request& req, const std::string& key) -> bsoncxx::document::value;
 }
 

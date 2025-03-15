@@ -47,3 +47,11 @@ auto ManagementApiHandler::delete_many_by_oids(
 ) -> crow::response {
     return delete_many(req, db_manager, collection_name, ManagementApiStrategy::process_request_func_delete_many_by_oids, BaseApiStrategy::process_response_func_delete_many);
 }
+
+auto ManagementApiHandler::update_one_by_oid(
+    const crow::request& req, 
+    std::shared_ptr<DatabaseManager> db_manager, 
+    const std::string& collection_name
+) -> crow::response {
+    return update_one(req, db_manager, collection_name, ManagementApiStrategy::process_request_func_update_one_by_oid, BaseApiStrategy::process_response_func_update_one);
+}
