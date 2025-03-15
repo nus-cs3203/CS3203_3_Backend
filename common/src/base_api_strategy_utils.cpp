@@ -78,13 +78,17 @@ auto BaseApiStrategyUtils::parse_request_json_to_database_bson(const crow::json:
             auto doc_value = value.b();
             doc_builder.append(kvp(key, doc_value));
         } else if (value.t() == crow::json::type::List) {
+            // TODO: parse nested list
             bsoncxx::builder::basic::array arr_builder;
-            for (const auto& sub_rval_json: value.lo()) {
-                auto doc_val = std::move(parse_request_json_to_database_bson(sub_rval_json));
-                arr_builder.append(doc_val);
+            for (auto sub_rval_json: value.lo()) {
+                auto doc_value = sub_rval_json.s();
+                arr_builder.append(doc_value);
             }
             bsoncxx::array::value arr_val = arr_builder.extract();
             doc_builder.append(kvp(key, bsoncxx::types::b_array{arr_val.view()}));
+        } else if (value.t() == crow::json::type::Null) {
+            bsoncxx::types::b_null doc_value{};
+            doc_builder.append(kvp(key, doc_value));
         } else {
             throw std::runtime_error("Unrecognized crow::json::rvalue type!");
         }
