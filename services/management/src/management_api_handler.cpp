@@ -32,6 +32,14 @@ auto ManagementApiHandler::get_by_daterange(
     return find(req, db_manager, collection_name, ManagementApiStrategy::process_request_func_get_by_daterange, ManagementApiStrategy::process_response_func_get);
 }
 
+auto ManagementApiHandler::get_many(
+    const crow::request& req, 
+    std::shared_ptr<DatabaseManager> db_manager, 
+    const std::string& collection_name
+) -> crow::response {
+    return find(req, db_manager, collection_name, ManagementApiStrategy::process_request_func_get_many, ManagementApiStrategy::process_response_func_get);
+}
+
 auto ManagementApiHandler::delete_one_by_oid(
     const crow::request& req, 
     std::shared_ptr<DatabaseManager> db_manager, 

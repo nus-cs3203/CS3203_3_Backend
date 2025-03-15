@@ -22,6 +22,31 @@ auto ManagementApiStrategy::process_request_func_get_one_by_oid(const crow::requ
     return std::make_tuple(filter, option);
 }
 
+auto ManagementApiStrategy::process_request_func_get_many(const crow::request& req) -> std::tuple<bsoncxx::document::value, mongocxx::options::find> {
+    BaseApiStrategyUtils::validate_fields(req, {"filter", "page_size", "page_number"});
+
+    auto body = crow::json::load(req.body);
+    auto filter = BaseApiStrategyUtils::parse_request_json_to_database_bson(body["filter"]);
+
+    auto page_size = body["page_size"].i();
+    auto page_number = body["page_number"].i();
+
+    if (page_size < 1) {
+        throw std::invalid_argument("Invalid page_size < 1.");
+    }
+
+    if (page_number < 1) {
+        throw std::invalid_argument("Invalid page_number < 1.");
+    }
+
+    mongocxx::options::find option;
+    option.skip((page_number - 1) * page_size);
+    option.limit(page_size);
+
+    return std::make_tuple(filter, option);
+}
+
+
 auto ManagementApiStrategy::process_response_func_get_one(const bsoncxx::document::value& doc) -> crow::json::wvalue {
     crow::json::wvalue response_data;
     auto doc_json = bsoncxx::to_json(doc);

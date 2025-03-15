@@ -89,6 +89,11 @@ int main() {
         return management_api_handler.get_by_daterange(req, db_manager, COLLECTION_COMPLAINTS);
     });
 
+    CROW_ROUTE(app, "/complaints/get_many").methods(crow::HTTPMethod::Post)
+    ([db_manager, &management_api_handler, COLLECTION_COMPLAINTS](const crow::request& req) {
+        return management_api_handler.get_many(req, db_manager, COLLECTION_COMPLAINTS);
+    });
+
     // CROW_ROUTE(app, "/complaints/search").methods(crow::HTTPMethod::Post)
     // ([db, &api_handler, COLLECTION_COMPLAINTS](const crow::request& req) {
     //     return api_handler.search(req, db, COLLECTION_COMPLAINTS, {"date"}, {false}, true);
