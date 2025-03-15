@@ -79,10 +79,10 @@ int main() {
     //     return api_handler.search(req, db, COLLECTION_COMPLAINTS, {"date"}, {false}, true);
     // });
 
-    // CROW_ROUTE(app, "/complaints/delete_by_oid").methods(crow::HTTPMethod::Post)
-    // ([db, &api_handler, COLLECTION_COMPLAINTS](const crow::request& req) {
-    //     return api_handler.delete_by_oid(req, db, COLLECTION_COMPLAINTS);
-    // });
+    CROW_ROUTE(app, "/complaints/delete_by_oid").methods(crow::HTTPMethod::Post)
+    ([db_manager, &management_api_handler, COLLECTION_COMPLAINTS](const crow::request& req) {
+        return management_api_handler.delete_one_by_oid(req, db_manager, COLLECTION_COMPLAINTS);
+    });
 
     // CROW_ROUTE(app, "/complaints/delete_many_by_oids").methods(crow::HTTPMethod::Post)
     // ([db, &api_handler, COLLECTION_COMPLAINTS](const crow::request& req) {

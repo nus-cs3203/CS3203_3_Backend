@@ -26,3 +26,10 @@ auto BaseApiStrategy::process_response_func_insert_one(const mongocxx::result::i
     response_data["oid"] = oid;
     return response_data;
 }
+
+auto BaseApiStrategy::process_response_func_delete_one(const mongocxx::result::delete_result& result) -> crow::json::wvalue {
+    crow::json::wvalue response_data;
+    auto deleted_count = result.deleted_count();
+    response_data["deleted_count"] = deleted_count;
+    return response_data;
+}
