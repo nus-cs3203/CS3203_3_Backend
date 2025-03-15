@@ -48,3 +48,19 @@ auto BaseApiStrategy::process_response_func_update_one(const mongocxx::result::u
     response_data["upserted_count"] = upserted_count;
     return response_data;
 }
+
+auto BaseApiStrategy::process_request_func_count_documents(const crow::request& req) -> std::tuple<bsoncxx::document::value, mongocxx::options::count> {
+    BaseApiStrategyUtils::validate_fields(req, {"filter"});
+
+    auto body = crow::json::load(req.body);
+    auto document = BaseApiStrategyUtils::parse_request_json_to_database_bson(body["filter"]);
+    mongocxx::options::count option;
+
+    return std::make_tuple(document, option);
+}
+
+auto BaseApiStrategy::process_response_func_count_documents(const long long int& count) -> crow::json::wvalue {
+    crow::json::wvalue response_data;
+    response_data["count"] = count;
+    return response_data;
+}

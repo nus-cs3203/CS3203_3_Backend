@@ -61,6 +61,14 @@ public:
         std::function<std::tuple<bsoncxx::document::value, bsoncxx::document::value, mongocxx::options::update>(const crow::request&)> process_request_func,
         std::function<crow::json::wvalue(const mongocxx::result::update&)> process_response_func
     ) -> crow::response;
+
+    auto count_documents(
+        const crow::request& req, 
+        std::shared_ptr<DatabaseManager> db_manager, 
+        const std::string& collection_name, 
+        std::function<std::tuple<bsoncxx::document::value, mongocxx::options::count>(const crow::request&)> process_request_func = BaseApiStrategy::process_request_func_count_documents,
+        std::function<crow::json::wvalue(const long long int&)> process_response_func = BaseApiStrategy::process_response_func_count_documents
+    ) -> crow::response;
 };
 
 #endif

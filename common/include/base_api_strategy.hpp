@@ -19,6 +19,9 @@ namespace BaseApiStrategy {
     auto process_response_func_delete_many(const mongocxx::result::delete_result& result) -> crow::json::wvalue;
 
     auto process_response_func_update_one(const mongocxx::result::update& result) -> crow::json::wvalue;
+
+    auto process_request_func_count_documents(const crow::request& req) -> std::tuple<bsoncxx::document::value, mongocxx::options::count>;
+    auto process_response_func_count_documents(const long long int& count) -> crow::json::wvalue; 
 }
 
 #endif
