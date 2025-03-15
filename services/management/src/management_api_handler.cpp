@@ -39,3 +39,11 @@ auto ManagementApiHandler::delete_one_by_oid(
 ) -> crow::response {
     return delete_one(req, db_manager, collection_name, ManagementApiStrategy::process_request_func_delete_one_by_oid, BaseApiStrategy::process_response_func_delete_one);
 }
+
+auto ManagementApiHandler::delete_many_by_oids(
+    const crow::request& req, 
+    std::shared_ptr<DatabaseManager> db_manager, 
+    const std::string& collection_name
+) -> crow::response {
+    return delete_many(req, db_manager, collection_name, ManagementApiStrategy::process_request_func_delete_many_by_oids, BaseApiStrategy::process_response_func_delete_many);
+}

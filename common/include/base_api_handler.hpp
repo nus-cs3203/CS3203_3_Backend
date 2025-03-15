@@ -45,6 +45,14 @@ public:
         std::function<std::tuple<bsoncxx::document::value, mongocxx::options::delete_options>(const crow::request&)> process_request_func,
         std::function<crow::json::wvalue(const mongocxx::result::delete_result&)> process_response_func
     ) -> crow::response;
+
+    auto delete_many(
+        const crow::request& req, 
+        std::shared_ptr<DatabaseManager> db_manager, 
+        const std::string& collection_name, 
+        std::function<std::tuple<bsoncxx::document::value, mongocxx::options::delete_options>(const crow::request&)> process_request_func,
+        std::function<crow::json::wvalue(const mongocxx::result::delete_result&)> process_response_func
+    ) -> crow::response;
 };
 
 #endif

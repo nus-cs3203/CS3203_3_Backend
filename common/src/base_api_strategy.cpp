@@ -33,3 +33,7 @@ auto BaseApiStrategy::process_response_func_delete_one(const mongocxx::result::d
     response_data["deleted_count"] = deleted_count;
     return response_data;
 }
+
+auto BaseApiStrategy::process_response_func_delete_many(const mongocxx::result::delete_result& result) -> crow::json::wvalue {
+    return process_response_func_delete_one(result);
+}

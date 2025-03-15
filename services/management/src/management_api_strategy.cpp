@@ -83,3 +83,32 @@ auto ManagementApiStrategy::process_request_func_delete_one_by_oid(const crow::r
 
     return std::make_tuple(filter, option);
 }
+
+auto ManagementApiStrategy::process_request_func_delete_many_by_oids(const crow::request& req) -> std::tuple<bsoncxx::document::value, mongocxx::options::delete_options> {
+    BaseApiStrategyUtils::validate_fields(req, {"oids"});
+    
+    auto body = crow::json::load(req.body);
+    if (body["oids"].t() != crow::json::type::List) {
+        throw std::invalid_argument("Field 'oids' must be an array!");
+    }
+    auto oid_jsons = body["oids"];
+    bsoncxx::builder::basic::array oid_arr_builder;
+    for (const auto& oid_json: oid_jsons.lo()) {
+        std::string oid_str = oid_json.s();
+        bsoncxx::oid oid{oid_str};
+        oid_arr_builder.append(oid);
+    }
+    bsoncxx::array::value oid_arr = oid_arr_builder.extract();
+    auto filter = make_document(
+        kvp(
+            "_id",
+            make_document(
+                kvp("$in", bsoncxx::types::b_array{oid_arr.view()})
+            )
+        )
+    );
+
+    mongocxx::options::delete_options option;
+
+    return std::make_tuple(filter, option);
+}
