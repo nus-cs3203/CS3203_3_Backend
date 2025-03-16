@@ -18,7 +18,6 @@
 #include <memory>
 
 int main() {
-    // auto db = std::make_shared<Database>(Database::create_from_env());
     auto db_manager = std::make_shared<DatabaseManager>(DatabaseManager::create_from_env());
     
     crow::App<CORS> app; 
@@ -144,6 +143,18 @@ int main() {
     CROW_ROUTE(app, "/polls/update_by_oid").methods(crow::HTTPMethod::Post)
     ([db_manager, &management_api_handler, COLLECTION_POLLS](const crow::request& req) {
         return management_api_handler.update_one_by_oid(req, db_manager, COLLECTION_POLLS);
+    });
+
+    const auto COLLECTION_POLL_TEMPLATES = Constants::COLLECTION_POLL_TEMPLATES;
+
+    CROW_ROUTE(app, "/poll_templates/get_all").methods(crow::HTTPMethod::Post)
+    ([db_manager, &management_api_handler, COLLECTION_POLL_TEMPLATES](const crow::request& req) {
+        return management_api_handler.get_all(req, db_manager, COLLECTION_POLL_TEMPLATES);
+    });
+
+    CROW_ROUTE(app, "/poll_templates/get_by_oid").methods(crow::HTTPMethod::Post)
+    ([db_manager, &management_api_handler, COLLECTION_POLL_TEMPLATES](const crow::request& req) {
+        return management_api_handler.get_one_by_oid(req, db_manager, COLLECTION_POLL_TEMPLATES);
     });
 
     app.port(8083).run();

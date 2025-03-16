@@ -16,6 +16,7 @@ namespace Constants {
     const std::string COLLECTION_CATEGORY_ANALYTICS = "category_analytics";
     const std::string COLLECTION_USERS = "users";
     const std::string COLLECTION_POLLS = "polls";
+    const std::string COLLECTION_POLL_TEMPLATES = "poll_templates";
 
     const std::string USERS_ROLE_CITIZEN = "CITIZEN";
     const std::string USERS_ROLE_ADMIN = "ADMIN";
