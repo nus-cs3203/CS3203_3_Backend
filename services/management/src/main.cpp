@@ -116,6 +116,36 @@ int main() {
         return management_api_handler.insert_one(req, db_manager, COLLECTION_POLLS);
     });
 
+    CROW_ROUTE(app, "/polls/get_by_oid").methods(crow::HTTPMethod::Post)
+    ([db_manager, &management_api_handler, COLLECTION_POLLS](const crow::request& req) {
+        return management_api_handler.get_one_by_oid(req, db_manager, COLLECTION_POLLS);
+    });
+
+    CROW_ROUTE(app, "/polls/get_many").methods(crow::HTTPMethod::Post)
+    ([db_manager, &management_api_handler, COLLECTION_POLLS](const crow::request& req) {
+        return management_api_handler.get_many(req, db_manager, COLLECTION_POLLS);
+    });
+
+    CROW_ROUTE(app, "/polls/get_count").methods(crow::HTTPMethod::Post)
+    ([db_manager, &management_api_handler, COLLECTION_POLLS](const crow::request& req) {
+        return management_api_handler.count_documents(req, db_manager, COLLECTION_POLLS);
+    });
+
+    CROW_ROUTE(app, "/polls/delete_by_oid").methods(crow::HTTPMethod::Post)
+    ([db_manager, &management_api_handler, COLLECTION_POLLS](const crow::request& req) {
+        return management_api_handler.delete_one_by_oid(req, db_manager, COLLECTION_POLLS);
+    });
+
+    CROW_ROUTE(app, "/polls/delete_many_by_oids").methods(crow::HTTPMethod::Post)
+    ([db_manager, &management_api_handler, COLLECTION_POLLS](const crow::request& req) {
+        return management_api_handler.delete_many_by_oids(req, db_manager, COLLECTION_POLLS);
+    });
+
+    CROW_ROUTE(app, "/polls/update_by_oid").methods(crow::HTTPMethod::Post)
+    ([db_manager, &management_api_handler, COLLECTION_POLLS](const crow::request& req) {
+        return management_api_handler.update_one_by_oid(req, db_manager, COLLECTION_POLLS);
+    });
+
     app.port(8083).run();
     return 0;
 }
