@@ -804,7 +804,7 @@ curl -X POST "http://localhost:8083/categories/get_all" \
 curl -X POST "http://localhost:8083/categories/get_by_oid" \
      -H "Content-Type: application/json" \
      -d '{
-         "oid": "67b458405b0f29f2e7c47ce8"
+         "oid": "67cc41c23b05707c187145ec"
      }'
 ```
 
@@ -824,7 +824,7 @@ curl -X POST "http://localhost:8083/categories/get_by_oid" \
 {
     "success": "bool",
     "message": "string",
-    "_id": "string"  // internal id of MongoDB
+    "oid": "string"  // internal id of MongoDB
 }
 ```
 
@@ -970,20 +970,19 @@ curl -X POST "http://localhost:8083/complaints/get_by_oid" \
 curl -X POST "http://localhost:8083/complaints/delete_by_oid" \
      -H "Content-Type: application/json" \
      -d '{
-         "oid": "67b458405b0f29f2e7c47ce8"
+         "oid": "67cc41c73b05707c1872c22d"
      }'
 ```
 
 ---
 
-#### **POST /complaints/search**
+#### **POST /complaints/get_many**
 
 **Text field explanation**:  
 Searches for the **existence** of a word in the `title` or `description` of a complaint (case-insensitive). For example, `"this"` will match the word `"this"` but not just the letter `"t"`.
 
 **Pagination explanation**:  
 - Filtered results are sorted by time (decreasing order).  
-- `total_count` of filtered results is returned.  
 - This endpoint will return the slice of documents at index `[page_size * page_number, page_size * (page_number + 1) - 1]` (1-based indexing).
 
 **Request:**
@@ -1007,8 +1006,7 @@ Searches for the **existence** of a word in the `title` or `description` of a co
 {
     "success": "bool",
     "documents": [],
-    "message": "string",
-    "total_count": "int"
+    "message": "string"
 }
 ```
 
@@ -1128,7 +1126,7 @@ curl -X POST "http://localhost:8083/complaints/get_by_daterange" \
      -H "Content-Type: application/json" \
      -d '{
         "start_date": "01-01-2023 00:00:00",
-        "end_date": "01-01-2023 23:59:59"
+        "end_date": "01-06-2023 23:59:59"
      }'
 ```
 
