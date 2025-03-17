@@ -756,6 +756,37 @@ This service provides various endpoints to manage categories and complaints for 
 
 Refer to Schema Document for collection definition.
 
+---
+
+#### **POST /categories/get_count**
+
+**Request:**
+```json
+{
+    "filter": {
+        // any valid field filters (e.g. {"name": "Techonology"} ), this API generally only makes sense for empty filter to get total number categories we have
+    }
+}
+```
+
+**Response:**
+```json
+{
+    "success": "bool",
+    "message": "string",
+    "count": "int"
+}
+```
+
+**Sample Request:**
+```sh
+curl -X POST http://localhost:8083/categories/get_count \
+     -H "Content-Type: application/json" \
+     -d '{
+         "filter": {}
+     }'
+```
+
 #### **POST /categories/get_all**
 
 **Request:**
@@ -945,6 +976,43 @@ curl -X POST "http://localhost:8083/complaints/get_by_oid" \
      }'
 ```
 
+#### **POST /complaints/get_count**
+
+**Request:**
+```json
+{
+    "filter": {
+        // any valid field filters (e.g. {"category": "Technology"} )
+    }
+}
+```
+
+**Response:**
+```json
+{
+    "success": "bool",
+    "message": "string",
+    "count": "int"
+}
+```
+
+**Sample Request:**
+```sh
+curl -X POST http://localhost:8083/complaints/get_count \
+     -H "Content-Type: application/json" \
+     -d '{
+         "filter": {}
+     }'
+```
+
+```sh
+curl -X POST http://localhost:8083/complaints/get_count \
+     -H "Content-Type: application/json" \
+     -d '{
+         "filter": {"category": "Technology"} 
+     }'
+```
+
 ---
 
 #### **POST /complaints/delete_by_oid**
@@ -978,8 +1046,8 @@ curl -X POST "http://localhost:8083/complaints/delete_by_oid" \
 
 #### **POST /complaints/get_many**
 
-**Text field explanation**:  
-Searches for the **existence** of a word in the `title` or `description` of a complaint (case-insensitive). For example, `"this"` will match the word `"this"` but not just the letter `"t"`.
+**Supports: Keyword Search**:  
+Text field explanation: Searches for the **existence** of a word in the `title` or `description` of a complaint (case-insensitive). For example, `"this"` will match the word `"this"` but not just the letter `"t"`.
 
 **Pagination explanation**:  
 - Filtered results are sorted by time (decreasing order).  
@@ -1136,6 +1204,45 @@ curl -X POST "http://localhost:8083/complaints/get_by_daterange" \
 
 Refer to Schema Document for collection definition.
 
+---
+
+#### **POST /posts/get_count**
+
+**Request:**
+```json
+{
+    "filter": {
+        // any valid field filters (e.g. {"source": "Reddit"} )
+    }
+}
+```
+
+**Response:**
+```json
+{
+    "success": "bool",
+    "message": "string",
+    "count": "int"
+}
+```
+
+**Sample Request:**
+```sh
+curl -X POST http://localhost:8083/posts/get_count \
+     -H "Content-Type: application/json" \
+     -d '{
+         "filter": {}
+     }'
+```
+
+```sh
+curl -X POST http://localhost:8083/posts/get_count \
+     -H "Content-Type: application/json" \
+     -d '{
+         "filter": {"source": "Reddit"}
+     }'
+```
+
 #### **POST /posts/get_by_daterange**
 
 **Request:**
@@ -1160,6 +1267,332 @@ curl -X POST "http://localhost:8083/posts/get_by_daterange" \
      -d '{
         "start_date": "01-01-2022 00:00:00",
         "end_date": "01-01-2022 23:59:59"
+     }'
+```
+
+---
+
+### **Collection: `polls`**
+
+Refer to Schema Document for collection definition.
+
+---
+
+#### **POST /polls/insert_one**
+
+**Request:**
+```json
+{
+    "document": {
+        "question": "string",
+        "category": "string",
+        "question_type": "string",
+        "options": [],
+        "date_created": "string", // format: dd-mm-YYYY HH:MM:SS
+        "date_published": "null",
+        "date_closed": "null",
+        "status": "string"
+    }
+}
+```
+
+**Response:**
+```json
+{
+    "success": "bool",
+    "message": "string",
+    "oid": "string"
+}
+```
+
+**Sample Request:**
+```sh
+curl -X POST http://localhost:8083/polls/insert_one \
+     -H "Content-Type: application/json" \
+     -d '{
+         "document": {
+             "question": "Which hawker centre is the dirtiest?",
+             "category": "Housing",
+             "question_type": "MCQ",
+             "options": ["Maxwell Food Centre", "Chinatown Complex", "Old Airport Road", "Newton Food Centre"],
+             "date_created": "2025-03-15T12:00:00Z",
+             "date_published": null,
+             "date_closed": null,
+             "status": "Unpublished"
+         }
+     }'
+```
+
+---
+
+#### **POST /polls/get_by_oid**
+
+**Request:**
+```json
+{
+    "oid": "string"
+}
+```
+
+**Response:**
+```json
+{
+    "success": "bool",
+    "message": "string",
+    "document": {} // Poll document or null
+}
+```
+
+**Sample Request:**
+```sh
+curl -X POST "http://localhost:8083/polls/get_by_oid" \
+     -H "Content-Type: application/json" \
+     -d '{
+         "oid": "67d6d68877831f230e0b0113"
+     }'
+```
+
+---
+
+#### **POST /polls/get_many**
+
+**Pagination explanation**:  
+- Filtered results are sorted in descending order (implementation-dependent).
+- This endpoint returns documents at index `[page_size * page_number, page_size * (page_number + 1) - 1]` (1-based indexing).
+
+**Request:**
+```json
+{
+    "filter": {
+        "status": "string",
+        ...
+    },
+    "page_size": "int",
+    "page_number": "int"
+}
+```
+
+**Response:**
+```json
+{
+    "success": "bool",
+    "message": "string",
+    "documents": []
+}
+```
+
+**Sample Request:**
+```sh
+curl -X POST "http://localhost:8083/polls/get_many" \
+     -H "Content-Type: application/json" \
+     -d '{
+         "filter": {
+             "status": "Unpublished"
+         },
+         "page_size": 2,
+         "page_number": 1
+     }'
+```
+
+---
+
+#### **POST /polls/get_count**
+
+**Request:**
+```json
+{
+    "filter": {
+        // any valid field filters (e.g. {"status": "Unpublished"} )
+    }
+}
+```
+
+**Response:**
+```json
+{
+    "success": "bool",
+    "message": "string",
+    "count": "int"
+}
+```
+
+**Sample Request:**
+```sh
+curl -X POST http://localhost:8083/polls/get_count \
+     -H "Content-Type: application/json" \
+     -d '{
+         "filter": {}
+     }'
+```
+
+**Sample Request:**
+```sh
+curl -X POST http://localhost:8083/polls/get_count \
+     -H "Content-Type: application/json" \
+     -d '{
+        "filter": {
+            "status": "Unpublished"
+        }
+     }'
+```
+
+---
+
+#### **POST /polls/delete_by_oid**
+
+**Request:**
+```json
+{
+    "oid": "string"
+}
+```
+
+**Response:**
+```json
+{
+    "success": "bool",
+    "message": "string",
+    "deleted_count": "int"
+}
+```
+
+**Sample Request:**
+```sh
+curl -X POST "http://localhost:8083/polls/delete_by_oid" \
+     -H "Content-Type: application/json" \
+     -d '{
+         "oid": "67d6d68877831f230e0b0112"
+     }'
+```
+
+---
+
+#### **POST /polls/delete_many_by_oids**
+
+**Request:**
+```json
+{
+    "oids": ["string", "string", ...]
+}
+```
+
+**Response:**
+```json
+{
+    "success": "bool",
+    "message": "string",
+    "deleted_count": "int"
+}
+```
+
+**Sample Request:**
+```sh
+curl -X POST "http://localhost:8083/polls/delete_many_by_oids" \
+     -H "Content-Type: application/json" \
+     -d '{
+         "oids": ["67b458405b0f29f2e7c47ce9", "67b458405b0f29f2e7c47ce7"]
+     }'
+```
+
+---
+
+#### **POST /polls/update_by_oid**
+
+**Request:**
+```json
+{
+    "oid": "string",
+    "update_document": {
+        "$set": {
+            // fields to be updated
+        }
+    }
+}
+```
+
+**Response:**
+```json
+{
+    "success": "bool",
+    "message": "string",
+    "matched_count": "int",
+    "modified_count": "int",
+    "upserted_count": "int"
+}
+```
+
+**Sample Request:**
+```sh
+curl -X POST "http://localhost:8083/polls/update_by_oid" \
+     -H "Content-Type: application/json" \
+     -d '{
+         "oid": "67d6d68877831f230e0b0113",
+         "update_document": {
+             "$set": {
+                 "status": "Published"
+             }
+         }
+     }'
+```
+
+---
+
+### **Collection: `poll_templates`**
+
+Refer to Schema Document for collection definition.
+
+---
+
+#### **POST /poll_templates/get_all**
+
+**Request:**
+```json
+{
+}
+```
+
+**Response:**
+```json
+{
+    "success": "bool",
+    "message": "string",
+    "documents": []
+}
+```
+
+**Sample Request:**
+```sh
+curl -X POST "http://localhost:8083/poll_templates/get_all" \
+     -H "Content-Type: application/json" \
+     -d '{}'
+```
+
+---
+
+#### **POST /poll_templates/get_by_oid**
+
+**Request:**
+```json
+{
+    "oid": "string"
+}
+```
+
+**Response:**
+```json
+{
+    "success": "bool",
+    "message": "string",
+    "document": {} // PollTemplate document or null
+}
+```
+
+**Sample Request:**
+```sh
+curl -X POST "http://localhost:8083/poll_templates/get_by_oid" \
+     -H "Content-Type: application/json" \
+     -d '{
+         "oid": "67d70b68b4119a65bca73640"
      }'
 ```
 
