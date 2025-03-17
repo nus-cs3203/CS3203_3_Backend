@@ -1,8 +1,5 @@
-#include "api_handler.hpp"
 #include "constants.hpp"
 #include "cors.hpp"
-#include "database.hpp"
-
 #include "database_manager.hpp"
 #include "management_api_handler.hpp"
 
