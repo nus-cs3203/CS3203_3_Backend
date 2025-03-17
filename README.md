@@ -1080,7 +1080,7 @@ Text field explanation: Searches for the **existence** of a word in the `title` 
 
 **Sample Request:**
 ```sh
-curl -X POST http://localhost:8083/complaints/search \
+curl -X POST http://localhost:8083/complaints/get_many \
      -H "Content-Type: application/json" \
      -d '{
          "filter": {
