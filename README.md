@@ -525,13 +525,12 @@ curl -X POST "http://localhost:8082/get_complaints_sorted_by_fields" \
         },
         "name": "string",
         "suggestions": ["string", ...],
-        "keywords_per_category": ["string", ...],
+        "keywords": ["string", ...],
+        "absa_result": [{"theme": "string", "sentiment": "string"}, ...],
         "summary": "string",
-        "forecasted_score": "float",
-        "current_score": "float",
-        "current_label": "string",
-        "key_concerns": ["string", ...],
-        "forecasted_label": "string"
+        "forecasted_sentiment": "float",
+        "sentiment": "float",
+        "concerns": ["string", ...]
     }
 }
 ```
