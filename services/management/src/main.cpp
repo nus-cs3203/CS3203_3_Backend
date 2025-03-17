@@ -21,7 +21,6 @@ int main() {
 
     app.loglevel(crow::LogLevel::Warning);
 
-    ApiHandler api_handler;
     ManagementApiHandler management_api_handler;
 
     const auto COLLECTION_CATEGORIES = Constants::COLLECTION_CATEGORIES;
