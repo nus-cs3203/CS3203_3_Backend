@@ -153,6 +153,33 @@ int main() {
         return management_api_handler.get_one_by_oid(req, db_manager, COLLECTION_POLL_TEMPLATES);
     });
 
+    const auto COLLECTION_POLL_RESPONSES = Constants::COLLECTION_POLL_REPONSES;
+
+    CROW_ROUTE(app, "/poll_responses/get_count").methods(crow::HTTPMethod::Post)
+    ([db_manager, &management_api_handler, COLLECTION_POLL_RESPONSES](const crow::request& req) {
+        return management_api_handler.count_documents(req, db_manager, COLLECTION_POLL_RESPONSES);
+    });
+
+    CROW_ROUTE(app, "/poll_responses/get_one").methods(crow::HTTPMethod::Post)
+    ([db_manager, &management_api_handler, COLLECTION_POLL_RESPONSES](const crow::request& req) {
+        return management_api_handler.find_one(req, db_manager, COLLECTION_POLL_RESPONSES);
+    });
+
+    CROW_ROUTE(app, "/poll_responses/get_many").methods(crow::HTTPMethod::Post)
+    ([db_manager, &management_api_handler, COLLECTION_POLL_RESPONSES](const crow::request& req) {
+        return management_api_handler.get_many(req, db_manager, COLLECTION_POLL_RESPONSES);
+    });
+
+    CROW_ROUTE(app, "/poll_responses/insert_one").methods(crow::HTTPMethod::Post)
+    ([db_manager, &management_api_handler, COLLECTION_POLL_RESPONSES](const crow::request& req) {
+        return management_api_handler.insert_one(req, db_manager, COLLECTION_POLL_RESPONSES);
+    });
+
+    CROW_ROUTE(app, "/poll_responses/get_statistics").methods(crow::HTTPMethod::Post)
+    ([db_manager, &management_api_handler, COLLECTION_POLL_RESPONSES](const crow::request& req) {
+        return management_api_handler.get_statistics_poll_responses(req, db_manager, COLLECTION_POLL_RESPONSES);
+    });
+
     app.port(8083).run();
     return 0;
 }

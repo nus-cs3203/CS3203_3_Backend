@@ -6,10 +6,14 @@
 #include <bsoncxx/json.hpp>
 #include "crow.h"
 #include <mongocxx/client.hpp>
+#include <mongocxx/exception/exception.hpp>
 #include <mongocxx/instance.hpp>
 
 #include <utility> 
 #include <vector>
+
+using bsoncxx::builder::basic::kvp;
+using bsoncxx::builder::basic::make_document;
 
 auto BaseApiHandler::find_one(
         const crow::request& req, 
@@ -42,13 +46,15 @@ auto BaseApiHandler::find(
     const crow::request& req, 
     std::shared_ptr<DatabaseManager> db_manager, 
     const std::string& collection_name, 
-    std::function<std::tuple<bsoncxx::document::value, mongocxx::options::find>(const crow::request&)> process_request_func,
+    std::function<std::tuple<bsoncxx::document::value, mongocxx::options::find, bsoncxx::document::value>(const crow::request&)> process_request_func,
     std::function<crow::json::wvalue(mongocxx::cursor&)> process_response_func
 ) -> crow::response {
     try {
-        auto filter_and_option = process_request_func(req);
-        auto filter = std::get<0>(filter_and_option);
-        auto option = std::get<1>(filter_and_option);
+        auto filter_and_option_and_sort = process_request_func(req);
+        auto filter = std::get<0>(filter_and_option_and_sort);
+        auto option = std::get<1>(filter_and_option_and_sort);
+        auto sort = std::get<2>(filter_and_option_and_sort);
+        option.sort(sort.view());
 
         auto cursor = db_manager->find(collection_name, filter, option);
 
@@ -74,7 +80,6 @@ auto BaseApiHandler::insert_one(
         auto option = std::get<1>(document_and_option);
 
         auto result = db_manager->insert_one(collection_name, document, option);
-
         if (!result.has_value()) {
             throw std::runtime_error("Insertion failed!");
         }
@@ -82,6 +87,13 @@ auto BaseApiHandler::insert_one(
         auto response_data = process_response_func(result.value());
         
         return BaseApiStrategyUtils::make_success_response(200, response_data, "Server processed insert request successfully.");
+    }
+    catch (const mongocxx::exception& e) {
+        if (e.code().value() == 11000) { 
+            return BaseApiStrategyUtils::make_error_response(409, "Unique constraint violation!");
+        } else {
+            return BaseApiStrategyUtils::make_error_response(500, e.what());
+        }
     }
     catch (const std::exception& e) {
         return BaseApiStrategyUtils::make_error_response(500, std::string("Server error: ") + e.what());

@@ -7,6 +7,7 @@
 
 #include <string>
 #include <tuple>
+#include <unordered_map>
 
 using bsoncxx::builder::basic::kvp;
 using bsoncxx::builder::basic::make_document;
@@ -22,7 +23,7 @@ auto ManagementApiStrategy::process_request_func_get_one_by_oid(const crow::requ
     return std::make_tuple(filter, option);
 }
 
-auto ManagementApiStrategy::process_request_func_get_many(const crow::request& req) -> std::tuple<bsoncxx::document::value, mongocxx::options::find> {
+auto ManagementApiStrategy::process_request_func_get_many(const crow::request& req) -> std::tuple<bsoncxx::document::value, mongocxx::options::find, bsoncxx::document::value> {
     BaseApiStrategyUtils::validate_fields(req, {"filter", "page_size", "page_number"});
 
     auto body = crow::json::load(req.body);
@@ -43,24 +44,19 @@ auto ManagementApiStrategy::process_request_func_get_many(const crow::request& r
     option.skip((page_number - 1) * page_size);
     option.limit(page_size);
 
-    return std::make_tuple(filter, option);
+    bsoncxx::document::value sort = make_document();
+    if (body.has("sort")) {
+        sort = BaseApiStrategyUtils::parse_request_json_to_database_bson(body["sort"]);
+    }
+
+    return std::make_tuple(filter, option, sort);
 }
 
-
-auto ManagementApiStrategy::process_response_func_get_one(const bsoncxx::document::value& doc) -> crow::json::wvalue {
-    crow::json::wvalue response_data;
-    auto doc_json = bsoncxx::to_json(doc);
-    auto doc_rval = crow::json::load(doc_json);
-    auto pased_doc_wval = BaseApiStrategyUtils::parse_database_json_to_response_json(doc_rval);
-    response_data["document"] = std::move(pased_doc_wval);
-    return response_data;
-}
-
-auto ManagementApiStrategy::process_request_func_get_all(const crow::request& req) -> std::tuple<bsoncxx::document::value, mongocxx::options::find> {    
+auto ManagementApiStrategy::process_request_func_get_all(const crow::request& req) -> std::tuple<bsoncxx::document::value, mongocxx::options::find, bsoncxx::document::value> {    
     auto filter = make_document();
     mongocxx::options::find option;
-
-    return std::make_tuple(filter, option);
+    bsoncxx::document::value sort = make_document();
+    return std::make_tuple(filter, option, sort);
 }
 
 auto ManagementApiStrategy::process_response_func_get(mongocxx::cursor& cursor) -> crow::json::wvalue {
@@ -78,7 +74,7 @@ auto ManagementApiStrategy::process_response_func_get(mongocxx::cursor& cursor) 
     return response_data;
 }
 
-auto ManagementApiStrategy::process_request_func_get_by_daterange(const crow::request& req) -> std::tuple<bsoncxx::document::value, mongocxx::options::find> {
+auto ManagementApiStrategy::process_request_func_get_by_daterange(const crow::request& req) -> std::tuple<bsoncxx::document::value, mongocxx::options::find, bsoncxx::document::value> {
     BaseApiStrategyUtils::validate_fields(req, {"start_date", "end_date"});
 
     auto body = crow::json::load(req.body);
@@ -94,7 +90,12 @@ auto ManagementApiStrategy::process_request_func_get_by_daterange(const crow::re
 
     mongocxx::options::find option;
 
-    return std::make_tuple(filter, option);
+    bsoncxx::document::value sort = make_document();
+    if (body.has("sort")) {
+        sort = BaseApiStrategyUtils::parse_request_json_to_database_bson(body["sort"]);
+    }
+
+    return std::make_tuple(filter, option, sort);
 }
 
 
@@ -149,4 +150,40 @@ auto ManagementApiStrategy::process_request_func_update_one_by_oid(const crow::r
     mongocxx::options::update option;
 
     return std::make_tuple(filter, update_doc, option);
+}
+
+auto ManagementApiStrategy::process_request_func_get_statistics_poll_responses(const crow::request& req) -> std::tuple<bsoncxx::document::value, mongocxx::options::find, bsoncxx::document::value> {
+    BaseApiStrategyUtils::validate_fields(req, {"filter"});
+
+    auto body = crow::json::load(req.body);
+    auto filter = BaseApiStrategyUtils::parse_request_json_to_database_bson(body["filter"]);
+
+    mongocxx::options::find option;
+
+    bsoncxx::document::value sort = make_document();
+
+    return std::make_tuple(filter, option, sort);
+}
+
+auto ManagementApiStrategy::process_response_func_get_statistics_poll_responses(mongocxx::cursor& cursor) -> crow::json::wvalue {
+    crow::json::wvalue response_data;
+
+    std::unordered_map<std::string, int> response_counter_map;
+
+    for (auto&& doc: cursor) {
+        auto doc_json = bsoncxx::to_json(doc);
+        auto doc_rval = crow::json::load(doc_json);
+        auto response = static_cast<std::string>(doc_rval["response"].s());
+        
+        if (response_counter_map.find(response) == response_counter_map.end()) {
+            response_counter_map[response] = 0;
+        }
+        response_counter_map[response]++;
+    }
+
+    for (auto &[response, count]: response_counter_map) {
+        response_data["statistics"][response] = count;
+    }
+
+    return response_data;
 }

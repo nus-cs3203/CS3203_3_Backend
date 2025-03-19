@@ -3,10 +3,13 @@ set(USER_EXECUTABLE_NAME "user")
 file(GLOB SRC_FILES
     ${CMAKE_CURRENT_SOURCE_DIR}/src/*.cpp
     ${COMMON_DIR}/src/*.cpp
+    ${CMAKE_SOURCE_DIR}/services/management/src/management_api_handler.cpp
+    ${CMAKE_SOURCE_DIR}/services/management/src/management_api_strategy.cpp
 )
 
 include_directories(${CMAKE_CURRENT_SOURCE_DIR}/includes/)
 include_directories(${CMAKE_CURRENT_SOURCE_DIR}/include)
+include_directories(${CMAKE_SOURCE_DIR}/services/management/include)
 include_directories(${COMMON_DIR}/include)
 
 add_executable(${USER_EXECUTABLE_NAME} ${SRC_FILES})
