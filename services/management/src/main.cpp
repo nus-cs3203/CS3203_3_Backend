@@ -165,6 +165,11 @@ int main() {
         return management_api_handler.find_one(req, db_manager, COLLECTION_POLL_RESPONSES);
     });
 
+    CROW_ROUTE(app, "/poll_responses/get_many").methods(crow::HTTPMethod::Post)
+    ([db_manager, &management_api_handler, COLLECTION_POLL_RESPONSES](const crow::request& req) {
+        return management_api_handler.get_many(req, db_manager, COLLECTION_POLL_RESPONSES);
+    });
+
     app.port(8083).run();
     return 0;
 }

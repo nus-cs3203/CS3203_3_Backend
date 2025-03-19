@@ -22,7 +22,7 @@ auto ManagementApiStrategy::process_request_func_get_one_by_oid(const crow::requ
     return std::make_tuple(filter, option);
 }
 
-auto ManagementApiStrategy::process_request_func_get_many(const crow::request& req) -> std::tuple<bsoncxx::document::value, mongocxx::options::find> {
+auto ManagementApiStrategy::process_request_func_get_many(const crow::request& req) -> std::tuple<bsoncxx::document::value, mongocxx::options::find, bsoncxx::document::value> {
     BaseApiStrategyUtils::validate_fields(req, {"filter", "page_size", "page_number"});
 
     auto body = crow::json::load(req.body);
@@ -43,14 +43,20 @@ auto ManagementApiStrategy::process_request_func_get_many(const crow::request& r
     option.skip((page_number - 1) * page_size);
     option.limit(page_size);
 
-    return std::make_tuple(filter, option);
+    bsoncxx::document::value sort = make_document();
+    if (body.has("sort")) {
+        sort = BaseApiStrategyUtils::parse_request_json_to_database_bson(body["sort"]);
+    }
+
+    return std::make_tuple(filter, option, sort);
 }
 
-auto ManagementApiStrategy::process_request_func_get_all(const crow::request& req) -> std::tuple<bsoncxx::document::value, mongocxx::options::find> {    
+auto ManagementApiStrategy::process_request_func_get_all(const crow::request& req) -> std::tuple<bsoncxx::document::value, mongocxx::options::find, bsoncxx::document::value> {    
     auto filter = make_document();
     mongocxx::options::find option;
+    bsoncxx::document::value sort = make_document();
 
-    return std::make_tuple(filter, option);
+    return std::make_tuple(filter, option, sort);
 }
 
 auto ManagementApiStrategy::process_response_func_get(mongocxx::cursor& cursor) -> crow::json::wvalue {
@@ -68,7 +74,7 @@ auto ManagementApiStrategy::process_response_func_get(mongocxx::cursor& cursor) 
     return response_data;
 }
 
-auto ManagementApiStrategy::process_request_func_get_by_daterange(const crow::request& req) -> std::tuple<bsoncxx::document::value, mongocxx::options::find> {
+auto ManagementApiStrategy::process_request_func_get_by_daterange(const crow::request& req) -> std::tuple<bsoncxx::document::value, mongocxx::options::find, bsoncxx::document::value> {
     BaseApiStrategyUtils::validate_fields(req, {"start_date", "end_date"});
 
     auto body = crow::json::load(req.body);
@@ -84,7 +90,9 @@ auto ManagementApiStrategy::process_request_func_get_by_daterange(const crow::re
 
     mongocxx::options::find option;
 
-    return std::make_tuple(filter, option);
+    bsoncxx::document::value sort = make_document();
+
+    return std::make_tuple(filter, option, sort);
 }
 
 
