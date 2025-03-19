@@ -1628,8 +1628,6 @@ curl -X POST "http://localhost:8083/poll_templates/get_by_oid" \
      }'
 ```
 
-## Service: **management** (continued)
-
 ### **Collection: `poll_responses`**
 
 Refer to Schema Document for collection definition.
@@ -1968,11 +1966,11 @@ curl -X POST "http://localhost:8085/signup" \
      -H "Content-Type: application/json" \
      -d '{
         "document": {
-            "name": "string",
-            "email": "string",
-            "password": "string",
-            "role": "string",
-            "collectibles": "[]string"
+            "name": "test",
+            "email": "test",
+            "password": "test",
+            "role": "Citizen",
+            "collectibles": []
         }
      }'
 ```
