@@ -7,6 +7,7 @@
 
 #include <string>
 #include <tuple>
+#include <unordered_map>
 
 using bsoncxx::builder::basic::kvp;
 using bsoncxx::builder::basic::make_document;
@@ -149,4 +150,40 @@ auto ManagementApiStrategy::process_request_func_update_one_by_oid(const crow::r
     mongocxx::options::update option;
 
     return std::make_tuple(filter, update_doc, option);
+}
+
+auto ManagementApiStrategy::process_request_func_get_statistics_poll_responses(const crow::request& req) -> std::tuple<bsoncxx::document::value, mongocxx::options::find, bsoncxx::document::value> {
+    BaseApiStrategyUtils::validate_fields(req, {"filter"});
+
+    auto body = crow::json::load(req.body);
+    auto filter = BaseApiStrategyUtils::parse_request_json_to_database_bson(body["filter"]);
+
+    mongocxx::options::find option;
+
+    bsoncxx::document::value sort = make_document();
+
+    return std::make_tuple(filter, option, sort);
+}
+
+auto ManagementApiStrategy::process_response_func_get_statistics_poll_responses(mongocxx::cursor& cursor) -> crow::json::wvalue {
+    crow::json::wvalue response_data;
+
+    std::unordered_map<std::string, int> response_counter_map;
+
+    for (auto&& doc: cursor) {
+        auto doc_json = bsoncxx::to_json(doc);
+        auto doc_rval = crow::json::load(doc_json);
+        auto response = static_cast<std::string>(doc_rval["response"].s());
+        
+        if (response_counter_map.find(response) == response_counter_map.end()) {
+            response_counter_map[response] = 0;
+        }
+        response_counter_map[response]++;
+    }
+
+    for (auto &[response, count]: response_counter_map) {
+        response_data["statistics"][response] = count;
+    }
+
+    return response_data;
 }

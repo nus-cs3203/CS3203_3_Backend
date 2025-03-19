@@ -26,6 +26,9 @@ namespace ManagementApiStrategy {
 
     auto process_request_func_update_one_by_oid(const crow::request& req) -> std::tuple<bsoncxx::document::value, bsoncxx::document::value, mongocxx::options::update>; 
 
+    auto process_request_func_get_statistics_poll_responses(const crow::request& req) -> std::tuple<bsoncxx::document::value, mongocxx::options::find, bsoncxx::document::value>;
+    auto process_response_func_get_statistics_poll_responses(mongocxx::cursor& cursor) -> crow::json::wvalue;
+
     auto _parse_oid(const crow::request& req, const std::string& key) -> bsoncxx::document::value;
 }
 
