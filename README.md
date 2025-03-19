@@ -1052,6 +1052,9 @@ Text field explanation: Searches for the **existence** of a word in the `title` 
 - Filtered results are sorted by time (decreasing order).  
 - This endpoint will return the slice of documents at index `[page_size * page_number, page_size * (page_number + 1) - 1]` (1-based indexing).
 
+**Sort Field**:
+- Optionally, takes sort field.
+
 **Request:**
 ```json
 {
@@ -1064,7 +1067,12 @@ Text field explanation: Searches for the **existence** of a word in the `title` 
         "field2": "field2 value"
     },
     "page_size": "int",
-    "page_number": "int"
+    "page_number": "int",
+    "sort": { // optional
+        "field1": "int", // 1 for ascending, -1 for descending
+        "field2": "int",
+        ...
+    }
 }
 ```
 
@@ -1093,7 +1101,24 @@ curl -X POST http://localhost:8083/complaints/get_many \
      }'
 ```
 
----
+```sh
+curl -X POST http://localhost:8083/complaints/get_many \
+     -H "Content-Type: application/json" \
+     -d '{
+         "filter": {
+             "$text": {
+                 "$search": "new"
+             },
+             "category": "Technology"
+         },
+         "page_size": 25,
+         "page_number": 1,
+         "sort": {
+            "date": -1,
+            "category": 1
+         }
+     }'
+```
 
 #### **POST /complaints/delete_many_by_oids**
 
@@ -1314,7 +1339,7 @@ curl -X POST http://localhost:8083/polls/insert_one \
              "category": "Housing",
              "question_type": "MCQ",
              "options": ["Maxwell Food Centre", "Chinatown Complex", "Old Airport Road", "Newton Food Centre"],
-             "date_created": "2025-03-15T12:00:00Z",
+             "date_created": "01-01-2022 00:00:00",
              "date_published": null,
              "date_closed": null,
              "status": "Unpublished"
@@ -1359,15 +1384,23 @@ curl -X POST "http://localhost:8083/polls/get_by_oid" \
 - Filtered results are sorted in descending order (implementation-dependent).
 - This endpoint returns documents at index `[page_size * page_number, page_size * (page_number + 1) - 1]` (1-based indexing).
 
+**Sort Field**:
+- Optionally, takes sort field.
+
 **Request:**
 ```json
 {
     "filter": {
-        "status": "string",
+        "field1": "string",
         ...
     },
     "page_size": "int",
-    "page_number": "int"
+    "page_number": "int",
+    "sort": { // optional
+        "field1": "int", // 1 for ascending, -1 for descending
+        "field2": "int",
+        ...
+    }
 }
 ```
 
@@ -1595,6 +1628,299 @@ curl -X POST "http://localhost:8083/poll_templates/get_by_oid" \
      }'
 ```
 
+## Service: **management** (continued)
+
+### **Collection: `poll_responses`**
+
+Refer to Schema Document for collection definition.
+
+---
+
+#### **POST /poll_responses/insert_one**
+
+- **Purpose**: Insert a new poll response document.
+
+**Request:**
+```json
+{
+    "document": {
+        "poll_id": "string",         // MongoDB OID (as string) referencing the poll
+        "user_id": "string",         // MongoDB OID (as string) referencing the user
+        "response": "string",        // Response data (e.g., a text answer or selected option)
+        "date_submitted": "string"   // format: dd-mm-YYYY HH:MM:SS
+    }
+}
+```
+
+**Response:**
+```json
+{
+    "success": "bool",
+    "message": "string",
+    "oid": "string"  // The inserted document's MongoDB OID
+}
+```
+
+**Sample Request:**
+```sh
+curl -X POST http://localhost:8083/poll_responses/insert_one \
+     -H "Content-Type: application/json" \
+     -d '{
+         "document": {
+             "poll_id": "67da871c1447ef5cec00d5f1",
+             "user_id": "67d93e8c3c0bfe14510691b1",
+             "response": "Maxwell Food Centre",
+             "date_submitted": "01-01-2022 00:00:00"
+         }
+     }'
+```
+
+**Sample Response:**
+```json
+{
+    "success": true,
+    "message": "Server processed insert request successfully.",
+    "oid": "67dad311a63875aa4603d5d1"
+}
+```
+
+---
+
+#### **POST /poll_responses/get_one**
+
+- **Purpose**: Retrieve a single poll response matching the specified filter criteria.
+
+**Request:**
+```json
+{
+    "filter": {
+        "poll_id": "string",
+        "user_id": "string"
+    }
+}
+```
+
+**Response:**
+```json
+{
+    "success": "bool",
+    "message": "string",
+    "document": {
+        "_id": {
+            "$oid": "string"
+        },
+        "user_id": "string",
+        "poll_id": "string",
+        "response": "string",
+        "date_submitted": "string"
+    }
+}
+```
+
+**Sample Request:**
+```sh
+curl -X POST http://localhost:8083/poll_responses/get_one \
+     -H "Content-Type: application/json" \
+     -d '{
+         "filter": {
+             "poll_id": "67da871c1447ef5cec00d5f1",
+             "user_id": "67d93e8c3c0bfe14510691b1"
+         }
+     }'
+```
+
+**Sample Response:**
+```json
+{
+    "message": "Server processed get request successfully.",
+    "success": true,
+    "document": {
+        "_id": {
+            "$oid": "67da891dbb0d0f2b82082521"
+        },
+        "user_id": "67d93e8c3c0bfe14510691b1",
+        "poll_id": "67da871c1447ef5cec00d5f1",
+        "response": "Maxwell Food Centre",
+        "date_submitted": "01-01-2022 00:00:00"
+    }
+}
+```
+
+---
+
+#### **POST /poll_responses/get_many**
+
+- **Purpose**: Retrieve multiple poll responses that match the specified filter, supporting pagination and optional sorting.
+
+**Pagination Explanation**:  
+- Results can be paginated using `page_size` and `page_number`.  
+
+**Request:**
+```json
+{
+    "filter": {
+        "field1": "string",
+        "field2": "string",
+        ...
+    },
+    "page_size": "int",
+    "page_number": "int",
+    "sort": { // optional
+        "field1": "int", // 1 for ascending, -1 for descending
+        "field2": "int",
+        ...
+    }
+}
+```
+
+**Response:**
+```json
+{
+    "success": "bool",
+    "message": "string",
+    "documents": [
+        {
+            "_id": {
+                "$oid": "string"
+            },
+            "user_id": "string",
+            "poll_id": "string",
+            "response": "string",
+            "date_submitted": "string"
+        },
+        ...
+    ]
+}
+```
+
+**Sample Request:**
+```sh
+curl -X POST http://localhost:8083/poll_responses/get_many \
+     -H "Content-Type: application/json" \
+     -d '{
+         "filter": {
+            "poll_id": "67da871c1447ef5cec00d5f1"
+         },
+         "page_size": 1,
+         "page_number": 1,
+         "sort": {
+            "date": 1
+         }
+     }'
+```
+
+**Sample Response:**
+```json
+{
+    "message": "Server processed get request successfully.",
+    "success": true,
+    "documents": [
+        {
+            "_id": {
+                "$oid": "67da891dbb0d0f2b82082521"
+            },
+            "user_id": "67d93e8c3c0bfe14510691b1",
+            "poll_id": "67da871c1447ef5cec00d5f1",
+            "response": "Maxwell Food Centre",
+            "date_submitted": "01-01-2022 00:00:00"
+        }
+    ]
+}
+```
+
+---
+
+#### **POST /poll_responses/get_statistics**
+
+- **Purpose**: Retrieve aggregated statistics (count of each unique response) for a given poll.
+
+**Request:**
+```json
+{
+    "filter": {
+        "poll_id": "string"
+        // other potential fields (if exist in schema)
+    }
+}
+```
+
+**Response:**
+```json
+{
+    "success": "bool",
+    "message": "string",
+    "statistics": {
+        "response_value_1": "int", // count for response_value_1
+        "response_value_2": "int",
+        ...
+    }
+}
+```
+
+**Sample Request:**
+```sh
+curl -X POST http://localhost:8083/poll_responses/get_statistics \
+     -H "Content-Type: application/json" \
+     -d '{
+         "filter": {
+             "poll_id": "67da871c1447ef5cec00d5f1"
+         }
+     }'
+```
+
+**Sample Response:**
+```json
+{
+    "success": true,
+    "message": "Server processed get request successfully.",
+    "statistics": {
+        "Maxwell Food Centre": 2
+    }
+}
+```
+
+---
+
+#### **POST /poll_responses/get_count**
+
+- **Purpose**: Retrieve the total number of poll response documents matching the specified filter.
+
+**Request:**
+```json
+{
+    "filter": {
+        // If empty, counts all documents
+    }
+}
+```
+
+**Response:**
+```json
+{
+    "success": "bool",
+    "message": "string",
+    "count": "int"
+}
+```
+
+**Sample Request:**
+```sh
+curl -X POST http://localhost:8083/poll_responses/get_count \
+     -H "Content-Type: application/json" \
+     -d '{
+         "filter": {}
+     }'
+```
+
+**Sample Response:**
+```json
+{
+    "message": "Server processed count_documents request successfully.",
+    "success": true,
+    "count": 2
+}
+```
+
 ---
 
 ## Service: **user**
@@ -1610,9 +1936,13 @@ This service provides user management endpoints, including account creation (`si
 **Request:**
 ```json
 {
-    "name": "string",
-    "email": "string",
-    "password": "string"
+    "document": {
+        "name": "string",
+        "email": "string",
+        "password": "string",
+        "role": "string",
+        "collectibles": "[]string"
+    }
 }
 ```
 
@@ -1637,9 +1967,13 @@ This service provides user management endpoints, including account creation (`si
 curl -X POST "http://localhost:8085/signup" \
      -H "Content-Type: application/json" \
      -d '{
-         "name": "test",
-         "email": "test",
-         "password": "test"
+        "document": {
+            "name": "string",
+            "email": "string",
+            "password": "string",
+            "role": "string",
+            "collectibles": "[]string"
+        }
      }'
 ```
 
@@ -1729,7 +2063,7 @@ curl -X POST "http://localhost:8085/login" \
 curl -X POST "http://localhost:8085/get_profile_by_oid" \
      -H "Content-Type: application/json" \
      -d '{
-         "oid": "67cc161e272d605a7902a4e2"
+         "oid": "67d93e8c3c0bfe14510691b1"
      }'
 ```
 
@@ -1748,3 +2082,47 @@ curl -X POST "http://localhost:8085/get_profile_by_oid" \
     }
 }
 ```
+
+---
+
+### **POST /update_profile_by_oid**
+
+- **Purpose**: Update a user's profile based on their unique ID (`oid`).
+
+**Request:**
+```json
+{
+    "oid": "string",
+    "update_document": {
+        "$set": {
+            "field_name": "updated_value"
+        }
+    }
+}
+```
+
+**Sample Request:**
+```sh
+curl -X POST "http://localhost:8085/update_profile_by_oid" \
+     -H "Content-Type: application/json" \
+     -d '{
+         "oid": "67d93e8c3c0bfe14510691b1",
+         "update_document": {
+             "$set": {
+                 "name": "test_2"
+             }
+         }
+     }'
+```
+
+**Sample Response:**
+```json
+{
+    "message": "Server processed update request successfully.",
+    "matched_count": 1,
+    "success": true,
+    "modified_count": 0,
+    "upserted_count": 0
+}
+```
+---
