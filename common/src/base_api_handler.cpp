@@ -6,6 +6,7 @@
 #include <bsoncxx/json.hpp>
 #include "crow.h"
 #include <mongocxx/client.hpp>
+#include <mongocxx/exception/exception.hpp>
 #include <mongocxx/instance.hpp>
 
 #include <utility> 
@@ -74,7 +75,6 @@ auto BaseApiHandler::insert_one(
         auto option = std::get<1>(document_and_option);
 
         auto result = db_manager->insert_one(collection_name, document, option);
-
         if (!result.has_value()) {
             throw std::runtime_error("Insertion failed!");
         }
@@ -82,6 +82,13 @@ auto BaseApiHandler::insert_one(
         auto response_data = process_response_func(result.value());
         
         return BaseApiStrategyUtils::make_success_response(200, response_data, "Server processed insert request successfully.");
+    }
+    catch (const mongocxx::exception& e) {
+        if (e.code().value() == 11000) { 
+            return BaseApiStrategyUtils::make_error_response(409, "Unique constraint violation!");
+        } else {
+            return BaseApiStrategyUtils::make_error_response(500, e.what());
+        }
     }
     catch (const std::exception& e) {
         return BaseApiStrategyUtils::make_error_response(500, std::string("Server error: ") + e.what());
