@@ -13,7 +13,7 @@ auto ManagementApiHandler::get_one_by_oid(
     std::shared_ptr<DatabaseManager> db_manager, 
     const std::string& collection_name
 ) -> crow::response {
-    return find_one(req, db_manager, collection_name, ManagementApiStrategy::process_request_func_get_one_by_oid, ManagementApiStrategy::process_response_func_get_one);
+    return find_one(req, db_manager, collection_name, ManagementApiStrategy::process_request_func_get_one_by_oid, BaseApiStrategy::process_response_func_get_one);
 }
 
 auto ManagementApiHandler::get_all(

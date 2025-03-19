@@ -12,6 +12,9 @@
 #include <vector>
 
 namespace BaseApiStrategy {
+    auto process_request_func_get_one(const crow::request& req) -> std::tuple<bsoncxx::document::value, mongocxx::options::find>;
+    auto process_response_func_get_one(const bsoncxx::document::value& doc) -> crow::json::wvalue;
+    
     auto process_request_func_insert_one(const crow::request& req) -> std::tuple<bsoncxx::document::value, mongocxx::options::insert>;
     auto process_response_func_insert_one(const mongocxx::result::insert_one& result) -> crow::json::wvalue;
 

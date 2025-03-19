@@ -18,8 +18,8 @@ public:
         const crow::request& req, 
         std::shared_ptr<DatabaseManager> db_manager, 
         const std::string& collection_name, 
-        std::function<std::tuple<bsoncxx::document::value, mongocxx::options::find>(const crow::request&)> process_request_func,
-        std::function<crow::json::wvalue(const bsoncxx::document::value&)> process_response_func
+        std::function<std::tuple<bsoncxx::document::value, mongocxx::options::find>(const crow::request&)> process_request_func = BaseApiStrategy::process_request_func_get_one,
+        std::function<crow::json::wvalue(const bsoncxx::document::value&)> process_response_func = BaseApiStrategy::process_response_func_get_one
     ) -> crow::response;
 
     auto find(
