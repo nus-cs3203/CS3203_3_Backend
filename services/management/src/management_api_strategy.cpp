@@ -55,7 +55,6 @@ auto ManagementApiStrategy::process_request_func_get_all(const crow::request& re
     auto filter = make_document();
     mongocxx::options::find option;
     bsoncxx::document::value sort = make_document();
-
     return std::make_tuple(filter, option, sort);
 }
 
@@ -91,6 +90,9 @@ auto ManagementApiStrategy::process_request_func_get_by_daterange(const crow::re
     mongocxx::options::find option;
 
     bsoncxx::document::value sort = make_document();
+    if (body.has("sort")) {
+        sort = BaseApiStrategyUtils::parse_request_json_to_database_bson(body["sort"]);
+    }
 
     return std::make_tuple(filter, option, sort);
 }
