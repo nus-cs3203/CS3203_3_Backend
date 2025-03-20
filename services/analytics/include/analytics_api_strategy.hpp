@@ -13,6 +13,11 @@
 
 namespace AnalyticsApiStrategy {
     auto process_request_func_get_one_by_name(const crow::request& req) -> std::tuple<bsoncxx::document::value, mongocxx::options::find>; 
+    auto process_request_func_get_complaints_statistics(const crow::request& req) -> std::tuple<std::vector<bsoncxx::document::value>, mongocxx::options::aggregate>;
+    
+    auto create_pipeline_func_get_complaints_statistics(const std::vector<bsoncxx::document::value>& documents) -> mongocxx::pipeline;
+
+    auto process_response_func_get_complaints_statistics(mongocxx::cursor& cursor) -> crow::json::wvalue;
 }
 
 #endif

@@ -15,3 +15,11 @@ auto AnalyticsApiHandler::get_one_by_name(
 ) -> crow::response {
     return find_one(req, db_manager, collection_name, AnalyticsApiStrategy::process_request_func_get_one_by_name, BaseApiStrategy::process_response_func_get_one);
 }
+
+auto AnalyticsApiHandler::get_complaints_statistics(
+    const crow::request& req, 
+    std::shared_ptr<DatabaseManager> db_manager, 
+    const std::string& collection_name
+) -> crow::response {
+    return aggregate(req, db_manager, collection_name, AnalyticsApiStrategy::process_request_func_get_complaints_statistics, AnalyticsApiStrategy::create_pipeline_func_get_complaints_statistics, AnalyticsApiStrategy::process_response_func_get_complaints_statistics);
+}

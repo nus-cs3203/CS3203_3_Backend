@@ -35,10 +35,12 @@ int main() {
         return analytics_api_handler.get_one_by_name(req, db_manager, COLLECTION_CATEGORY_ANALYTICS);
     });
 
-    // CROW_ROUTE(app, "/get_complaints_statistics").methods(crow::HTTPMethod::Post)
-    // ([db, &api_handler](const crow::request& req) {
-    //     return api_handler.get_complaints_statistics(req, db);
-    // });
+    auto COLLECTION_COMPLAINTS = Constants::COLLECTION_COMPLAINTS;
+
+    CROW_ROUTE(app, "/get_complaints_statistics").methods(crow::HTTPMethod::Post)
+    ([db_manager, &analytics_api_handler, COLLECTION_COMPLAINTS](const crow::request& req) {
+        return analytics_api_handler.get_complaints_statistics(req, db_manager, COLLECTION_COMPLAINTS);
+    });
 
     // CROW_ROUTE(app, "/get_complaints_statistics_over_time").methods(crow::HTTPMethod::Post)
     // ([db, &api_handler](const crow::request& req) {

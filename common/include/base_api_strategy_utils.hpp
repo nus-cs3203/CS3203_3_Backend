@@ -21,7 +21,8 @@ namespace BaseApiStrategyUtils {
 
     auto parse_oid_str_to_oid_bson(const std::string& oid_str) -> bsoncxx::document::value;
     auto parse_date_str_to_date_bson(const std::string& date_str) -> bsoncxx::types::b_date;
-    
+    auto parse_complaints_filter(const crow::json::rvalue& rval_json) -> bsoncxx::document::value;
+
     const std::unordered_set<std::string> DATE_FIELDS = {"date", "from_date", "to_date", "start_date", "end_date", "date_created", "date_published", "date_closed", "date_submitted"};
 
     const std::string DEFAULT_KEY = "";

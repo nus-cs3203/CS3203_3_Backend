@@ -192,3 +192,28 @@ auto BaseApiHandler::count_documents(
         return BaseApiStrategyUtils::make_error_response(500, std::string("Server error: ") + e.what());
     }
 }
+
+auto BaseApiHandler::aggregate(
+    const crow::request& req, 
+    std::shared_ptr<DatabaseManager> db_manager, 
+    const std::string& collection_name, 
+    std::function<std::tuple<std::vector<bsoncxx::document::value>, mongocxx::options::aggregate>(const crow::request&)> process_request_func,
+    std::function<mongocxx::pipeline(const std::vector<bsoncxx::document::value>&)> create_pipeline_func,
+    std::function<crow::json::wvalue(mongocxx::cursor&)> process_response_func
+) -> crow::response {
+    try {
+        auto documents_and_option = process_request_func(req);
+        auto documents = std::get<0>(documents_and_option);
+        auto option = std::get<1>(documents_and_option);
+
+        auto pipeline = create_pipeline_func(documents);
+        auto cursor = db_manager->aggregate(collection_name, pipeline, option);
+
+        auto response_data = process_response_func(cursor);
+        
+        return BaseApiStrategyUtils::make_success_response(200, response_data, "Server processed aggregate request successfully.");
+    }
+    catch (const std::exception& e) {
+        return BaseApiStrategyUtils::make_error_response(500, std::string("Server error: ") + e.what());
+    }
+}

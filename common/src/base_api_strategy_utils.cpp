@@ -154,6 +154,79 @@ auto BaseApiStrategyUtils::parse_date_str_to_date_bson(const std::string& date_s
     return date_bson;
 }
 
+auto BaseApiStrategyUtils::parse_complaints_filter(const crow::json::rvalue& rval_json) -> bsoncxx::document::value {
+    bsoncxx::builder::basic::document filter_builder{};
+
+    if (rval_json.has("keyword")) {
+        auto keyword = rval_json["keyword"].s();
+        filter_builder.append(
+            kvp("$text", 
+                make_document(
+                    kvp("$search", static_cast<std::string>(keyword))
+                )
+            )
+        );
+    }
+
+    if (rval_json.has("category")) {
+        auto category = rval_json["category"].s();
+        filter_builder.append(kvp("category", static_cast<std::string>(category)));
+    }
+
+    if (rval_json.has("source")) {
+        auto source = rval_json["source"].s();
+        filter_builder.append(kvp("source", static_cast<std::string>(source)));
+    }
+
+    if (rval_json.has("start_date")) {
+        auto start_date_str = static_cast<std::string>(rval_json["start_date"].s());
+        auto start_date_bdate = parse_date_str_to_date_bson(start_date_str);
+        filter_builder.append(
+            kvp("date", 
+                make_document(
+                    kvp("$gte", start_date_bdate)
+                )
+            )
+        );
+    }
+
+    if (rval_json.has("end_date")) {
+        auto end_date_str = static_cast<std::string>(rval_json["end_date"].s());
+        auto end_date_bdate = parse_date_str_to_date_bson(end_date_str);
+        filter_builder.append(
+            kvp("date", 
+                make_document(
+                    kvp("$lte", end_date_bdate)
+                )
+            )
+        );
+    }
+
+    if (rval_json.has("min_sentiment")) {
+        auto min_sentiment = rval_json["min_sentiment"].d();
+        filter_builder.append(
+            kvp("sentiment", 
+                make_document(
+                    kvp("$gte", min_sentiment)
+                )
+            )
+        );
+    }
+
+    if (rval_json.has("max_sentiment")) {
+        auto max_sentiment = rval_json["max_sentiment"].d();
+        filter_builder.append(
+            kvp("sentiment", 
+                make_document(
+                    kvp("$lte", max_sentiment)
+                )
+            )
+        );
+    }
+    
+    return filter_builder.extract();
+}
+
 auto BaseApiStrategyUtils::make_error_response(int status_code, const std::string& message) -> crow::response {
     crow::json::wvalue res;
     res["success"] = false;
