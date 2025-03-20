@@ -586,13 +586,15 @@ curl -X POST "http://localhost:8082/get_category_analytics_by_name" \
 ```json
 {
     "filter": {
-        "keyword": "string",        // (optional) Title or selftext contains this keyword (case-insensitive)
+        "$text": { // (optional) Title or selftext contains this keyword (case-insensitive)
+            "$search": "string"
+        },        
         "source": "string",         // (optional) Source of complaint, e.g. "Reddit"
         "category": "string",       // (optional) Category of complaint, e.g. "Housing"
-        "start_date": "string",     // (optional) format: dd-mm-YYYY HH:MM:SS
-        "end_date": "string",       // (optional) format: dd-mm-YYYY HH:MM:SS
-        "min_sentiment": "double",  // (optional)
-        "max_sentiment": "double"   // (optional)
+        "_from_date": "string",     // (optional) format: dd-mm-YYYY HH:MM:SS
+        "_to_date": "string",       // (optional) format: dd-mm-YYYY HH:MM:SS
+        "_from_sentiment": "double",  // (optional)
+        "_to_sentiment": "double"   // (optional)
     }
 }
 ```
@@ -631,8 +633,8 @@ curl -X POST "http://localhost:8082/get_complaints_statistics" \
 -d '{
     "filter": {
         "category": "Housing",
-        "start_date": "01-01-2023 00:00:00",
-        "end_date":  "02-01-2023 00:00:00"
+        "_from_date": "01-01-2023 00:00:00",
+        "_to_date":  "02-01-2023 00:00:00"
     }
 }'
 ```

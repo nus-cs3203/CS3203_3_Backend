@@ -29,7 +29,7 @@ auto AnalyticsApiStrategy::process_request_func_get_complaints_statistics(const 
     auto body = crow::json::load(req.body);
     auto filter = make_document();
     if (body.has("filter")) {
-        filter = BaseApiStrategyUtils::parse_complaints_filter(body["filter"]);
+        filter = BaseApiStrategyUtils::parse_request_json_to_database_bson(body["filter"]);
     }
 
     std::vector<bsoncxx::document::value> documents = {filter};
