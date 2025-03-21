@@ -1,6 +1,6 @@
 #include "base_api_strategy_utils.hpp"
 #include "analytics_api_strategy.hpp"
-#include "utils.hpp"
+#include "date_utils.hpp"
 
 #include <bsoncxx/json.hpp>
 #include "crow.h"
@@ -26,11 +26,10 @@ auto AnalyticsApiStrategy::process_request_func_get_one_by_name(const crow::requ
 }
 
 auto AnalyticsApiStrategy::process_request_func_get_complaints_statistics(const crow::request& req) -> std::tuple<std::vector<bsoncxx::document::value>, mongocxx::options::aggregate> {
+    BaseApiStrategyUtils::validate_fields(req, {"filter"});
+    
     auto body = crow::json::load(req.body);
-    auto filter = make_document();
-    if (body.has("filter")) {
-        filter = BaseApiStrategyUtils::parse_request_json_to_database_bson(body["filter"]);
-    }
+    auto filter = BaseApiStrategyUtils::parse_request_json_to_database_bson(body["filter"]);
 
     std::vector<bsoncxx::document::value> documents = {filter};
 
@@ -38,6 +37,20 @@ auto AnalyticsApiStrategy::process_request_func_get_complaints_statistics(const 
 
     return std::make_tuple(documents, option);
 }
+
+auto AnalyticsApiStrategy::process_request_func_get_complaints_statistics_over_time(const crow::request& req) -> std::tuple<std::vector<bsoncxx::document::value>, mongocxx::options::aggregate> {
+    BaseApiStrategyUtils::validate_fields(req, {"start_date", "end_date", "filter"});
+    
+    auto body = crow::json::load(req.body);
+    auto filter = BaseApiStrategyUtils::parse_request_json_to_database_bson(body["filter"]);
+
+    std::vector<bsoncxx::document::value> documents = {filter};
+
+    mongocxx::options::aggregate option;
+
+    return std::make_tuple(documents, option);
+}
+
 
 auto AnalyticsApiStrategy::create_pipeline_func_get_complaints_statistics(const std::vector<bsoncxx::document::value>& documents) -> mongocxx::pipeline {
     mongocxx::pipeline pipeline{};
@@ -56,15 +69,115 @@ auto AnalyticsApiStrategy::create_pipeline_func_get_complaints_statistics(const 
     return pipeline;
 }
 
-auto AnalyticsApiStrategy::process_response_func_get_complaints_statistics(mongocxx::cursor& cursor) -> crow::json::wvalue {
+auto AnalyticsApiStrategy::create_pipeline_func_get_complaints_statistics_over_time(const std::vector<bsoncxx::document::value>& documents) -> mongocxx::pipeline {
+    mongocxx::pipeline pipeline{};
+
+    const auto &filter = documents[0];
+    pipeline.match(filter.view());
+
+    pipeline.group(make_document(
+        kvp("_id", make_document(
+            kvp("year", make_document(kvp("$year", "$date"))),
+            kvp("month", make_document(kvp("$month", "$date")))
+        )),
+        kvp("count", make_document(kvp("$sum", 1))),
+        kvp("avg_sentiment", make_document(kvp("$avg", "$sentiment")))
+    ));
+
+    return pipeline;
+}
+
+auto AnalyticsApiStrategy::process_response_func_get_complaints_statistics(const crow::request& req, mongocxx::cursor& cursor) -> crow::json::wvalue {
     crow::json::wvalue response_data;
-    response_data["count"] = 0;
-    response_data["avg_sentiment"] = 0;
+    response_data["statistics"]["count"] = 0;
+    response_data["statistics"]["avg_sentiment"] = 0;
     for (const auto& document: cursor) {
         auto document_json = bsoncxx::to_json(document);
         crow::json::rvalue rval_json = crow::json::load(document_json);
-        response_data["count"] = rval_json["count"];
-        response_data["avg_sentiment"] = rval_json["avg_sentiment"];
+        response_data["statistics"]["count"] = rval_json["count"];
+        response_data["statistics"]["avg_sentiment"] = rval_json["avg_sentiment"];
     }
     return response_data;
+}
+
+auto AnalyticsApiStrategy::process_response_func_get_complaints_statistics_over_time(const crow::request& req, mongocxx::cursor& cursor) -> crow::json::wvalue {
+    auto body = crow::json::load(req.body);
+
+    auto start_date = static_cast<std::string>(body["start_date"].s());
+    auto end_date = static_cast<std::string>(body["end_date"].s());
+    auto month_range = _create_month_range(start_date, end_date);
+
+    struct Statistics {
+        int count;
+        double avg_sentiment;
+    };
+    
+    std::map<std::pair<int, int>, Statistics> mapper;
+
+
+    for (auto&& document: cursor) {
+        auto doc_json = bsoncxx::to_json(document);
+        auto doc_rval_json = crow::json::load(doc_json);
+
+        int month = doc_rval_json["_id"]["month"].i();
+        int year = doc_rval_json["_id"]["year"].i();
+
+        int count = doc_rval_json["count"].i();
+        double avg_sentiment = doc_rval_json["avg_sentiment"].d();
+
+        mapper[{month, year}] = Statistics{count, avg_sentiment};
+    }
+
+    std::vector<crow::json::wvalue> result;
+    for (const auto &[month, year]: month_range) {
+        Statistics stat;
+        if (mapper.find({month, year}) != mapper.end()) {
+            stat.count = mapper[{month, year}].count;
+            stat.avg_sentiment = mapper[{month, year}].avg_sentiment;
+        }
+
+        crow::json::wvalue wval_json;
+        wval_json["date"] = DateUtils::create_month_year_str(month, year);
+        wval_json["data"]["count"] = stat.count;
+        wval_json["data"]["avg_sentiment"] = stat.avg_sentiment;
+        result.push_back(std::move(wval_json));
+    }
+
+    crow::json::wvalue response_data;
+    response_data["statistics"] = std::move(result);
+    return response_data;
+}
+
+auto AnalyticsApiStrategy::_create_month_range(const std::string& start_date, const std::string& end_date) -> std::vector<std::pair<int, int>> {
+    int start_month = DateUtils::extract_month_from_timestamp_str(start_date);
+    int start_year = DateUtils::extract_year_from_timestamp_str(start_date);
+
+    int end_month = DateUtils::extract_month_from_timestamp_str(end_date);
+    int end_year = DateUtils::extract_year_from_timestamp_str(end_date);
+
+    std::vector<std::pair<int, int>> result;
+    if (start_year > end_year) {
+        return result;
+    }
+
+    if (start_year == end_year) {
+        for (int month = start_month; month <= end_month; ++month) {
+            result.push_back({month, start_year});
+        }
+        return result;
+    }
+
+    for (int month = start_month; month <= 12; ++month) {
+        result.push_back({month, start_year});
+    }
+    for (int year = start_year + 1; year < end_year; ++year) {
+        for (int month = 1; month <= 12; ++month) {
+            result.push_back({month, year});
+        }
+    }
+    for (int month = 1; month <= end_month; ++month) {
+        result.push_back({month, end_year});
+    }
+
+    return result;
 }

@@ -42,10 +42,10 @@ int main() {
         return analytics_api_handler.get_complaints_statistics(req, db_manager, COLLECTION_COMPLAINTS);
     });
 
-    // CROW_ROUTE(app, "/get_complaints_statistics_over_time").methods(crow::HTTPMethod::Post)
-    // ([db, &api_handler](const crow::request& req) {
-    //     return api_handler.get_complaints_statistics_over_time(req, db);
-    // });
+    CROW_ROUTE(app, "/get_complaints_statistics_over_time").methods(crow::HTTPMethod::Post)
+    ([db_manager, &analytics_api_handler, COLLECTION_COMPLAINTS](const crow::request& req) {
+        return analytics_api_handler.get_complaints_statistics_over_time(req, db_manager, COLLECTION_COMPLAINTS);
+    });
 
     // CROW_ROUTE(app, "/get_complaints_grouped_by_sentiment_value").methods(crow::HTTPMethod::Post)
     // ([db, &api_handler](const crow::request& req) {

@@ -76,7 +76,7 @@ public:
         const std::string& collection_name, 
         std::function<std::tuple<std::vector<bsoncxx::document::value>, mongocxx::options::aggregate>(const crow::request&)> process_request_func,
         std::function<mongocxx::pipeline(const std::vector<bsoncxx::document::value>&)> create_pipeline_func,
-        std::function<crow::json::wvalue(mongocxx::cursor&)> process_response_func
+        std::function<crow::json::wvalue(const crow::request&, mongocxx::cursor&)> process_response_func
     ) -> crow::response;
 };
 

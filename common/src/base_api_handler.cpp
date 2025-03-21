@@ -199,7 +199,7 @@ auto BaseApiHandler::aggregate(
     const std::string& collection_name, 
     std::function<std::tuple<std::vector<bsoncxx::document::value>, mongocxx::options::aggregate>(const crow::request&)> process_request_func,
     std::function<mongocxx::pipeline(const std::vector<bsoncxx::document::value>&)> create_pipeline_func,
-    std::function<crow::json::wvalue(mongocxx::cursor&)> process_response_func
+    std::function<crow::json::wvalue(const crow::request&, mongocxx::cursor&)> process_response_func
 ) -> crow::response {
     try {
         auto documents_and_option = process_request_func(req);
@@ -209,7 +209,7 @@ auto BaseApiHandler::aggregate(
         auto pipeline = create_pipeline_func(documents);
         auto cursor = db_manager->aggregate(collection_name, pipeline, option);
 
-        auto response_data = process_response_func(cursor);
+        auto response_data = process_response_func(req, cursor);
         
         return BaseApiStrategyUtils::make_success_response(200, response_data, "Server processed aggregate request successfully.");
     }
