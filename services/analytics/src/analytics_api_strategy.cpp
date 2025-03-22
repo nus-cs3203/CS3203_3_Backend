@@ -30,8 +30,13 @@ auto AnalyticsApiStrategy::process_request_func_get_complaints_statistics(const 
     
     auto body = crow::json::load(req.body);
     auto filter = BaseApiStrategyUtils::parse_request_json_to_database_bson(body["filter"]);
+    auto group = make_document(
+        kvp("_id", bsoncxx::types::b_null()),
+        kvp("count", make_document(kvp("$sum", 1))),
+        kvp("avg_sentiment", make_document(kvp("$avg", "$sentiment")))
+    );
 
-    std::vector<bsoncxx::document::value> documents = {filter};
+    std::vector<bsoncxx::document::value> documents = {filter, group};
 
     mongocxx::options::aggregate option;
 
@@ -43,8 +48,16 @@ auto AnalyticsApiStrategy::process_request_func_get_complaints_statistics_over_t
     
     auto body = crow::json::load(req.body);
     auto filter = BaseApiStrategyUtils::parse_request_json_to_database_bson(body["filter"]);
+    auto group = make_document(
+        kvp("_id", make_document(
+            kvp("year", make_document(kvp("$year", "$date"))),
+            kvp("month", make_document(kvp("$month", "$date")))
+        )),
+        kvp("count", make_document(kvp("$sum", 1))),
+        kvp("avg_sentiment", make_document(kvp("$avg", "$sentiment")))
+    );
 
-    std::vector<bsoncxx::document::value> documents = {filter};
+    std::vector<bsoncxx::document::value> documents = {filter, group};
 
     mongocxx::options::aggregate option;
 
@@ -83,15 +96,10 @@ auto AnalyticsApiStrategy::create_pipeline_func_get_complaints_statistics(const 
     mongocxx::pipeline pipeline{};
 
     const auto &filter = documents[0];
-    pipeline.match(filter.view());
+    const auto &group = documents[1];
 
-    pipeline.group(
-        make_document(
-            kvp("_id", bsoncxx::types::b_null()),
-            kvp("count", make_document(kvp("$sum", 1))),
-            kvp("avg_sentiment", make_document(kvp("$avg", "$sentiment")))
-        )
-    );
+    pipeline.match(filter.view());
+    pipeline.group(group.view());
 
     return pipeline;
 }
@@ -100,16 +108,10 @@ auto AnalyticsApiStrategy::create_pipeline_func_get_complaints_statistics_over_t
     mongocxx::pipeline pipeline{};
 
     const auto &filter = documents[0];
-    pipeline.match(filter.view());
+    const auto &group = documents[1];
 
-    pipeline.group(make_document(
-        kvp("_id", make_document(
-            kvp("year", make_document(kvp("$year", "$date"))),
-            kvp("month", make_document(kvp("$month", "$date")))
-        )),
-        kvp("count", make_document(kvp("$sum", 1))),
-        kvp("avg_sentiment", make_document(kvp("$avg", "$sentiment")))
-    ));
+    pipeline.match(filter.view());
+    pipeline.group(group.view());
 
     return pipeline;
 }
@@ -121,7 +123,6 @@ auto AnalyticsApiStrategy::create_pipeline_func_get_complaints_statistics_groupe
     const auto &group = documents[1];
 
     pipeline.match(filter.view());
-
     pipeline.group(group.view());
 
     return pipeline;
