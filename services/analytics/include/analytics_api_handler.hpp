@@ -28,6 +28,12 @@ public:
         std::shared_ptr<DatabaseManager> db_manager, 
         const std::string& collection_name
     ) -> crow::response;
+
+    auto get_complaints_statistics_grouped(
+        const crow::request& req, 
+        std::shared_ptr<DatabaseManager> db_manager, 
+        const std::string& collection_name
+    ) -> crow::response;
 private:
 };
 

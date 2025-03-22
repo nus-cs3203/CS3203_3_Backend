@@ -30,19 +30,19 @@ int main() {
 
     auto COLLECTION_CATEGORY_ANALYTICS = Constants::COLLECTION_CATEGORY_ANALYTICS;
 
-    CROW_ROUTE(app, "/get_category_analytics_by_name").methods(crow::HTTPMethod::Post)
+    CROW_ROUTE(app, "/category_analytics/get_by_name").methods(crow::HTTPMethod::Post)
     ([db_manager, &analytics_api_handler, COLLECTION_CATEGORY_ANALYTICS](const crow::request& req) {
         return analytics_api_handler.get_one_by_name(req, db_manager, COLLECTION_CATEGORY_ANALYTICS);
     });
 
     auto COLLECTION_COMPLAINTS = Constants::COLLECTION_COMPLAINTS;
 
-    CROW_ROUTE(app, "/get_complaints_statistics").methods(crow::HTTPMethod::Post)
+    CROW_ROUTE(app, "/complaints/get_statistics").methods(crow::HTTPMethod::Post)
     ([db_manager, &analytics_api_handler, COLLECTION_COMPLAINTS](const crow::request& req) {
         return analytics_api_handler.get_complaints_statistics(req, db_manager, COLLECTION_COMPLAINTS);
     });
 
-    CROW_ROUTE(app, "/get_complaints_statistics_over_time").methods(crow::HTTPMethod::Post)
+    CROW_ROUTE(app, "/complaints/get_statistics_over_time").methods(crow::HTTPMethod::Post)
     ([db_manager, &analytics_api_handler, COLLECTION_COMPLAINTS](const crow::request& req) {
         return analytics_api_handler.get_complaints_statistics_over_time(req, db_manager, COLLECTION_COMPLAINTS);
     });
@@ -52,19 +52,14 @@ int main() {
     //     return api_handler.get_complaints_grouped_by_sentiment_value(req, db);
     // });
 
-    // CROW_ROUTE(app, "/get_complaints_grouped_by_field").methods(crow::HTTPMethod::Post)
-    // ([db, &api_handler](const crow::request& req) {
-    //     return api_handler.get_complaints_grouped_by_field(req, db);
-    // });
+    CROW_ROUTE(app, "/complaints/get_statistics_grouped").methods(crow::HTTPMethod::Post)
+    ([db_manager, &analytics_api_handler, COLLECTION_COMPLAINTS](const crow::request& req) {
+        return analytics_api_handler.get_complaints_statistics_grouped(req, db_manager, COLLECTION_COMPLAINTS);
+    });
 
     // CROW_ROUTE(app, "/get_complaints_grouped_by_field_over_time").methods(crow::HTTPMethod::Post)
     // ([db, &api_handler](const crow::request& req) {
     //     return api_handler.get_complaints_grouped_by_field_over_time(req, db);
-    // });
-
-    // CROW_ROUTE(app, "/get_complaints_sorted_by_fields").methods(crow::HTTPMethod::Post)
-    // ([db, &api_handler](const crow::request& req) {
-    //     return api_handler.get_complaints_sorted_by_fields(req, db);
     // });
 
     // Run the server

@@ -51,6 +51,33 @@ auto AnalyticsApiStrategy::process_request_func_get_complaints_statistics_over_t
     return std::make_tuple(documents, option);
 }
 
+auto AnalyticsApiStrategy::process_request_func_get_complaints_statistics_grouped(const crow::request& req) -> std::tuple<std::vector<bsoncxx::document::value>, mongocxx::options::aggregate> {
+    BaseApiStrategyUtils::validate_fields(req, {"group_by_field", "filter"});
+    
+    auto body = crow::json::load(req.body);
+    auto filter = BaseApiStrategyUtils::parse_request_json_to_database_bson(body["filter"]);
+
+    auto group_by_field = static_cast<std::string>(body["group_by_field"].s());
+    auto group = make_document(
+        kvp("_id", "$" + group_by_field),
+        kvp("count",
+            make_document(
+                kvp("$sum", 1)
+            )
+        ),
+        kvp("avg_sentiment",
+            make_document(
+                kvp("$avg", "$sentiment")
+            )
+        )
+    );
+
+    std::vector<bsoncxx::document::value> documents = {filter, group};
+
+    mongocxx::options::aggregate option;
+
+    return std::make_tuple(documents, option);
+}
 
 auto AnalyticsApiStrategy::create_pipeline_func_get_complaints_statistics(const std::vector<bsoncxx::document::value>& documents) -> mongocxx::pipeline {
     mongocxx::pipeline pipeline{};
@@ -83,6 +110,19 @@ auto AnalyticsApiStrategy::create_pipeline_func_get_complaints_statistics_over_t
         kvp("count", make_document(kvp("$sum", 1))),
         kvp("avg_sentiment", make_document(kvp("$avg", "$sentiment")))
     ));
+
+    return pipeline;
+}
+
+auto AnalyticsApiStrategy::create_pipeline_func_get_complaints_statistics_grouped(const std::vector<bsoncxx::document::value>& documents) -> mongocxx::pipeline {
+    mongocxx::pipeline pipeline{};
+
+    const auto &filter = documents[0];
+    const auto &group = documents[1];
+
+    pipeline.match(filter.view());
+
+    pipeline.group(group.view());
 
     return pipeline;
 }
@@ -148,6 +188,41 @@ auto AnalyticsApiStrategy::process_response_func_get_complaints_statistics_over_
     return response_data;
 }
 
+auto AnalyticsApiStrategy::process_response_func_get_complaints_statistics_grouped(const crow::request& req, mongocxx::cursor& cursor) -> crow::json::wvalue {
+    std::unordered_set<std::string> exists;
+
+    crow::json::wvalue result;
+    for (auto&& document: cursor) {
+        auto document_json = bsoncxx::to_json(document);
+        crow::json::rvalue rval_json = crow::json::load(document_json);
+
+        crow::json::wvalue sub_result;
+        sub_result["count"] = rval_json["count"];
+        sub_result["avg_sentiment"] = rval_json["avg_sentiment"];
+        auto group_by_field_value = rval_json["_id"].s();
+        result[group_by_field_value] = std::move(sub_result);
+        exists.insert(group_by_field_value);
+    }
+
+    auto body = crow::json::load(req.body);
+    auto group_by_field = static_cast<std::string>(body["group_by_field"].s());
+    auto group_by_field_values = AnalyticsApiStrategy::GROUP_BY_FIELD_VALUES_MAPPER[group_by_field];
+    for (const auto &group_by_field_value: group_by_field_values) {
+        if (exists.find(group_by_field_value) != exists.end()) {
+            continue;
+        }
+        crow::json::wvalue sub_result;
+        sub_result["count"] = 0;
+        sub_result["avg_sentiment"] = 0;
+        result[group_by_field_value] = std::move(sub_result);
+        exists.insert(group_by_field_value);
+    }
+
+    crow::json::wvalue response_data;
+    response_data["statistics"] = std::move(result);
+    return response_data;
+}
+
 auto AnalyticsApiStrategy::_create_month_range(const std::string& start_date, const std::string& end_date) -> std::vector<std::pair<int, int>> {
     int start_month = DateUtils::extract_month_from_timestamp_str(start_date);
     int start_year = DateUtils::extract_year_from_timestamp_str(start_date);
@@ -181,3 +256,8 @@ auto AnalyticsApiStrategy::_create_month_range(const std::string& start_date, co
 
     return result;
 }
+
+std::unordered_map<std::string, std::vector<std::string>> AnalyticsApiStrategy::GROUP_BY_FIELD_VALUES_MAPPER = {
+    {"category", {"Housing", "Healthcare", "Public Safety", "Transport", "Education", "Environment", "Employment", "Public Health", "Legal", "Economy", "Politics", "Technology", "Infrastructure", "Others"}},
+    {"source", {"Reddit"}}
+};
