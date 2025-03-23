@@ -44,9 +44,16 @@ auto AnalyticsApiStrategy::process_request_func_get_complaints_statistics(const 
 }
 
 auto AnalyticsApiStrategy::process_request_func_get_complaints_statistics_over_time(const crow::request& req) -> std::tuple<std::vector<bsoncxx::document::value>, mongocxx::options::aggregate> {
-    BaseApiStrategyUtils::validate_fields(req, {"start_date", "end_date", "filter"});
+    BaseApiStrategyUtils::validate_fields(req, {"filter"});
     
     auto body = crow::json::load(req.body);
+    if (!body["filter"].has("_from_date")) {
+        throw std::invalid_argument("Invalid request: missing _from_date field in filter");
+    }
+    if (!body["filter"].has("_to_date")) {
+        throw std::invalid_argument("Invalid request: missing _to_date field in filter");
+    }
+
     auto filter = BaseApiStrategyUtils::parse_request_json_to_database_bson(body["filter"]);
     auto group = make_document(
         kvp("_id", make_document(
@@ -93,9 +100,16 @@ auto AnalyticsApiStrategy::process_request_func_get_complaints_statistics_groupe
 }
 
 auto AnalyticsApiStrategy::process_request_func_get_complaints_statistics_grouped_over_time(const crow::request& req) -> std::tuple<std::vector<bsoncxx::document::value>, mongocxx::options::aggregate> {
-    BaseApiStrategyUtils::validate_fields(req, {"start_date", "end_date", "group_by_field", "filter"});
+    BaseApiStrategyUtils::validate_fields(req, {"group_by_field", "filter"});
     
     auto body = crow::json::load(req.body);
+    if (!body["filter"].has("_from_date")) {
+        throw std::invalid_argument("Invalid request: missing _from_date field in filter");
+    }
+    if (!body["filter"].has("_to_date")) {
+        throw std::invalid_argument("Invalid request: missing _to_date field in filter");
+    }
+
     auto filter = BaseApiStrategyUtils::parse_request_json_to_database_bson(body["filter"]);
 
     auto group_by_field = static_cast<std::string>(body["group_by_field"].s());
@@ -182,8 +196,8 @@ auto AnalyticsApiStrategy::process_response_func_get_complaints_statistics(const
 auto AnalyticsApiStrategy::process_response_func_get_complaints_statistics_over_time(const crow::request& req, mongocxx::cursor& cursor) -> crow::json::wvalue {
     auto body = crow::json::load(req.body);
 
-    auto start_date = static_cast<std::string>(body["start_date"].s());
-    auto end_date = static_cast<std::string>(body["end_date"].s());
+    auto start_date = static_cast<std::string>(body["filter"]["_from_date"].s());
+    auto end_date = static_cast<std::string>(body["filter"]["_to_date"].s());
     auto month_range = _create_month_range(start_date, end_date);
 
     struct Statistics {
@@ -266,8 +280,8 @@ auto AnalyticsApiStrategy::process_response_func_get_complaints_statistics_group
     auto body = crow::json::load(req.body);
     
     auto group_by_field = static_cast<std::string>(body["group_by_field"].s());
-    auto start_date = static_cast<std::string>(body["start_date"].s());
-    auto end_date = static_cast<std::string>(body["end_date"].s());
+    auto start_date = static_cast<std::string>(body["filter"]["_from_date"].s());
+    auto end_date = static_cast<std::string>(body["filter"]["_to_date"].s());
     auto month_range = _create_month_range(start_date, end_date);
     
     std::map<std::pair<int, int>, crow::json::wvalue> mapper;    
