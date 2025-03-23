@@ -1,10 +1,7 @@
-#include "api_handler.hpp"
 #include "constants.hpp"
 #include "cors.hpp"
-#include "jwt_manager.hpp"
-#include "database.hpp"
-
 #include "database_manager.hpp"
+#include "jwt_manager.hpp"
 #include "user_api_handler.hpp"
 
 #include <bsoncxx/builder/basic/document.hpp>

@@ -60,7 +60,8 @@ auto BaseApiStrategyUtils::parse_request_json_to_database_bson(const crow::json:
             doc_builder.append(std::move(sub_field_kvp));
         } else {
             auto sub_field_doc = parse_request_json_to_database_bson_single_primitive(sub_field_key, sub_field);
-            auto sub_field_kvp = kvp(sub_field_key, sub_field_doc[sub_field_key].get_value());
+            auto clean_sub_field_key = _parse_request_json_to_database_bson_single_primitive_clean_key(sub_field_key);
+            auto sub_field_kvp = kvp(clean_sub_field_key, sub_field_doc[clean_sub_field_key].get_value());
             doc_builder.append(std::move(sub_field_kvp));
         }
     }
@@ -69,6 +70,12 @@ auto BaseApiStrategyUtils::parse_request_json_to_database_bson(const crow::json:
 }
 
 auto BaseApiStrategyUtils::parse_request_json_to_database_bson_single_primitive(const std::string& key, const crow::json::rvalue& rval_json) -> bsoncxx::document::value {
+    auto doc = _parse_request_json_to_database_bson_single_primitive(key, rval_json);
+    doc = _parse_request_json_to_database_bson_single_primitive_parse_inequality(key, doc);
+    return doc;
+}
+
+auto BaseApiStrategyUtils::_parse_request_json_to_database_bson_single_primitive(const std::string& key, const crow::json::rvalue& rval_json) -> bsoncxx::document::value {
     switch (rval_json.t()) {
         case crow::json::type::String:
             if (DATE_FIELDS.find(key) != DATE_FIELDS.end()) {
@@ -99,6 +106,33 @@ auto BaseApiStrategyUtils::parse_request_json_to_database_bson_single_primitive(
         default:
             throw std::runtime_error("Non-primitive crow::json::type!");
     }
+}
+
+auto BaseApiStrategyUtils::_parse_request_json_to_database_bson_single_primitive_clean_key(const std::string& key) -> std::string {
+    if (key.substr(0, LTE_SIGN.length()) == LTE_SIGN) {
+        return key.substr(LTE_SIGN.length(), key.length());
+    }
+
+    if (key.substr(0, GTE_SIGN.length()) == GTE_SIGN) {
+        return key.substr(GTE_SIGN.length(), key.length());
+    }
+
+    return key;
+
+}
+
+auto BaseApiStrategyUtils::_parse_request_json_to_database_bson_single_primitive_parse_inequality(const std::string& key, const bsoncxx::document::value& doc) -> bsoncxx::document::value {
+    if (key.substr(0, LTE_SIGN.length()) == LTE_SIGN) {
+        auto clean_key = key.substr(LTE_SIGN.length(), key.length());
+        return make_document(kvp(clean_key, make_document(kvp("$lte", doc[key].get_value()))));
+    }
+
+    if (key.substr(0, GTE_SIGN.length()) == GTE_SIGN) {
+        auto clean_key = key.substr(GTE_SIGN.length(), key.length());
+        return make_document(kvp(clean_key, make_document(kvp("$gte", doc[key].get_value()))));
+    }
+
+    return doc;
 }
 
 auto BaseApiStrategyUtils::parse_request_json_to_database_bson_single_array(const std::string& key, const crow::json::rvalue& rval_json) -> bsoncxx::document::value {
