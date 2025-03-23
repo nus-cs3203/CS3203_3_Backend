@@ -14,7 +14,7 @@
 #include <memory>
 
 int main() {
-    auto db_manager = std::make_shared<DatabaseManager>(DatabaseManager::create_from_env());
+    auto db_manager = DatabaseManager::create_from_env();
     
     crow::App<CORS> app; 
 
@@ -57,6 +57,7 @@ int main() {
     });
 
     // Run the server
+    app.multithreaded();
     app.port(8082).run();
     return 0;
 }

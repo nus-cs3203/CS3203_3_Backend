@@ -15,7 +15,7 @@
 #include <memory>
 
 int main() {
-    auto db_manager = std::make_shared<DatabaseManager>(DatabaseManager::create_from_env());
+    auto db_manager =DatabaseManager::create_from_env();
     
     crow::App<CORS> app; 
 
@@ -180,6 +180,7 @@ int main() {
         return management_api_handler.get_statistics_poll_responses(req, db_manager, COLLECTION_POLL_RESPONSES);
     });
 
+    app.multithreaded();
     app.port(8083).run();
     return 0;
 }

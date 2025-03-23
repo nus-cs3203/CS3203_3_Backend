@@ -16,7 +16,7 @@
 #include <memory>
 
 int main() {
-    auto db_manager = std::make_shared<DatabaseManager>(DatabaseManager::create_from_env());
+    auto db_manager = DatabaseManager::create_from_env();
     
     crow::App<CORS> app; 
 
@@ -46,6 +46,7 @@ int main() {
         return user_api_handler.update_one_by_oid(req, db_manager, COLLECTION_USERS);
     });
 
+    app.multithreaded();
     app.port(8085).run();
     return 0;
 }

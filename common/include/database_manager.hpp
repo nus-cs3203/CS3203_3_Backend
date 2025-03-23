@@ -9,6 +9,7 @@
 #include <mongocxx/client.hpp>
 #include <mongocxx/instance.hpp>
 
+#include <mutex>
 #include <vector>
 
 class DatabaseManager {
@@ -18,7 +19,7 @@ public:
         const std::string& db_name
     );
 
-    auto static create_from_env(EnvManager env_manager = EnvManager()) -> DatabaseManager;
+    static std::shared_ptr<DatabaseManager> create_from_env(EnvManager env_manager = EnvManager());
 
     auto find_one(
         const std::string& collection_name,
@@ -86,6 +87,8 @@ private:
     mongocxx::instance instance; 
     mongocxx::client client;
     mongocxx::database db;
+
+    mutable std::mutex mutex;
 };
 
 #endif
