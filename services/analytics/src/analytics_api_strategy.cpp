@@ -92,6 +92,32 @@ auto AnalyticsApiStrategy::process_request_func_get_complaints_statistics_groupe
     return std::make_tuple(documents, option);
 }
 
+auto AnalyticsApiStrategy::process_request_func_get_complaints_statistics_grouped_over_time(const crow::request& req) -> std::tuple<std::vector<bsoncxx::document::value>, mongocxx::options::aggregate> {
+    BaseApiStrategyUtils::validate_fields(req, {"start_date", "end_date", "group_by_field", "filter"});
+    
+    auto body = crow::json::load(req.body);
+    auto filter = BaseApiStrategyUtils::parse_request_json_to_database_bson(body["filter"]);
+
+    auto group_by_field = static_cast<std::string>(body["group_by_field"].s());
+    auto group = make_document(
+        kvp("_id",
+            make_document(
+                kvp("year", make_document(kvp("$year", "$date"))),
+                kvp("month", make_document(kvp("$month", "$date"))),
+                kvp(group_by_field, "$" + group_by_field)
+            )
+        ),
+        kvp("count", make_document(kvp("$sum", 1))),
+        kvp("avg_sentiment", make_document(kvp("$avg", "$sentiment")))
+    );
+
+    std::vector<bsoncxx::document::value> documents = {filter, group};
+
+    mongocxx::options::aggregate option;
+
+    return std::make_tuple(documents, option);
+}
+
 auto AnalyticsApiStrategy::create_pipeline_func_get_complaints_statistics(const std::vector<bsoncxx::document::value>& documents) -> mongocxx::pipeline {
     mongocxx::pipeline pipeline{};
 
@@ -117,6 +143,18 @@ auto AnalyticsApiStrategy::create_pipeline_func_get_complaints_statistics_over_t
 }
 
 auto AnalyticsApiStrategy::create_pipeline_func_get_complaints_statistics_grouped(const std::vector<bsoncxx::document::value>& documents) -> mongocxx::pipeline {
+    mongocxx::pipeline pipeline{};
+
+    const auto &filter = documents[0];
+    const auto &group = documents[1];
+
+    pipeline.match(filter.view());
+    pipeline.group(group.view());
+
+    return pipeline;
+}
+
+auto AnalyticsApiStrategy::create_pipeline_func_get_complaints_statistics_grouped_over_time(const std::vector<bsoncxx::document::value>& documents) -> mongocxx::pipeline {
     mongocxx::pipeline pipeline{};
 
     const auto &filter = documents[0];
@@ -217,6 +255,64 @@ auto AnalyticsApiStrategy::process_response_func_get_complaints_statistics_group
         sub_result["avg_sentiment"] = 0;
         result[group_by_field_value] = std::move(sub_result);
         exists.insert(group_by_field_value);
+    }
+
+    crow::json::wvalue response_data;
+    response_data["statistics"] = std::move(result);
+    return response_data;
+}
+
+auto AnalyticsApiStrategy::process_response_func_get_complaints_statistics_grouped_over_time(const crow::request& req, mongocxx::cursor& cursor) -> crow::json::wvalue {
+    auto body = crow::json::load(req.body);
+    
+    auto group_by_field = static_cast<std::string>(body["group_by_field"].s());
+    auto start_date = static_cast<std::string>(body["start_date"].s());
+    auto end_date = static_cast<std::string>(body["end_date"].s());
+    auto month_range = _create_month_range(start_date, end_date);
+    
+    std::map<std::pair<int, int>, crow::json::wvalue> mapper;    
+    
+    for (auto&& document : cursor) {
+        auto doc_json = bsoncxx::to_json(document);
+        auto rval_json = crow::json::load(doc_json);
+
+        std::string group_by_field_value = rval_json["_id"][group_by_field].s();
+        int month = rval_json["_id"]["month"].i();
+        int year = rval_json["_id"]["year"].i();
+        
+        auto month_year = std::make_pair(month, year);
+        if (mapper.find(month_year) == mapper.end()) {
+            crow::json::wvalue data;
+            mapper[month_year] = std::move(data);
+        }
+
+        mapper[month_year][group_by_field_value]["count"] = rval_json["count"];
+        mapper[month_year][group_by_field_value]["avg_sentiment"] = rval_json["avg_sentiment"];
+    }
+
+    const auto &group_by_field_values = AnalyticsApiStrategy::GROUP_BY_FIELD_VALUES_MAPPER[group_by_field];
+
+    crow::json::wvalue result;
+    for (const auto& month_year: month_range) {
+        if (mapper.find(month_year) == mapper.end()) {
+            mapper[month_year] = crow::json::wvalue{};
+        }
+
+        auto rval_json = crow::json::load(mapper[month_year].dump());
+
+        int month = month_year.first;
+        int year = month_year.second;
+        
+        auto month_year_str = DateUtils::create_month_year_str(month, year);
+        for (const auto &group_by_field_value: group_by_field_values) {
+            result[month_year_str][group_by_field_value]["count"] = 0;
+            result[month_year_str][group_by_field_value]["avg_sentiment"] = 0;
+
+            if (rval_json.t() != crow::json::type::Null and rval_json.has(group_by_field_value)) {
+                result[month_year_str][group_by_field_value]["count"] = rval_json[group_by_field_value]["count"];
+                result[month_year_str][group_by_field_value]["avg_sentiment"] = rval_json[group_by_field_value]["avg_sentiment"];
+            }
+        }
     }
 
     crow::json::wvalue response_data;

@@ -18,14 +18,17 @@ namespace AnalyticsApiStrategy {
     auto process_request_func_get_complaints_statistics(const crow::request& req) -> std::tuple<std::vector<bsoncxx::document::value>, mongocxx::options::aggregate>;
     auto process_request_func_get_complaints_statistics_over_time(const crow::request& req) -> std::tuple<std::vector<bsoncxx::document::value>, mongocxx::options::aggregate>;
     auto process_request_func_get_complaints_statistics_grouped(const crow::request& req) -> std::tuple<std::vector<bsoncxx::document::value>, mongocxx::options::aggregate>;
+    auto process_request_func_get_complaints_statistics_grouped_over_time(const crow::request& req) -> std::tuple<std::vector<bsoncxx::document::value>, mongocxx::options::aggregate>;
 
     auto create_pipeline_func_get_complaints_statistics(const std::vector<bsoncxx::document::value>& documents) -> mongocxx::pipeline;
     auto create_pipeline_func_get_complaints_statistics_over_time(const std::vector<bsoncxx::document::value>& documents) -> mongocxx::pipeline;
     auto create_pipeline_func_get_complaints_statistics_grouped(const std::vector<bsoncxx::document::value>& documents) -> mongocxx::pipeline;
+    auto create_pipeline_func_get_complaints_statistics_grouped_over_time(const std::vector<bsoncxx::document::value>& documents) -> mongocxx::pipeline;
 
     auto process_response_func_get_complaints_statistics(const crow::request& req, mongocxx::cursor& cursor) -> crow::json::wvalue;
     auto process_response_func_get_complaints_statistics_over_time(const crow::request& req, mongocxx::cursor& cursor) -> crow::json::wvalue;
     auto process_response_func_get_complaints_statistics_grouped(const crow::request& req, mongocxx::cursor& cursor) -> crow::json::wvalue;
+    auto process_response_func_get_complaints_statistics_grouped_over_time(const crow::request& req, mongocxx::cursor& cursor) -> crow::json::wvalue;
 
     auto _create_month_range(const std::string& start_date, const std::string& end_date) -> std::vector<std::pair<int, int>>;
 

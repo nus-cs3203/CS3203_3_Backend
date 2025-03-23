@@ -528,7 +528,6 @@ auto ApiHandler::_get_complaints_grouped_by_field_over_time_get_cursor(std::shar
                             )
                         )
                     ),
-                    // e.g. "category" = "$category"
                     kvp(group_by_field, "$" + group_by_field)
                 )
             ),

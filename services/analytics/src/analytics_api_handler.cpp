@@ -39,3 +39,11 @@ auto AnalyticsApiHandler::get_complaints_statistics_grouped(
 ) -> crow::response {
     return aggregate(req, db_manager, collection_name, AnalyticsApiStrategy::process_request_func_get_complaints_statistics_grouped, AnalyticsApiStrategy::create_pipeline_func_get_complaints_statistics_grouped, AnalyticsApiStrategy::process_response_func_get_complaints_statistics_grouped);
 }
+
+auto AnalyticsApiHandler::get_complaints_statistics_grouped_over_time(
+    const crow::request& req, 
+    std::shared_ptr<DatabaseManager> db_manager, 
+    const std::string& collection_name
+) -> crow::response {
+    return aggregate(req, db_manager, collection_name, AnalyticsApiStrategy::process_request_func_get_complaints_statistics_grouped_over_time, AnalyticsApiStrategy::create_pipeline_func_get_complaints_statistics_grouped_over_time, AnalyticsApiStrategy::process_response_func_get_complaints_statistics_grouped_over_time);
+}
