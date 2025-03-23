@@ -21,7 +21,7 @@ auto AnalyticsApiHandler::get_complaints_statistics(
     std::shared_ptr<DatabaseManager> db_manager, 
     const std::string& collection_name
 ) -> crow::response {
-    return aggregate(req, db_manager, collection_name, AnalyticsApiStrategy::process_request_func_get_complaints_statistics, AnalyticsApiStrategy::create_pipeline_func_get_complaints_statistics, AnalyticsApiStrategy::process_response_func_get_complaints_statistics);
+    return aggregate(req, db_manager, collection_name, AnalyticsApiStrategy::process_request_func_get_complaints_statistics, AnalyticsApiStrategy::create_pipeline_func_filter_and_group, AnalyticsApiStrategy::process_response_func_get_complaints_statistics);
 }
 
 auto AnalyticsApiHandler::get_complaints_statistics_over_time(
@@ -29,7 +29,7 @@ auto AnalyticsApiHandler::get_complaints_statistics_over_time(
     std::shared_ptr<DatabaseManager> db_manager, 
     const std::string& collection_name
 ) -> crow::response {
-    return aggregate(req, db_manager, collection_name, AnalyticsApiStrategy::process_request_func_get_complaints_statistics_over_time, AnalyticsApiStrategy::create_pipeline_func_get_complaints_statistics_over_time, AnalyticsApiStrategy::process_response_func_get_complaints_statistics_over_time);
+    return aggregate(req, db_manager, collection_name, AnalyticsApiStrategy::process_request_func_get_complaints_statistics_over_time, AnalyticsApiStrategy::create_pipeline_func_filter_and_group, AnalyticsApiStrategy::process_response_func_get_complaints_statistics_over_time);
 }
 
 auto AnalyticsApiHandler::get_complaints_statistics_grouped(
@@ -37,7 +37,7 @@ auto AnalyticsApiHandler::get_complaints_statistics_grouped(
     std::shared_ptr<DatabaseManager> db_manager, 
     const std::string& collection_name
 ) -> crow::response {
-    return aggregate(req, db_manager, collection_name, AnalyticsApiStrategy::process_request_func_get_complaints_statistics_grouped, AnalyticsApiStrategy::create_pipeline_func_get_complaints_statistics_grouped, AnalyticsApiStrategy::process_response_func_get_complaints_statistics_grouped);
+    return aggregate(req, db_manager, collection_name, AnalyticsApiStrategy::process_request_func_get_complaints_statistics_grouped, AnalyticsApiStrategy::create_pipeline_func_filter_and_group, AnalyticsApiStrategy::process_response_func_get_complaints_statistics_grouped);
 }
 
 auto AnalyticsApiHandler::get_complaints_statistics_grouped_over_time(
@@ -45,5 +45,5 @@ auto AnalyticsApiHandler::get_complaints_statistics_grouped_over_time(
     std::shared_ptr<DatabaseManager> db_manager, 
     const std::string& collection_name
 ) -> crow::response {
-    return aggregate(req, db_manager, collection_name, AnalyticsApiStrategy::process_request_func_get_complaints_statistics_grouped_over_time, AnalyticsApiStrategy::create_pipeline_func_get_complaints_statistics_grouped_over_time, AnalyticsApiStrategy::process_response_func_get_complaints_statistics_grouped_over_time);
+    return aggregate(req, db_manager, collection_name, AnalyticsApiStrategy::process_request_func_get_complaints_statistics_grouped_over_time, AnalyticsApiStrategy::create_pipeline_func_filter_and_group, AnalyticsApiStrategy::process_response_func_get_complaints_statistics_grouped_over_time);
 }

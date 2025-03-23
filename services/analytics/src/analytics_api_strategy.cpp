@@ -132,43 +132,7 @@ auto AnalyticsApiStrategy::process_request_func_get_complaints_statistics_groupe
     return std::make_tuple(documents, option);
 }
 
-auto AnalyticsApiStrategy::create_pipeline_func_get_complaints_statistics(const std::vector<bsoncxx::document::value>& documents) -> mongocxx::pipeline {
-    mongocxx::pipeline pipeline{};
-
-    const auto &filter = documents[0];
-    const auto &group = documents[1];
-
-    pipeline.match(filter.view());
-    pipeline.group(group.view());
-
-    return pipeline;
-}
-
-auto AnalyticsApiStrategy::create_pipeline_func_get_complaints_statistics_over_time(const std::vector<bsoncxx::document::value>& documents) -> mongocxx::pipeline {
-    mongocxx::pipeline pipeline{};
-
-    const auto &filter = documents[0];
-    const auto &group = documents[1];
-
-    pipeline.match(filter.view());
-    pipeline.group(group.view());
-
-    return pipeline;
-}
-
-auto AnalyticsApiStrategy::create_pipeline_func_get_complaints_statistics_grouped(const std::vector<bsoncxx::document::value>& documents) -> mongocxx::pipeline {
-    mongocxx::pipeline pipeline{};
-
-    const auto &filter = documents[0];
-    const auto &group = documents[1];
-
-    pipeline.match(filter.view());
-    pipeline.group(group.view());
-
-    return pipeline;
-}
-
-auto AnalyticsApiStrategy::create_pipeline_func_get_complaints_statistics_grouped_over_time(const std::vector<bsoncxx::document::value>& documents) -> mongocxx::pipeline {
+auto AnalyticsApiStrategy::create_pipeline_func_filter_and_group(const std::vector<bsoncxx::document::value>& documents) -> mongocxx::pipeline {
     mongocxx::pipeline pipeline{};
 
     const auto &filter = documents[0];
