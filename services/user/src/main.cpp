@@ -46,7 +46,7 @@ int main() {
         return user_api_handler.update_one_by_oid(req, db_manager, COLLECTION_USERS);
     });
 
-    app.multithreaded();
+    app.concurrency(10);
     app.port(8085).run();
     return 0;
 }
