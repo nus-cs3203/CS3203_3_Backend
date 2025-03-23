@@ -230,7 +230,6 @@ auto AnalyticsApiStrategy::process_response_func_get_complaints_statistics_over_
     
     std::map<std::pair<int, int>, Statistics> mapper;
 
-
     for (auto&& document: cursor) {
         auto doc_json = bsoncxx::to_json(document);
         auto doc_rval_json = crow::json::load(doc_json);
@@ -246,7 +245,7 @@ auto AnalyticsApiStrategy::process_response_func_get_complaints_statistics_over_
 
     std::vector<crow::json::wvalue> result;
     for (const auto &[month, year]: month_range) {
-        Statistics stat;
+        Statistics stat{0, 0};
         if (mapper.find({month, year}) != mapper.end()) {
             stat.count = mapper[{month, year}].count;
             stat.avg_sentiment = mapper[{month, year}].avg_sentiment;
@@ -360,7 +359,7 @@ auto AnalyticsApiStrategy::process_response_func_get_complaints_statistics_group
 auto AnalyticsApiStrategy::process_response_func_get_complaints_statistics_grouped_by_sentiment_value(const crow::request& req, mongocxx::cursor& cursor) -> crow::json::wvalue {
     auto body = crow::json::load(req.body);
     double bucket_size = body["bucket_size"].d();
-    
+
     std::unordered_set<double> added_left_bounds;
 
     std::vector<crow::json::wvalue> result;
