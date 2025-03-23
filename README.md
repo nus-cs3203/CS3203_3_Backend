@@ -233,8 +233,6 @@ curl -X POST "http://localhost:8082/complaints/get_statistics" \
 curl -X POST "http://localhost:8082/complaints/get_statistics_over_time" \
 -H "Content-Type: application/json" \
 -d '{
-    "start_date": "01-01-2023 00:00:00",
-    "end_date": "01-03-2023 00:00:00",
     "filter": {
         "_from_date": "01-01-2023 00:00:00",
         "_to_date":  "02-01-2023 00:00:00"
