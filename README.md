@@ -215,7 +215,7 @@ curl -X POST "http://localhost:8082/complaints/get_statistics" \
 {
     "success": "bool",
     "message": "string",
-    "result": [
+    "statistics": [
         {
             "date": "string",  // month-year, e.g. "1-2023"
             "data": {
@@ -486,7 +486,7 @@ curl -X POST "http://localhost:8082/complaints/get_statistics_over_time" \
 {
     "success": true,
     "message": "Server processed aggregate request successfully.",
-    "result": [
+    "statistics": [
         {
             "date": "01-2010",
             "data": {
@@ -587,7 +587,7 @@ curl -X POST "http://localhost:8082/complaints/get_statistics_over_time" \
 {
     "success": "bool",
     "message": "string",
-    "result": [
+    "statistics": [
         {
             "left_bound_inclusive": "float",
             "right_bound_exclusive": "float",
@@ -616,7 +616,7 @@ curl -X POST "http://localhost:8082/complaints/get_statistics_over_time" \
 {
     "message": "Server processed aggregate request successfully.",
     "success": true,
-    "result": [
+    "statistics": [
         {
             "right_bound_exclusive": -0.5,
             "count": 2,
@@ -699,19 +699,17 @@ curl -X POST "http://localhost:8082/category_analytics/get_by_name" \
             "Improve public transport",
             "Subsidize fares"
         ],
-        "keywords_per_category": [
+        "keywords": [
             "cars",
             "pollution",
             "MRT"
         ],
         "summary": "Concerns about transportation persist among citizens.",
-        "forecasted_score": 0.5398,
-        "current_score": 0.5714,
-        "current_label": "positive",
-        "key_concerns": [
+        "forecasted_sentiment": 0.5398,
+        "sentiment": 0.5714,
+        "concerns": [
             "Poor infrastructure"
-        ],
-        "forecasted_label": "positive"
+        ]
     }
 }
 ```
@@ -2024,7 +2022,8 @@ curl -X POST "http://localhost:8085/login" \
         },
         "name": "string",
         "role": "string",
-        "email": "string"
+        "email": "string",
+        "collectibles": "[]string"
     }
 }
 ```
@@ -2048,8 +2047,9 @@ curl -X POST "http://localhost:8085/get_profile_by_oid" \
             "$oid": "67cc161e272d605a7902a4e2"
         },
         "name": "test",
-        "role": "CITIZEN",
-        "email": "test"
+        "role": "Citizen",
+        "email": "test",
+        "collecitbles": []
     }
 }
 ```
