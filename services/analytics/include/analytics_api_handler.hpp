@@ -40,6 +40,12 @@ public:
         std::shared_ptr<DatabaseManager> db_manager, 
         const std::string& collection_name
     ) -> crow::response;
+
+    auto get_complaints_statistics_grouped_by_sentiment_value(
+        const crow::request& req, 
+        std::shared_ptr<DatabaseManager> db_manager, 
+        const std::string& collection_name
+    ) -> crow::response;
 private:
 };
 

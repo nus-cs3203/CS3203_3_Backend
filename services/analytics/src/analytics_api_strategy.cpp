@@ -132,6 +132,53 @@ auto AnalyticsApiStrategy::process_request_func_get_complaints_statistics_groupe
     return std::make_tuple(documents, option);
 }
 
+auto AnalyticsApiStrategy::process_request_func_get_complaints_statistics_grouped_by_sentiment_value(const crow::request& req) -> std::tuple<std::vector<bsoncxx::document::value>, mongocxx::options::aggregate> {
+    BaseApiStrategyUtils::validate_fields(req, {"filter", "bucket_size"});
+    
+    auto body = crow::json::load(req.body);
+    if (!body["filter"].has("_from_date")) {
+        throw std::invalid_argument("Invalid request: missing _from_date field in filter");
+    }
+    if (!body["filter"].has("_to_date")) {
+        throw std::invalid_argument("Invalid request: missing _to_date field in filter");
+    }
+
+    auto filter = BaseApiStrategyUtils::parse_request_json_to_database_bson(body["filter"]);
+
+    double bucket_size = body["bucket_size"].d();
+    if (bucket_size <= 0) {
+        throw std::invalid_argument("Bucket size must be greater than 0");
+    }
+    double min_sentiment = -1.0;
+    double max_sentiment = 1.01;
+    
+    std::vector<double> boundaries;
+    for (double val = min_sentiment; val < max_sentiment; val += bucket_size) {
+        boundaries.push_back(val);
+    }   
+    boundaries.push_back(max_sentiment);
+
+    bsoncxx::builder::basic::array boundaries_array;
+    for (auto b: boundaries) {
+        boundaries_array.append(b);
+    }
+
+    auto bucket = make_document(
+        kvp("groupBy", std::string{"$sentiment"}),
+        kvp("boundaries", boundaries_array.extract()),
+        kvp("default", std::string{"OutOfRange"}),
+        kvp("output", make_document(
+            kvp("count", make_document(kvp("$sum", 1)))
+        ))
+    );
+
+    std::vector<bsoncxx::document::value> documents = {filter, bucket};
+
+    mongocxx::options::aggregate option;
+
+    return std::make_tuple(documents, option);
+}
+
 auto AnalyticsApiStrategy::create_pipeline_func_filter_and_group(const std::vector<bsoncxx::document::value>& documents) -> mongocxx::pipeline {
     mongocxx::pipeline pipeline{};
 
@@ -140,6 +187,18 @@ auto AnalyticsApiStrategy::create_pipeline_func_filter_and_group(const std::vect
 
     pipeline.match(filter.view());
     pipeline.group(group.view());
+
+    return pipeline;
+}
+
+auto AnalyticsApiStrategy::create_pipeline_func_filter_and_bucket(const std::vector<bsoncxx::document::value>& documents) -> mongocxx::pipeline {
+    mongocxx::pipeline pipeline{};
+
+    const auto &filter = documents[0];
+    const auto &bucket = documents[1];
+
+    pipeline.match(filter.view());
+    pipeline.bucket(bucket.view());
 
     return pipeline;
 }
@@ -297,6 +356,43 @@ auto AnalyticsApiStrategy::process_response_func_get_complaints_statistics_group
     response_data["statistics"] = std::move(result);
     return response_data;
 }
+
+auto AnalyticsApiStrategy::process_response_func_get_complaints_statistics_grouped_by_sentiment_value(const crow::request& req, mongocxx::cursor& cursor) -> crow::json::wvalue {
+    auto body = crow::json::load(req.body);
+    double bucket_size = body["bucket_size"].d();
+    
+    std::unordered_set<double> added_left_bounds;
+
+    std::vector<crow::json::wvalue> result;
+    for (auto&& doc : cursor) {
+        auto doc_json = bsoncxx::to_json(doc);
+        crow::json::rvalue rval_json = crow::json::load(doc_json);
+
+        crow::json::wvalue sub_result;
+        sub_result["left_bound_inclusive"] = rval_json["_id"];
+        sub_result["right_bound_exclusive"] = rval_json["_id"].d() + bucket_size;
+        sub_result["count"] = rval_json["count"];
+        result.push_back(sub_result);
+        added_left_bounds.insert(rval_json["_id"].d());
+    }
+
+    for (double left_bound = -1; left_bound < 1.01; left_bound += bucket_size) {
+        if (added_left_bounds.find(left_bound) != added_left_bounds.end()) {
+            continue;
+        }
+        crow::json::wvalue sub_result;
+        sub_result["left_bound_inclusive"] = left_bound;
+        sub_result["right_bound_exclusive"] = left_bound + bucket_size;
+        sub_result["count"] = 0;
+        result.push_back(sub_result);
+        added_left_bounds.insert(left_bound);
+    }
+
+    crow::json::wvalue response_data;
+    response_data["statistics"] = std::move(result);
+    return response_data;
+}
+
 
 auto AnalyticsApiStrategy::_create_month_range(const std::string& start_date, const std::string& end_date) -> std::vector<std::pair<int, int>> {
     int start_month = DateUtils::extract_month_from_timestamp_str(start_date);

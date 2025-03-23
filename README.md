@@ -559,7 +559,7 @@ curl -X POST "http://localhost:8082/complaints/get_statistics_over_time" \
 
 ---
 
-### **POST /get_complaints_grouped_by_sentiment_value**
+### **POST /complaints/get_statistics_grouped_by_sentiment_value**
 
 - **Purpose**: Group complaints into "buckets" based on their sentiment value. For example, if the `bucket_size` is 0.5, it will group sentiments in the following ranges: `[-1, -0.5), [-0.5, 0), [0, 0.5), [0.5, 1)`.
 - **`bucket_size` explanation**: A numerical interval for grouping sentiment values, e.g. `0.5` creates buckets of width 0.5 each.
@@ -567,9 +567,18 @@ curl -X POST "http://localhost:8082/complaints/get_statistics_over_time" \
 **Request:**
 ```json
 {
-    "start_date": "string",  // format: dd-mm-YYYY HH:MM:SS
-    "end_date": "string",    // format: dd-mm-YYYY HH:MM:SS
-    "bucket_size": "float"
+    "bucket_size": "float",
+    "filter": {
+        "$text": {                      // (optional) Title or selftext contains this keyword (case-insensitive)
+            "$search": "string"
+        },        
+        "source": "string",             // (optional) Source of complaint, e.g. "Reddit"
+        "category": "string",           // (optional) Category of complaint, e.g. "Housing"
+        "_from_date": "string",         // (optional) format: dd-mm-YYYY HH:MM:SS
+        "_to_date": "string",           // (optional) format: dd-mm-YYYY HH:MM:SS
+        "_from_sentiment": "double",    // (optional)
+        "_to_sentiment": "double"       // (optional)
+    }
 }
 ```
 
@@ -591,19 +600,21 @@ curl -X POST "http://localhost:8082/complaints/get_statistics_over_time" \
 
 **Sample Request:**
 ```sh
-    curl -X POST "http://localhost:8082/get_complaints_grouped_by_sentiment_value" \
+    curl -X POST "http://localhost:8082/complaints/get_statistics_grouped_by_sentiment_value" \
     -H "Content-Type: application/json" \
     -d '{
-        "start_date": "01-01-2010 00:00:00",
-        "end_date": "31-12-2010 23:59:59",
-        "bucket_size": 0.5
+        "bucket_size": 0.5,
+        "filter": {
+            "_from_date": "01-01-2010 00:00:00",
+            "_to_date": "31-12-2010 23:59:59"
+        }
     }'
 ```
 
 **Sample Response:**
 ```json
 {
-    "message": "Analytics result retrieved.",
+    "message": "Server processed aggregate request successfully.",
     "success": true,
     "result": [
         {
@@ -632,7 +643,7 @@ curl -X POST "http://localhost:8082/complaints/get_statistics_over_time" \
 
 ---
 
-### **POST /get_category_analytics_by_name**
+### **POST /category_analytics/get_by_name**
 
 - **Purpose**: Retrieve analytics for a given category name, returning various metrics such as current score, forecasted score, sentiment labels, key concerns, and more.
 
@@ -666,7 +677,7 @@ curl -X POST "http://localhost:8082/complaints/get_statistics_over_time" \
 
 **Sample Request:**
 ```sh
-curl -X POST "http://localhost:8082/get_category_analytics_by_name" \
+curl -X POST "http://localhost:8082/category_analytics/get_by_name" \
 -H "Content-Type: application/json" \
 -d '{
     "name": "Housing"
@@ -676,7 +687,7 @@ curl -X POST "http://localhost:8082/get_category_analytics_by_name" \
 **Sample Response:**
 ```json
 {
-    "message": "Retrieved analytics successfully",
+    "message": "Server processed get request successfully.",
     "success": true,
     "document": {
         "_id": {
