@@ -56,7 +56,8 @@ auto UserApiStrategy::process_response_func_get_one_profile_by_oid(const bsoncxx
     profile["email"] = parsed_doc_rval["email"];
     profile["role"] = parsed_doc_rval["role"];
     profile["collectibles"] = parsed_doc_rval["collectibles"];
+    
     crow::json::wvalue response_data;
-    response_data["profile"] = crow::json::load(profile.dump());
+    response_data["profile"] = std::move(profile);
     return response_data;
 }
