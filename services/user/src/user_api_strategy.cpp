@@ -32,11 +32,11 @@ auto UserApiStrategy::process_request_func_login(const crow::request& req) -> st
 auto UserApiStrategy::process_response_func_login(const bsoncxx::document::value& doc) -> crow::json::wvalue {
     auto document_json = bsoncxx::to_json(doc);
     auto document_rvalue = crow::json::load(document_json);
-    auto oid = document_rvalue["_id"]["$oid"].s();
-    
+
     JwtManager jwt_manager;
+    auto oid = static_cast<std::string>(document_rvalue["_id"]["$oid"].s());
     auto role = static_cast<std::string>(document_rvalue["role"].s());
-    auto jwt = jwt_manager.generate_token(role);
+    auto jwt = jwt_manager.generate_token(oid, role);
 
     crow::json::wvalue response_data;
     response_data["oid"] = oid;
