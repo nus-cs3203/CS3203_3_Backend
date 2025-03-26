@@ -328,7 +328,7 @@ auto AnalyticsApiStrategy::process_response_func_get_complaints_statistics_group
 
     const auto &group_by_field_values = AnalyticsApiStrategy::GROUP_BY_FIELD_VALUES_MAPPER[group_by_field];
 
-    crow::json::wvalue result;
+    std::vector<crow::json::wvalue> result;
     for (const auto& month_year: month_range) {
         if (mapper.find(month_year) == mapper.end()) {
             mapper[month_year] = crow::json::wvalue{};
@@ -340,15 +340,19 @@ auto AnalyticsApiStrategy::process_response_func_get_complaints_statistics_group
         int year = month_year.second;
         
         auto month_year_str = DateUtils::create_month_year_str(month, year);
+
+        crow::json::wvalue sub_result;
         for (const auto &group_by_field_value: group_by_field_values) {
-            result[month_year_str][group_by_field_value]["count"] = 0;
-            result[month_year_str][group_by_field_value]["avg_sentiment"] = 0;
+            sub_result["date"] = month_year_str;
+            sub_result["data"][group_by_field_value]["count"] = 0;
+            sub_result["data"][group_by_field_value]["avg_sentiment"] = 0;
 
             if (rval_json.t() != crow::json::type::Null and rval_json.has(group_by_field_value)) {
-                result[month_year_str][group_by_field_value]["count"] = rval_json[group_by_field_value]["count"];
-                result[month_year_str][group_by_field_value]["avg_sentiment"] = rval_json[group_by_field_value]["avg_sentiment"];
+                sub_result["data"][group_by_field_value]["count"] = rval_json[group_by_field_value]["count"];
+                sub_result["data"][group_by_field_value]["avg_sentiment"] = rval_json[group_by_field_value]["avg_sentiment"];
             }
         }
+        result.push_back(std::move(sub_result));
     }
 
     crow::json::wvalue response_data;
