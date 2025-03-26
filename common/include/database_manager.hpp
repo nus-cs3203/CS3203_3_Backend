@@ -9,7 +9,6 @@
 #include <mongocxx/client.hpp>
 #include <mongocxx/instance.hpp>
 
-#include <mutex>
 #include <vector>
 
 class DatabaseManager {
@@ -87,8 +86,6 @@ private:
     mongocxx::instance instance; 
     mongocxx::client client;
     mongocxx::database db;
-
-    mutable std::mutex mutex;
 };
 
 #endif
