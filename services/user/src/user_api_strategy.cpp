@@ -46,15 +46,18 @@ auto UserApiStrategy::process_response_func_login(const bsoncxx::document::value
 }
 
 auto UserApiStrategy::process_response_func_get_one_profile_by_oid(const bsoncxx::document::value& doc) -> crow::json::wvalue {
-    crow::json::wvalue response_data;
+    crow::json::wvalue profile;
     auto doc_json = bsoncxx::to_json(doc);
     auto doc_rval = crow::json::load(doc_json);
     auto parsed_doc_wval = BaseApiStrategyUtils::parse_database_json_to_response_json(doc_rval);
     auto parsed_doc_rval = crow::json::load(parsed_doc_wval.dump());
-    response_data["_id"] = parsed_doc_rval["_id"];
-    response_data["name"] = parsed_doc_rval["name"];
-    response_data["email"] = parsed_doc_rval["email"];
-    response_data["role"] = parsed_doc_rval["role"];
-    response_data["collectibles"] = parsed_doc_rval["collectibles"];
+    profile["_id"] = parsed_doc_rval["_id"];
+    profile["name"] = parsed_doc_rval["name"];
+    profile["email"] = parsed_doc_rval["email"];
+    profile["role"] = parsed_doc_rval["role"];
+    profile["collectibles"] = parsed_doc_rval["collectibles"];
+    
+    crow::json::wvalue response_data;
+    response_data["profile"] = std::move(profile);
     return response_data;
 }
