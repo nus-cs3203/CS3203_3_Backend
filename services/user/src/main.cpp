@@ -14,6 +14,7 @@
 #include <iostream>
 #include <vector>
 #include <memory>
+#include <mutex>
 
 int main() {
     auto db_manager = DatabaseManager::create_from_env();
@@ -24,25 +25,31 @@ int main() {
 
     UserApiHandler user_api_handler;
 
+    std::mutex api_mutex; 
+
     const auto COLLECTION_USERS = Constants::COLLECTION_USERS;
 
     CROW_ROUTE(app, "/signup").methods(crow::HTTPMethod::Post)
-    ([db_manager, &user_api_handler, COLLECTION_USERS](const crow::request& req) {
+    ([db_manager, &user_api_handler, COLLECTION_USERS, &api_mutex](const crow::request& req) {
+        std::lock_guard<std::mutex> api_lock(api_mutex); 
         return user_api_handler.insert_one(req, db_manager, COLLECTION_USERS);
     });
 
     CROW_ROUTE(app, "/login").methods(crow::HTTPMethod::Post)
-    ([db_manager, &user_api_handler, COLLECTION_USERS](const crow::request& req) {
+    ([db_manager, &user_api_handler, COLLECTION_USERS, &api_mutex](const crow::request& req) {
+        std::lock_guard<std::mutex> api_lock(api_mutex); 
         return user_api_handler.login(req, db_manager, COLLECTION_USERS);
     });
 
     CROW_ROUTE(app, "/get_profile_by_oid").methods(crow::HTTPMethod::Post)
-    ([db_manager, &user_api_handler, COLLECTION_USERS](const crow::request& req) {
+    ([db_manager, &user_api_handler, COLLECTION_USERS, &api_mutex](const crow::request& req) {
+        std::lock_guard<std::mutex> api_lock(api_mutex); 
         return user_api_handler.get_one_profile_by_oid(req, db_manager, COLLECTION_USERS);
     });
 
     CROW_ROUTE(app, "/update_profile_by_oid").methods(crow::HTTPMethod::Post)
-    ([db_manager, &user_api_handler, COLLECTION_USERS](const crow::request& req) {
+    ([db_manager, &user_api_handler, COLLECTION_USERS, &api_mutex](const crow::request& req) {
+        std::lock_guard<std::mutex> api_lock(api_mutex); 
         return user_api_handler.update_one_by_oid(req, db_manager, COLLECTION_USERS);
     });
 
