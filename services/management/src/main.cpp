@@ -212,7 +212,7 @@ int main() {
         return management_api_handler.get_statistics_poll_responses(req, db_manager, COLLECTION_POLL_RESPONSES);
     });
 
-    app.concurrency(10);
+    app.multithreaded();
     app.port(8083).run();
     return 0;
 }
