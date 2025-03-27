@@ -1,9 +1,17 @@
+#include "base_api_strategy_utils.hpp"
 #include "jwt_manager.hpp"
 
+#include "crow.h"
 #include <jwt-cpp/jwt.h>
 
 #include <chrono>
 #include <stdexcept>
+
+JwtManager::JwtManager(
+    const std::string& jwt_secret
+) : jwt_secret{jwt_secret} {}
+
+EnvManager JwtManager::env_manager = EnvManager();
 
 std::string JwtManager::generate_token(const std::string &oid, const std::string &role) {
     auto token = jwt::create()
@@ -17,24 +25,43 @@ std::string JwtManager::generate_token(const std::string &oid, const std::string
     return token;
 }
 
-std::string JwtManager::get_oid_from_token(const std::string &token) {
-    return _get_from_token(token, "oid");
-}
-
-std::string JwtManager::get_role_from_token(const std::string &token) {
-    return _get_from_token(token, "role");
-}
-
-void JwtManager::validate_oid(const std::string &token, const std::string &expected_oid) {
-    if (get_oid_from_token(token) != expected_oid) {
-        throw std::runtime_error("Oid retrieved from JWT token is not the expected oid.");
+ApiHandler JwtManager::api_path_protection_decorator(const ApiHandler& api_handler, const crow::request& req, const JwtAccessLevel& access_level) {
+    auto auth_header = req.get_header_value("Authorization");
+    if (auth_header.empty() || auth_header.substr(0, 7) != "Bearer ") {
+        return _create_error_api_handler(401, "Unauthorized: Missing or invalid Authorization header");
     }
-}
+    std::string token = auth_header.substr(7);
+    try {
+        auto oid_from_token = _get_from_token(token, "oid");
+        auto role_from_token = _get_from_token(token, "role");
 
-void JwtManager::validate_role(const std::string &token, const std::string &expected_role) {
-    if (get_role_from_token(token) != expected_role) {
-        throw std::runtime_error("Role retrieved from JWT token is not the expected role");
+        switch (access_level) {
+            case JwtAccessLevel::Personal: {
+                auto body = crow::json::load(req.body);
+                auto oid_from_request = static_cast<std::string>(body["oid"]);
+                if (oid_from_token != oid_from_request) {
+                    throw std::runtime_error("Invalid Personal Level Access: oid retrieved from JWT token is not the oid provided in the request.");
+                }
+                break;
+            }
+        
+            case JwtAccessLevel::Admin: {
+                if (role_from_token != "Admin") {
+                    throw std::runtime_error("Invalid Admin Level Access: role retrieved from JWT token is below Admin.");
+                }
+                break;
+            }
+        
+            case JwtAccessLevel::Citizen: {
+                break;
+            }
+        }        
+
+    } catch (const std::exception &ex) {
+        return _create_error_api_handler(401, std::string("Unauthorized: ") + ex.what());
     }
+
+    return api_handler;
 }
 
 std::string JwtManager::_get_from_token(const std::string &token, const std::string &key) {
@@ -53,8 +80,8 @@ std::string JwtManager::_get_from_token(const std::string &token, const std::str
     }
 }
 
-EnvManager JwtManager::env_manager = EnvManager();
-
-JwtManager::JwtManager(
-    const std::string& jwt_secret
-) : jwt_secret{jwt_secret} {}
+ApiHandler JwtManager::_create_error_api_handler(const int& status_code, const std::string& message) {
+    return [status_code, message](const crow::request& req, std::shared_ptr<DatabaseManager> db, const std::string& user_id) -> crow::response {
+        return BaseApiStrategyUtils::make_error_response(status_code, message);
+    };
+}
