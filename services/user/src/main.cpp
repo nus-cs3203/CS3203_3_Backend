@@ -24,6 +24,8 @@ int main() {
 
     UserApiHandler user_api_handler;
 
+    JwtManager jwt_manager;
+
     const auto COLLECTION_USERS = Constants::COLLECTION_USERS;
 
     CROW_ROUTE(app, "/signup").methods(crow::HTTPMethod::Post)
@@ -37,13 +39,27 @@ int main() {
     });
 
     CROW_ROUTE(app, "/get_profile_by_oid").methods(crow::HTTPMethod::Post)
-    ([db_manager, &user_api_handler, COLLECTION_USERS](const crow::request& req) {
-        return user_api_handler.get_one_profile_by_oid(req, db_manager, COLLECTION_USERS);
+    ([db_manager, &user_api_handler, COLLECTION_USERS, &jwt_manager](const crow::request& req) {
+        auto handler = jwt_manager.api_path_protection_decorator(
+            [&user_api_handler](const crow::request& req, std::shared_ptr<DatabaseManager> db, const std::string& user_id) -> crow::response {
+                return user_api_handler.get_one_profile_by_oid(req, db, user_id);
+            },
+            req,
+            JwtAccessLevel::Citizen
+        );
+        return handler(req, db_manager, COLLECTION_USERS);
     });
 
     CROW_ROUTE(app, "/update_profile_by_oid").methods(crow::HTTPMethod::Post)
     ([db_manager, &user_api_handler, COLLECTION_USERS](const crow::request& req) {
-        return user_api_handler.update_one_by_oid(req, db_manager, COLLECTION_USERS);
+        auto handler = jwt_manager.api_path_protection_decorator(
+            [&user_api_handler](const crow::request& req, std::shared_ptr<DatabaseManager> db, const std::string& user_id) -> crow::response {
+                return user_api_handler.update_one_by_oid(req, db, user_id);
+            },
+            req,
+            JwtAccessLevel::Personal
+        );
+        return handler(req, db_manager, COLLECTION_USERS);
     });
 
     app.port(8085).run();
