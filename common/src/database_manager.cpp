@@ -15,10 +15,10 @@ DatabaseManager::DatabaseManager(
     const std::string& db_name
 ) : instance{}, client{mongocxx::uri{uri}}, db{client[db_name]} {}
 
-auto DatabaseManager::create_from_env(EnvManager env_manager) -> DatabaseManager {
+std::shared_ptr<DatabaseManager> DatabaseManager::create_from_env(EnvManager env_manager) {
     auto MONGO_URI = env_manager.read_env("MONGO_URI", Constants::MONGO_URI);
     auto DB_NAME = env_manager.read_env("DB_NAME", Constants::DB_NAME);
-    return DatabaseManager(MONGO_URI, DB_NAME);
+    return std::make_shared<DatabaseManager>(MONGO_URI, DB_NAME);
 }
 
 auto DatabaseManager::find_one(const std::string& collection_name, const bsoncxx::document::view& filter, const mongocxx::options::find& option)

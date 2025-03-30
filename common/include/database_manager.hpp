@@ -18,7 +18,7 @@ public:
         const std::string& db_name
     );
 
-    auto static create_from_env(EnvManager env_manager = EnvManager()) -> DatabaseManager;
+    static std::shared_ptr<DatabaseManager> create_from_env(EnvManager env_manager = EnvManager());
 
     auto find_one(
         const std::string& collection_name,
