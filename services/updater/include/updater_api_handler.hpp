@@ -18,6 +18,12 @@ public:
         std::shared_ptr<DatabaseManager> db_manager
     ) -> crow::response;
 
+    auto run_analytics(
+        const crow::request& req, 
+        std::shared_ptr<DatabaseManager> db_manager,
+        const std::string& collection_name
+    ) -> crow::response;
+
 private:
     std::shared_ptr<RedditManager> reddit_manager;
 };

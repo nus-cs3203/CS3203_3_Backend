@@ -3,11 +3,16 @@
 #include "updater_api_handler.hpp"
 
 #include <bsoncxx/json.hpp>
+#include <cpr/cpr.h>  
 #include "crow.h"
 #include <mongocxx/exception/exception.hpp>
 
 #include <string>
 #include <tuple>
+#include <unordered_map>
+
+using bsoncxx::builder::basic::kvp;
+using bsoncxx::builder::basic::make_document;
 
 UpdaterApiHandler::UpdaterApiHandler()
 : reddit_manager(RedditManager::create_from_env()) {}
@@ -53,7 +58,44 @@ auto UpdaterApiHandler::update_posts(
         response_data["successful_insertions"] = successful_insertions;
         response_data["ignored_insertions"] = ignored_insertions;
         response_data["failed_insertions"] = failed_insertions;
-        return BaseApiStrategyUtils::make_success_response(200, response_data, "Server processed insert request successfully.");
+        return BaseApiStrategyUtils::make_success_response(200, response_data, "Server processed update request successfully.");
+    }
+    catch (const std::exception& e) {
+        return BaseApiStrategyUtils::make_error_response(500, std::string("Server error: ") + e.what());
+    }
+}
+
+auto run_analytics(
+    const crow::request& req, 
+    std::shared_ptr<DatabaseManager> db_manager,
+    const std::string& collection_name
+) -> crow::response {
+    try {
+        BaseApiStrategyUtils::validate_fields(req, {"start_date", "end_date"});
+
+        std::unordered_map<std::string, std::string> URL_MAPPER = {
+            {Constants::COLLECTION_COMPLAINTS, Constants::ANALYTICS_URL + "/process_complaints"},
+            {Constants::COLLECTION_CATEGORY_ANALYTICS, Constants::ANALYTICS_URL + "https://cs3203-ai-84a031329df8.herokuapp.com/generate_category_analytics"},
+            {Constants::COLLECTION_POLL_TEMPLATES, Constants::ANALYTICS_URL + "https://cs3203-ai-84a031329df8.herokuapp.com/generate_poll_prompts"},
+        };
+
+        auto url = URL_MAPPER[collection_name];
+
+        crow::json::wvalue body = crow::json::load(req.body);
+        std::string body_str = body.dump();
+        auto resp = cpr::Post(
+            cpr::Url{url},
+            cpr::Header{{"Content-Type", "application/json"}},
+            cpr::Body{body_str}
+        );
+
+        auto analytics_resp_body = crow::json::load(resp.text);
+        auto task_id_doc = make_document(kvp("task_id", analytics_resp_body["task_id"].i()));
+        db_manager->insert_one(Constants::COLLECTION_ANALYTICS_TASK_IDS, task_id_doc);
+
+        crow::json::wvalue response_data;
+        response_data["task_id"] = analytics_resp_body["task_id"];
+        return BaseApiStrategyUtils::make_success_response(200, response_data, "Server processed update request successfully.");
     }
     catch (const std::exception& e) {
         return BaseApiStrategyUtils::make_error_response(500, std::string("Server error: ") + e.what());
