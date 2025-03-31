@@ -19,9 +19,11 @@ namespace Constants {
     const std::string COLLECTION_POLL_TEMPLATES = "poll_templates";
     const std::string COLLECTION_POLL_REPONSES = "poll_responses";
 
-    const std::string USERS_ROLE_CITIZEN = "CITIZEN";
-    const std::string USERS_ROLE_ADMIN = "ADMIN";
-    const std::string USERS_ROLE_SUPER_ADMIN = "SUPER_ADMIN";
+    const std::string REDDIT_API_ID = "";
+    const std::string REDDIT_API_SECRET = "";
+    const std::string REDDIT_USERNAME = "";
+    const std::string REDDIT_PASSWORD = "";
+    const std::string USER_AGENT = "";
 
     const std::string ENV_FILE_DEFAULT_PATH = "./.env";
 }
