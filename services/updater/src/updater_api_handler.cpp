@@ -131,7 +131,13 @@ auto retrieve_analytics(
             );
             auto resp_json = crow::json::load(resp.text);
             auto resp_bson = BaseApiStrategyUtils::parse_request_json_to_database_bson(resp_json);
-            db_manager->insert_one(collection, resp_bson);
+            try {
+                db_manager->insert_one(collection, resp_bson);
+                db_manager->delete_one(collection, doc);
+            }
+            catch (const std::exception& e) {
+                std::cout << e.what() << std::endl;
+            }
         }
 
         crow::json::wvalue response_data;
