@@ -90,11 +90,51 @@ auto run_analytics(
         );
 
         auto analytics_resp_body = crow::json::load(resp.text);
-        auto task_id_doc = make_document(kvp("task_id", analytics_resp_body["task_id"].i()));
+        auto task_id_doc = make_document(
+            kvp("task_id", analytics_resp_body["task_id"].s()),
+            kvp("collection", collection_name)
+        );
         db_manager->insert_one(Constants::COLLECTION_ANALYTICS_TASK_IDS, task_id_doc);
 
         crow::json::wvalue response_data;
         response_data["task_id"] = analytics_resp_body["task_id"];
+        return BaseApiStrategyUtils::make_success_response(200, response_data, "Server processed update request successfully.");
+    }
+    catch (const std::exception& e) {
+        return BaseApiStrategyUtils::make_error_response(500, std::string("Server error: ") + e.what());
+    }
+}
+
+auto retrieve_analytics(
+    const crow::request& req, 
+    std::shared_ptr<DatabaseManager> db_manager
+) -> crow::response {
+    try {
+        auto task_id_cursor = db_manager->find(Constants::COLLECTION_ANALYTICS_TASK_IDS);
+
+        std::unordered_map<std::string, std::string> BASE_URL_MAPPER = {
+            {Constants::COLLECTION_COMPLAINTS, Constants::ANALYTICS_URL + "/task_status"},
+            {Constants::COLLECTION_CATEGORY_ANALYTICS, Constants::ANALYTICS_URL + "/poll_generation_status"},
+            {Constants::COLLECTION_POLL_TEMPLATES, Constants::ANALYTICS_URL + "/category_analytics_status"},
+        };
+
+        for (auto&& doc: task_id_cursor) {
+            auto doc_json = bsoncxx::to_json(doc);
+            auto doc_rval = crow::json::load(doc_json);
+            
+            std::string task_id = doc_rval["task_id"].s();
+            auto collection = doc_rval["collection"].s();
+            auto url = BASE_URL_MAPPER[collection] + "/" + task_id;
+            
+            auto resp = cpr::Get(
+                cpr::Url{url}
+            );
+            auto resp_json = crow::json::load(resp.text);
+            auto resp_bson = BaseApiStrategyUtils::parse_request_json_to_database_bson(resp_json);
+            db_manager->insert_one(collection, resp_bson);
+        }
+
+        crow::json::wvalue response_data;
         return BaseApiStrategyUtils::make_success_response(200, response_data, "Server processed update request successfully.");
     }
     catch (const std::exception& e) {

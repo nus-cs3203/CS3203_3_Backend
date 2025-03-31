@@ -24,6 +24,12 @@ public:
         const std::string& collection_name
     ) -> crow::response;
 
+    auto retrieve_analytics(
+        const crow::request& req, 
+        std::shared_ptr<DatabaseManager> db_manager,
+        const std::string& collection_name
+    ) -> crow::response;
+
 private:
     std::shared_ptr<RedditManager> reddit_manager;
 };
