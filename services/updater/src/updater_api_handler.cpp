@@ -65,7 +65,7 @@ auto UpdaterApiHandler::update_posts(
     }
 }
 
-auto run_analytics(
+auto UpdaterApiHandler::run_analytics(
     const crow::request& req, 
     std::shared_ptr<DatabaseManager> db_manager,
     const std::string& collection_name
@@ -105,7 +105,7 @@ auto run_analytics(
     }
 }
 
-auto retrieve_analytics(
+auto UpdaterApiHandler::retrieve_analytics(
     const crow::request& req, 
     std::shared_ptr<DatabaseManager> db_manager
 ) -> crow::response {
@@ -141,6 +141,23 @@ auto retrieve_analytics(
         }
 
         crow::json::wvalue response_data;
+        return BaseApiStrategyUtils::make_success_response(200, response_data, "Server processed update request successfully.");
+    }
+    catch (const std::exception& e) {
+        return BaseApiStrategyUtils::make_error_response(500, std::string("Server error: ") + e.what());
+    }
+}
+
+auto UpdaterApiHandler::clear_analytics(
+    const crow::request& req, 
+    std::shared_ptr<DatabaseManager> db_manager,
+    const std::string& collection_name
+) -> crow::response {
+    try {
+        auto result = db_manager->delete_many(collection_name, {});
+        crow::json::wvalue response_data;
+        auto deleted_count = result.value().deleted_count();
+        response_data["deleted_count"] = deleted_count;
         return BaseApiStrategyUtils::make_success_response(200, response_data, "Server processed update request successfully.");
     }
     catch (const std::exception& e) {

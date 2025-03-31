@@ -26,6 +26,11 @@ public:
 
     auto retrieve_analytics(
         const crow::request& req, 
+        std::shared_ptr<DatabaseManager> db_manager
+    ) -> crow::response;
+
+    auto clear_analytics(
+        const crow::request& req, 
         std::shared_ptr<DatabaseManager> db_manager,
         const std::string& collection_name
     ) -> crow::response;
