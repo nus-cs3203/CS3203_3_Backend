@@ -60,7 +60,71 @@ std::string RedditManager::_get_access_token() {
     return access_token;
 }
 
-std::vector<crow::json::wvalue> RedditManager::get_posts(const std::string& subreddit, const std::string& before_id, const int& limit) {
+std::string removeNonUtf8(const std::string &input) {
+    std::string output;
+    size_t i = 0;
+    while (i < input.size()) {
+        unsigned char c = input[i];
+        size_t bytesInChar = 0;
+        
+        // Determine the expected number of bytes for this UTF-8 character.
+        if (c <= 0x7F) { 
+            bytesInChar = 1; // ASCII
+        } else if (c >= 0xC2 && c <= 0xDF) {
+            bytesInChar = 2; // 2-byte sequence
+        } else if (c >= 0xE0 && c <= 0xEF) {
+            bytesInChar = 3; // 3-byte sequence
+        } else if (c >= 0xF0 && c <= 0xF4) {
+            bytesInChar = 4; // 4-byte sequence
+        } else {
+            // Invalid starting byte: skip it.
+            ++i;
+            continue;
+        }
+        
+        // Ensure there are enough bytes remaining.
+        if (i + bytesInChar > input.size()) {
+            break; // Incomplete sequence at the end.
+        }
+        
+        bool valid = true;
+        // Check that each continuation byte is in the 0x80 to 0xBF range.
+        for (size_t j = 1; j < bytesInChar; j++) {
+            if ((static_cast<unsigned char>(input[i+j]) & 0xC0) != 0x80) {
+                valid = false;
+                break;
+            }
+        }
+        
+        // Additional checks for specific multi-byte sequences.
+        if (valid) {
+            if (bytesInChar == 3) {
+                unsigned char second = input[i+1];
+                // For 3-byte sequences, check for overlong sequences or surrogates.
+                if (c == 0xE0 && second < 0xA0) valid = false;
+                if (c == 0xED && second > 0x9F) valid = false;
+            }
+            if (bytesInChar == 4) {
+                unsigned char second = input[i+1];
+                // For 4-byte sequences, check for overlong encoding.
+                if (c == 0xF0 && second < 0x90) valid = false;
+                if (c == 0xF4 && second > 0x8F) valid = false;
+            }
+        }
+        
+        if (valid) {
+            // Append the valid UTF-8 sequence.
+            output.append(input, i, bytesInChar);
+            i += bytesInChar;
+        } else {
+            // Skip the invalid byte and continue.
+            ++i;
+        }
+    }
+    return output;
+}
+
+std::vector<crow::json::wvalue> RedditManager::get_posts(const std::string& subreddit) {
     cpr::Header base_headers{{"User-Agent", user_agent}};
     cpr::Header oauth_headers = base_headers;
     std::string access_token = _get_access_token();
@@ -92,8 +156,51 @@ std::vector<crow::json::wvalue> RedditManager::get_posts(const std::string& subr
         auto post_data = child["data"];
         if (!post_data) continue;
 
-        crow::json::wvalue single_post = post_data;
+        crow::json::wvalue single_post;
 
+        std::vector<std::string> double_fields = {
+            "upvote_ratio"
+        };
+
+        std::vector<std::string> int_fields = {
+            "downs", "likes", "num_comments", "score", "ups", "view_count"
+        };
+
+        std::vector<std::string> string_fields = {
+            "author_flair_text", "selftext", "title", "url", "id"
+        };
+
+        for (const auto& field: double_fields) {
+            if (post_data[field].t() == crow::json::type::Null) {
+                single_post[field] = post_data[field];
+                continue;
+            }
+
+            single_post[field] = post_data[field].d();
+        }
+
+        for (const auto& field: int_fields) {
+            if (post_data[field].t() == crow::json::type::Null) {
+                single_post[field] = post_data[field];
+                continue;
+            }
+
+            single_post[field] = post_data[field].i();
+        }
+
+        for (const auto& field: string_fields) {
+            if (post_data[field].t() == crow::json::type::Null) {
+                single_post[field] = post_data[field];
+                continue;
+            }
+
+            auto value = removeNonUtf8(static_cast<std::string>(post_data[field].s()));
+            single_post[field] = "value";
+        }
+        single_post["date"] = utc_unix_timestamp_to_string(post_data["created"].i(), Constants::DATETIME_FORMAT);
+        single_post["source"] = "Reddit";
+        single_post["sub_source"] = subreddit;
+        
         std::string short_id = post_data["id"].s();
 
         std::string comments_url = "https://oauth.reddit.com/r/" + subreddit + "/comments/" + short_id;
@@ -110,7 +217,7 @@ std::vector<crow::json::wvalue> RedditManager::get_posts(const std::string& subr
         catch (const std::exception& e) {
             std::cout << e.what() << std::endl;
         }
-        single_post["comments"] = joined_comments;
+        single_post["comments"] = removeNonUtf8(joined_comments);
 
         posts_array.push_back(std::move(single_post));
     }

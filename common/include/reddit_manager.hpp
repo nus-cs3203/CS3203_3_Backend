@@ -20,7 +20,7 @@ public:
 
     static std::shared_ptr<RedditManager> create_from_env(EnvManager env_manager = EnvManager());
 
-    std::vector<crow::json::wvalue> get_posts(const std::string& subreddit, const std::string& before_id, const int& limit);
+    std::vector<crow::json::wvalue> get_posts(const std::string& subreddit);
 
 private:
     std::string reddit_api_id;
