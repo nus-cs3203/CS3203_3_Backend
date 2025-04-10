@@ -1,10 +1,8 @@
 #include "user_server.hpp"
 
-UserServer::UserServer(int port, int concurrency) : BaseServer(port, concurrency) {
-    define_handler_funcs();
-}
+UserServer::UserServer(int port, int concurrency) : BaseServer(port, concurrency) {}
 
-void UserServer::define_handler_funcs() {
+void UserServer::_define_handler_funcs() {
     auto api_handler = std::make_shared<UserApiHandler>();
     auto db_manager = DatabaseManager::create_from_env();
    
@@ -47,8 +45,4 @@ void UserServer::define_handler_funcs() {
         crow::HTTPMethod::Post,
         concurrency_protection_decorator
     );
-
-    for (auto &handler_func: handler_funcs) {
-        handler_func.func = handler_func.concurrency_protection_decorator(handler_func.func);
-    }
 }

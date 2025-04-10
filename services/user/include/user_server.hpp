@@ -21,7 +21,7 @@ public:
     UserServer(int port = Constants::USER_SERVER_PORT_NUMBER, int concurrency = Constants::DEFAULT_CONCURRENCY);
 
 private:
-    void define_handler_funcs();
+    void _define_handler_funcs();
 };
 
 #endif
