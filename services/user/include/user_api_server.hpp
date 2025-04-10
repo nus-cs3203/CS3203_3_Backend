@@ -5,7 +5,6 @@
 #include "cors.hpp"
 #include "database_manager.hpp"
 #include "user_api_handler.hpp"
-
 #include "crow.h"
 
 #include <functional>
@@ -21,19 +20,23 @@ struct HandlerFunc {
 
 class UserApiServer {
 public:
-    UserApiServer();
-    void init();
-    void run(const int& port, const int& concurrency = Constants::DEFAULT_CONCURRENCY);
+    UserApiServer(int port = 8085, int concurrency = Constants::DEFAULT_CONCURRENCY);
+    void run();
+
 private:
     std::unique_ptr<crow::App<CORS>> app;
     std::unique_ptr<UserApiHandler> api_handler;
     std::shared_ptr<DatabaseManager> db_manager;
-
     std::string COLLECTION_USERS = Constants::COLLECTION_USERS;
-
     std::vector<HandlerFunc> handler_funcs;
+    int port;
+    int concurrency;
+
     void _register_handler_funcs();
-    void _register_handler_func(const std::string& route, const std::function<crow::response(const crow::request&)>& func, const crow::HTTPMethod& method);  
+    void _register_handler_func(const std::string& route,
+                                const std::function<crow::response(const crow::request&)>& func,
+                                const crow::HTTPMethod& method);
+    void _init_server();
 };
 
 #endif
