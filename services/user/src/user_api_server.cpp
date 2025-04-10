@@ -2,12 +2,9 @@
 #include <iostream>
 
 UserApiServer::UserApiServer(int port, int concurrency)
-    : port(port), concurrency(concurrency),
-      app{std::make_unique<crow::App<CORS>>()},
-      api_handler{std::make_unique<UserApiHandler>()},
-      db_manager{DatabaseManager::create_from_env()}
+    : port(port), concurrency(concurrency)
 {
-    _register_handler_funcs();
+    _define_handler_funcs();
 }
 
 void UserApiServer::_init_server() {
@@ -24,32 +21,37 @@ void UserApiServer::_register_handler_func(const std::string& route,
     handler_funcs.push_back(handler_func);
 }
 
-void UserApiServer::_register_handler_funcs() {
+void UserApiServer::_define_handler_funcs() {
+    auto api_handler = std::make_shared<UserApiHandler>();
+    auto db_manager = DatabaseManager::create_from_env();
+
+    auto COLLECTION_USERS = Constants::COLLECTION_USERS;
+
     _register_handler_func(
         "/signup",
-        [this](const crow::request& req) { 
-            return this->api_handler->insert_one(req, this->db_manager, this->COLLECTION_USERS); 
+        [api_handler, db_manager, COLLECTION_USERS](const crow::request& req) { 
+            return api_handler->insert_one(req, db_manager, COLLECTION_USERS); 
         },
         crow::HTTPMethod::Post
     );
     _register_handler_func(
         "/login",
-        [this](const crow::request& req) { 
-            return this->api_handler->login(req, this->db_manager, this->COLLECTION_USERS); 
+        [api_handler, db_manager, COLLECTION_USERS](const crow::request& req) { 
+            return api_handler->login(req, db_manager, COLLECTION_USERS); 
         },
         crow::HTTPMethod::Post
     );
     _register_handler_func(
         "/get_profile_by_oid",
-        [this](const crow::request& req) { 
-            return this->api_handler->get_one_profile_by_oid(req, this->db_manager, this->COLLECTION_USERS); 
+        [api_handler, db_manager, COLLECTION_USERS](const crow::request& req) { 
+            return api_handler->get_one_profile_by_oid(req, db_manager, COLLECTION_USERS); 
         },
         crow::HTTPMethod::Post
     );
     _register_handler_func(
         "/update_profile_by_oid",
-        [this](const crow::request& req) { 
-            return this->api_handler->update_one_by_oid(req, this->db_manager, this->COLLECTION_USERS); 
+        [api_handler, db_manager, COLLECTION_USERS](const crow::request& req) { 
+            return api_handler->update_one_by_oid(req, db_manager, COLLECTION_USERS); 
         },
         crow::HTTPMethod::Post
     );
