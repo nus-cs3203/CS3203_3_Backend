@@ -26,8 +26,7 @@ namespace UserApiStrategy {
     auto _generate_salt(size_t length = 16) -> std::string;
     auto _sha256(const std::string& input) -> std::string;
 
-    auto preprocess_request_func_login(const crow::request& req, std::shared_ptr<DatabaseManager> db_manager, const std::string& collection_name) -> crow::request;
-    auto process_response_func_login(const bsoncxx::document::value& doc) -> crow::json::wvalue;
+    auto process_response_func_login(const bsoncxx::document::value& doc, const crow::request& req) -> crow::json::wvalue;
 
     auto process_response_func_get_one_profile_by_oid(const bsoncxx::document::value& doc) -> crow::json::wvalue;
 }

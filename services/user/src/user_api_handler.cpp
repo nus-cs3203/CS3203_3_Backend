@@ -1,3 +1,4 @@
+#include "base_api_strategy_utils.hpp"
 #include "management_api_strategy.hpp"
 #include "user_api_handler.hpp"
 #include "user_api_strategy.hpp"
@@ -13,8 +14,24 @@ auto UserApiHandler::login(
     std::shared_ptr<DatabaseManager> db_manager, 
     const std::string& collection_name
 ) -> crow::response {
-    auto preprocessed_req = UserApiStrategy::preprocess_request_func_login(req, db_manager, collection_name);
-    return find_one(preprocessed_req, db_manager, collection_name, UserApiStrategy::process_request_func_login, UserApiStrategy::process_response_func_login);
+    try {
+        auto filter_and_option = UserApiStrategy::process_request_func_login(req);
+        auto filter = std::get<0>(filter_and_option);
+        auto option = std::get<1>(filter_and_option);
+
+        auto result = db_manager->find_one(collection_name, filter, option);
+
+        if (!result.has_value()) {
+            return BaseApiStrategyUtils::make_success_response(200, {}, "Server processed get request successfully but no matching documents found");
+        }
+
+        auto response_data = UserApiStrategy::process_response_func_login(result.value(), req);
+        
+        return BaseApiStrategyUtils::make_success_response(200, response_data, "Server processed get request successfully.");
+    }
+    catch (const std::exception& e) {
+        return BaseApiStrategyUtils::make_error_response(500, std::string("Server error: ") + e.what());
+    }
 }
 
 auto UserApiHandler::get_one_profile_by_oid(

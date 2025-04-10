@@ -11,50 +11,14 @@
 using bsoncxx::builder::basic::kvp;
 using bsoncxx::builder::basic::make_document;
 
-auto UserApiStrategy::preprocess_request_func_login(const crow::request& req, std::shared_ptr<DatabaseManager> db_manager, const std::string& collection_name) -> crow::request {
-    BaseApiStrategyUtils::validate_fields(req, {"email", "password"});
-    
-    auto body = crow::json::load(req.body);
-
-    std::string email = body["email"].s();
-    std::string password = body["password"].s();
-
-    auto filter = make_document(
-        kvp("email", email)
-    );
-    auto result = db_manager->find_one(collection_name, filter);
-
-    if (!result.has_value()) {
-        throw std::runtime_error("Server processed get request successfully but no matching documents found");
-    }
-
-    auto doc_json = bsoncxx::to_json(result.value());
-    auto doc_rval = crow::json::load(doc_json);
-
-    std::string salt = doc_rval["salt"].s();
-    auto salted_password = salt + password;
-    std::string hashed_password = _sha256(salted_password);
-
-    crow::json::wvalue modified_req_body;
-    modified_req_body["email"] = email;
-    modified_req_body["hashed_password"] = hashed_password;
-
-    crow::request modified_req = req;
-    modified_req.body = modified_req_body.dump();
-    
-    return modified_req;
-}
-
 auto UserApiStrategy::process_request_func_login(const crow::request& req) -> std::tuple<bsoncxx::document::value, mongocxx::options::find> {
-    BaseApiStrategyUtils::validate_fields(req, {"email", "hashed_password"});
+    BaseApiStrategyUtils::validate_fields(req, {"email", "password"});
 
     auto body = crow::json::load(req.body);
     auto email = body["email"].s();
-    auto hashed_password = body["hashed_password"].s();
 
     auto filter = make_document(
-        kvp("email", email),
-        kvp("hashed_password", hashed_password)
+        kvp("email", email)
     );
 
     mongocxx::options::find option;
@@ -124,9 +88,22 @@ auto UserApiStrategy::_sha256(const std::string &input) -> std::string {
     return ss.str();
 }
 
-auto UserApiStrategy::process_response_func_login(const bsoncxx::document::value& doc) -> crow::json::wvalue {
+auto UserApiStrategy::process_response_func_login(const bsoncxx::document::value& doc, const crow::request& req) -> crow::json::wvalue {
+    auto body = crow::json::load(req.body);
+    std::string password = body["password"].s();
+
     auto document_json = bsoncxx::to_json(doc);
     auto document_rvalue = crow::json::load(document_json);
+
+    std::string salt = document_rvalue["salt"].s();
+    auto salted_password = salt + password;
+    std::string hashed_password = _sha256(salted_password);
+    std::string hashed_password_from_db = document_rvalue["hashed_password"].s();
+
+    if (hashed_password != hashed_password_from_db) {
+        throw std::runtime_error("Email and password do not match");
+    }
+
     auto oid = document_rvalue["_id"]["$oid"].s();
     
     JwtManager jwt_manager;
