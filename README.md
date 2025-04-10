@@ -2149,3 +2149,81 @@ curl -X POST "http://localhost:8085/update_profile_by_oid" \
 }
 ```
 ---
+
+## JWT Protection Logic
+
+We use JWT to protect our API endpoints. JWT can be obtained through `/login` API in **user** service. JWT token should be attached as a Bearer token to access JWT-protected API endpoints.
+
+### JWT Access Levels
+
+| Level      | Description                                                                                                      |
+|------------|------------------------------------------------------------------------------------------------------------------|
+| `None`     | No bearer token required.                                                                                        |
+| `Citizen`  | Requires a valid bearer token of account with `role=Citizen`. Used for general authenticated user access.        |
+| `Admin`    | Requires a valid bearer token of account with `role=Admin`. Reserved for privileged administrative operations.   |
+| `Personal` | Only used for modification of personal profile. Requires bearer token of profile owner.                          |
+
+**Note:** Some API paths have access level `None`. This does not mean they are publicly available since we whitelist clients who are able to call our API endpoints. This just means that it does not necessarily make sense to `login` in order to access these API endpoints.
+
+---
+
+### Management Service
+
+| Endpoint                            | JWT Protection |
+|-------------------------------------|----------------|
+| `/categories/get_count`             | None           |
+| `/categories/get_all`               | None           |
+| `/categories/get_by_oid`            | None           |
+| `/categories/insert_one`            | Admin          |
+| `/categories/delete_by_oid`         | Admin          |
+| `/categories/update_by_oid`         | Admin          |
+| `/posts/get_count`                  | None           |
+| `/posts/get_by_daterange`           | None           |
+| `/complaints/get_count`             | None           |
+| `/complaints/get_by_oid`            | None           |
+| `/complaints/get_by_daterange`      | None           |
+| `/complaints/get_many`              | None           |
+| `/complaints/delete_by_oid`         | Admin          |
+| `/complaints/delete_many_by_oids`   | Admin          |
+| `/complaints/update_by_oid`         | Admin          |
+| `/polls/insert_one`                 | Admin          |
+| `/polls/get_by_oid`                 | None           |
+| `/polls/get_many`                   | None           |
+| `/polls/get_count`                  | None           |
+| `/polls/delete_by_oid`              | Admin          |
+| `/polls/delete_many_by_oids`        | Admin          |
+| `/polls/update_by_oid`              | Admin          |
+| `/poll_templates/get_all`           | None           |
+| `/poll_templates/get_by_oid`        | None           |
+| `/poll_responses/get_count`         | None           |
+| `/poll_responses/get_one`           | None           |
+| `/poll_responses/get_many`          | None           |
+| `/poll_responses/insert_one`        | Citizen        |
+| `/poll_responses/get_statistics`    | None           |
+
+---
+
+### Analytics Service
+
+| Endpoint                                                 | JWT Protection |
+|----------------------------------------------------------|----------------|
+| `/category_analytics/get_by_name`                        | None           |
+| `/complaints/get_statistics`                             | None           |
+| `/complaints/get_statistics_over_time`                   | None           |
+| `/complaints/get_statistics_grouped`                     | None           |
+| `/complaints/get_statistics_grouped_over_time`           | None           |
+| `/complaints/get_statistics_grouped_by_sentiment_value`  | None           |
+
+---
+
+### User Service
+
+| Endpoint                   | JWT Protection |
+|----------------------------|----------------|
+| `/signup`                  | None           |
+| `/create_admin_account`    | Admin          |
+| `/login`                   | None           |
+| `/get_profile_by_oid`      | None           |
+| `/update_profile_by_oid`   | Personal       |
+
+---
