@@ -28,6 +28,27 @@ auto UserApiStrategy::process_request_func_login(const crow::request& req) -> st
     return std::make_tuple(filter, option);
 }
 
+auto UserApiStrategy::_process_request_func_create_account(const crow::request& req, const std::string& role) -> std::tuple<bsoncxx::document::value, mongocxx::options::insert> {
+    BaseApiStrategyUtils::validate_fields(req, {"document"});
+
+    auto body = crow::json::load(req.body);
+    
+    crow::json::wvalue account = body["document"];
+    account["role"] = role;
+    auto account_rval = crow::json::load(account.dump());
+    auto document = BaseApiStrategyUtils::parse_request_json_to_database_bson(account_rval);
+    mongocxx::options::insert option;
+
+    return std::make_tuple(document, option);
+}
+
+auto UserApiStrategy::process_request_func_create_account_admin(const crow::request& req) -> std::tuple<bsoncxx::document::value, mongocxx::options::insert> {
+    return _process_request_func_create_account(req, Constants::USERS_ROLE_ADMIN);
+}
+
+auto UserApiStrategy::process_request_func_create_account_citizen(const crow::request& req) -> std::tuple<bsoncxx::document::value, mongocxx::options::insert> {
+    return _process_request_func_create_account(req, Constants::USERS_ROLE_CITIZEN);
+}
 
 auto UserApiStrategy::process_response_func_login(const bsoncxx::document::value& doc) -> crow::json::wvalue {
     auto document_json = bsoncxx::to_json(doc);

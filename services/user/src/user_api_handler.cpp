@@ -23,3 +23,19 @@ auto UserApiHandler::get_one_profile_by_oid(
 ) -> crow::response {
     return find_one(req, db_manager, collection_name, ManagementApiStrategy::process_request_func_get_one_by_oid, UserApiStrategy::process_response_func_get_one_profile_by_oid);
 }
+
+auto UserApiHandler::insert_one_account_admin(
+    const crow::request& req, 
+    std::shared_ptr<DatabaseManager> db_manager, 
+    const std::string& collection_name
+) -> crow::response {
+    return insert_one(req, db_manager, collection_name, UserApiStrategy::process_request_func_create_account_admin, BaseApiStrategy::process_response_func_insert_one);
+}
+
+auto UserApiHandler::insert_one_account_citizen(
+    const crow::request& req, 
+    std::shared_ptr<DatabaseManager> db_manager, 
+    const std::string& collection_name
+) -> crow::response {
+    return insert_one(req, db_manager, collection_name, UserApiStrategy::process_request_func_create_account_citizen, BaseApiStrategy::process_response_func_insert_one);
+}

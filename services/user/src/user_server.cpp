@@ -16,7 +16,15 @@ void UserServer::_define_handler_funcs() {
     _register_handler_func(
         "/signup",
         [api_handler, db_manager, COLLECTION_USERS](const crow::request& req) { 
-            return api_handler->insert_one(req, db_manager, COLLECTION_USERS); 
+            return api_handler->insert_one_account_citizen(req, db_manager, COLLECTION_USERS); 
+        },
+        crow::HTTPMethod::Post,
+        concurrency_protection_decorator
+    );
+    _register_handler_func(
+        "/create_admin_account",
+        [api_handler, db_manager, COLLECTION_USERS](const crow::request& req) { 
+            return api_handler->insert_one_account_admin(req, db_manager, COLLECTION_USERS); 
         },
         crow::HTTPMethod::Post,
         concurrency_protection_decorator

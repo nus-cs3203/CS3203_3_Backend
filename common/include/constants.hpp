@@ -19,9 +19,8 @@ namespace Constants {
     const std::string COLLECTION_POLL_TEMPLATES = "poll_templates";
     const std::string COLLECTION_POLL_RESPONSES = "poll_responses";
 
-    const std::string USERS_ROLE_CITIZEN = "CITIZEN";
-    const std::string USERS_ROLE_ADMIN = "ADMIN";
-    const std::string USERS_ROLE_SUPER_ADMIN = "SUPER_ADMIN";
+    const std::string USERS_ROLE_CITIZEN = "Citizen";
+    const std::string USERS_ROLE_ADMIN = "Admin";
 
     const std::string ENV_FILE_DEFAULT_PATH = "./.env";
 
