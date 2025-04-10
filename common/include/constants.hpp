@@ -17,13 +17,17 @@ namespace Constants {
     const std::string COLLECTION_USERS = "users";
     const std::string COLLECTION_POLLS = "polls";
     const std::string COLLECTION_POLL_TEMPLATES = "poll_templates";
-    const std::string COLLECTION_POLL_REPONSES = "poll_responses";
+    const std::string COLLECTION_POLL_RESPONSES = "poll_responses";
 
-    const std::string USERS_ROLE_CITIZEN = "CITIZEN";
-    const std::string USERS_ROLE_ADMIN = "ADMIN";
-    const std::string USERS_ROLE_SUPER_ADMIN = "SUPER_ADMIN";
+    const std::string USERS_ROLE_CITIZEN = "Citizen";
+    const std::string USERS_ROLE_ADMIN = "Admin";
 
     const std::string ENV_FILE_DEFAULT_PATH = "./.env";
+
+    const int ANALYTICS_SERVER_PORT_NUMBER = 8082;
+    const int MANAGEMENT_SERVER_PORT_NUMBER = 8083;
+    const int USER_SERVER_PORT_NUMBER = 8085;
+    const int DEFAULT_CONCURRENCY = 25;
 }
 
 #endif // CONSTANTS_HPP
