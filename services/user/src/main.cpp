@@ -1,7 +1,7 @@
-#include "user_api_server.hpp"
+#include "user_server.hpp"
 
 int main(){
-    UserApiServer user_api_server;
-    user_api_server.run();
+    UserServer user_server;
+    user_server.serve();
     return 0;
 }
