@@ -35,7 +35,6 @@ public:
         const std::string& collection_name
     ) -> crow::response;
 
-    // TODO: move to analytics API
     auto get_statistics_poll_responses(
         const crow::request& req, 
         std::shared_ptr<DatabaseManager> db_manager, 

@@ -1898,7 +1898,7 @@ This service provides user management endpoints, including account creation (`si
 
 ### **POST /signup**
 
-- **Purpose**: Create a new user account.
+- **Purpose**: Create a new account with role `Citizen`.
 
 **Request:**
 ```json
@@ -1907,7 +1907,6 @@ This service provides user management endpoints, including account creation (`si
         "name": "string",
         "email": "string",
         "password": "string",
-        "role": "string",
         "collectibles": "[]string"
     }
 }
@@ -1938,7 +1937,62 @@ curl -X POST "http://localhost:8085/signup" \
             "name": "test",
             "email": "test",
             "password": "test",
-            "role": "Citizen",
+            "collectibles": []
+        }
+     }'
+```
+
+**Sample Response (Success):**
+```json
+{
+    "message": "Account created successfully.",
+    "success": true
+}
+```
+
+---
+
+### **POST /create_admin_account**
+
+- **Purpose**: Create a new account with role `Admin`.
+
+**Request:**
+```json
+{
+    "document": {
+        "name": "string",
+        "email": "string",
+        "password": "string",
+        "collectibles": "[]string"
+    }
+}
+```
+
+**Response (Success):**
+```json
+{
+    "message": "Account created successfully.",
+    "success": true
+}
+```
+
+**Response (Failure, HTTP Code 409)**:
+```json
+{
+    "message": "Email already in use.",
+    "success": false
+}
+```
+
+**Sample Request:**
+```sh
+curl -X POST "http://localhost:8085/create_admin_account" \
+     -H "Content-Type: application/json" \
+     -d '{
+        "document": {
+            "name": "admin",
+            "email": "admin",
+            "password": "admin",
             "collectibles": []
         }
      }'
