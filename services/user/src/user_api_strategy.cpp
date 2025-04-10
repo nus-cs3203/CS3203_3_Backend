@@ -104,8 +104,6 @@ auto UserApiStrategy::process_response_func_login(const bsoncxx::document::value
         throw std::runtime_error("Email and password do not match");
     }
 
-    auto oid = document_rvalue["_id"]["$oid"].s();
-    
     JwtManager jwt_manager;
     auto oid = static_cast<std::string>(document_rvalue["_id"]["$oid"].s());
     auto role = static_cast<std::string>(document_rvalue["role"].s());
