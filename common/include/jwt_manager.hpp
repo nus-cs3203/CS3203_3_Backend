@@ -7,9 +7,8 @@
 
 #include "crow.h"
 
+#include <functional>
 #include <string>
-
-using ApiHandler = std::function<crow::response(const crow::request&, std::shared_ptr<DatabaseManager>, const std::string&)>;
 
 enum class JwtAccessLevel {
     Personal,
@@ -25,14 +24,13 @@ public:
 
     std::string generate_token(const std::string &oid, const std::string &role);
     
-    ApiHandler api_path_protection_decorator(const ApiHandler& api_handler, const crow::request& req, const JwtAccessLevel& access_level);
+    auto jwt_protection_decorator(const std::function<crow::response(const crow::request&)>& func, const JwtAccessLevel& access_level) -> std::function<crow::response(const crow::request&)>;
 
 private:
     std::string jwt_secret;
 
     std::string _get_from_token(const std::string &token, const std::string &key);
-    ApiHandler _create_error_api_handler(const int& status_code, const std::string& message);
-
+    
     static EnvManager env_manager;
 };
 

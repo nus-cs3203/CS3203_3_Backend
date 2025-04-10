@@ -25,43 +25,38 @@ std::string JwtManager::generate_token(const std::string &oid, const std::string
     return token;
 }
 
-ApiHandler JwtManager::api_path_protection_decorator(const ApiHandler& api_handler, const crow::request& req, const JwtAccessLevel& access_level) {
-    auto auth_header = req.get_header_value("Authorization");
-    if (auth_header.empty() || auth_header.substr(0, 7) != "Bearer ") {
-        return _create_error_api_handler(401, "Unauthorized: Missing or invalid Authorization header");
-    }
-    std::string token = auth_header.substr(7);
-    try {
+auto JwtManager::jwt_protection_decorator(const std::function<crow::response(const crow::request&)>& func, const JwtAccessLevel& access_level) -> std::function<crow::response(const crow::request&)> {
+    return [this, func, access_level](const crow::request& req) {
+        auto auth_header = req.get_header_value("Authorization");
+        if (auth_header.empty() || auth_header.substr(0, 7) != "Bearer ") {
+            return BaseApiStrategyUtils::make_error_response(401, "Unauthorized: Missing or invalid Authorization header");
+        }
+        std::string token = auth_header.substr(7);
         auto oid_from_token = _get_from_token(token, "oid");
         auto role_from_token = _get_from_token(token, "role");
-
+    
         switch (access_level) {
             case JwtAccessLevel::Personal: {
                 auto body = crow::json::load(req.body);
                 auto oid_from_request = static_cast<std::string>(body["oid"]);
                 if (oid_from_token != oid_from_request) {
-                    throw std::runtime_error("Invalid Personal Level Access: oid retrieved from JWT token is not the oid provided in the request.");
+                    return BaseApiStrategyUtils::make_error_response(401, "Invalid Personal Level Access: oid retrieved from JWT token is not the oid provided in the request.");
                 }
                 break;
             }
-        
             case JwtAccessLevel::Admin: {
                 if (role_from_token != "Admin") {
-                    throw std::runtime_error("Invalid Admin Level Access: role retrieved from JWT token is below Admin.");
+                    throw BaseApiStrategyUtils::make_error_response(401, "Invalid Admin Level Access: role retrieved from JWT token is below Admin.");
                 }
                 break;
             }
-        
             case JwtAccessLevel::Citizen: {
                 break;
             }
         }        
-
-    } catch (const std::exception &ex) {
-        return _create_error_api_handler(401, std::string("Unauthorized: ") + ex.what());
-    }
-
-    return api_handler;
+    
+        return func(req);    
+    };
 }
 
 std::string JwtManager::_get_from_token(const std::string &token, const std::string &key) {
@@ -78,10 +73,4 @@ std::string JwtManager::_get_from_token(const std::string &token, const std::str
     } catch (const std::exception &e) {
         throw std::runtime_error(std::string("Token verification failed: ") + e.what());
     }
-}
-
-ApiHandler JwtManager::_create_error_api_handler(const int& status_code, const std::string& message) {
-    return [status_code, message](const crow::request& req, std::shared_ptr<DatabaseManager> db, const std::string& user_id) -> crow::response {
-        return BaseApiStrategyUtils::make_error_response(status_code, message);
-    };
 }
