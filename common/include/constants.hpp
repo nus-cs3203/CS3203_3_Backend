@@ -25,6 +25,7 @@ namespace Constants {
 
     const std::string ENV_FILE_DEFAULT_PATH = "./.env";
 
+    const int ANALYTICS_SERVER_PORT_NUMBER = 8082;
     const int MANAGEMENT_SERVER_PORT_NUMBER = 8083;
     const int USER_SERVER_PORT_NUMBER = 8085;
     const int DEFAULT_CONCURRENCY = 25;
