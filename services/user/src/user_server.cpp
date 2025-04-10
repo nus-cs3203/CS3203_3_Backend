@@ -1,9 +1,7 @@
 #include "user_server.hpp"
 #include <iostream>
 
-UserServer::UserServer(int port, int concurrency)
-    : BaseServer(port, concurrency)
-{
+UserServer::UserServer(int port, int concurrency) : BaseServer(port, concurrency) {
     define_handler_funcs();
 }
 

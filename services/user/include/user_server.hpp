@@ -15,7 +15,7 @@
 
 class UserServer : public BaseServer {
 public:
-    UserServer(int port = 8085, int concurrency = Constants::DEFAULT_CONCURRENCY);
+    UserServer(int port = Constants::USER_SERVER_PORT_NUMBER int concurrency = Constants::DEFAULT_CONCURRENCY);
 
 private:
     void define_handler_funcs();
