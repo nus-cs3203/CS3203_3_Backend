@@ -28,7 +28,15 @@ namespace Constants {
     const std::string REDDIT_PASSWORD = "";
     const std::string USER_AGENT = "";
 
+    const std::string USERS_ROLE_CITIZEN = "Citizen";
+    const std::string USERS_ROLE_ADMIN = "Admin";
+
     const std::string ENV_FILE_DEFAULT_PATH = "./.env";
+
+    const int ANALYTICS_SERVER_PORT_NUMBER = 8082;
+    const int MANAGEMENT_SERVER_PORT_NUMBER = 8083;
+    const int USER_SERVER_PORT_NUMBER = 8085;
+    const int DEFAULT_CONCURRENCY = 25;
 }
 
 #endif // CONSTANTS_HPP

@@ -22,6 +22,18 @@ public:
         std::shared_ptr<DatabaseManager> db_manager, 
         const std::string& collection_name
     ) -> crow::response;
+
+    auto insert_one_account_admin(
+        const crow::request& req, 
+        std::shared_ptr<DatabaseManager> db_manager, 
+        const std::string& collection_name
+    ) -> crow::response;
+
+    auto insert_one_account_citizen(
+        const crow::request& req, 
+        std::shared_ptr<DatabaseManager> db_manager, 
+        const std::string& collection_name
+    ) -> crow::response;
 };
 
 #endif
