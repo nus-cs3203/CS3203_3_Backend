@@ -9,10 +9,13 @@
 #include <string>
 #include <vector>
 
+using handler_func_type = std::function<crow::response(const crow::request&)>;
+
 struct HandlerFunc {
     std::string route;
     std::function<crow::response(const crow::request&)> func;
     crow::HTTPMethod method;
+    std::function<handler_func_type(const handler_func_type&)> concurrency_protection_decorator;
 };
 
 class BaseServer {
@@ -26,7 +29,7 @@ protected:
     std::vector<HandlerFunc> handler_funcs;
 
     void define_handler_funcs();
-    void _register_handler_func(const std::string& route, const std::function<crow::response(const crow::request&)>& func, const crow::HTTPMethod& method);
+    void _register_handler_func(const std::string& route, const std::function<crow::response(const crow::request&)>& func, const crow::HTTPMethod& method, const std::function<handler_func_type(const handler_func_type&)>& concurrency_protection_decorator);
 };
 
 #endif
