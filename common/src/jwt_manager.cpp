@@ -27,6 +27,10 @@ std::string JwtManager::generate_token(const std::string &oid, const std::string
 
 auto JwtManager::jwt_protection_decorator(const std::function<crow::response(const crow::request&)>& func, const JwtAccessLevel& access_level) -> std::function<crow::response(const crow::request&)> {
     return [this, func, access_level](const crow::request& req) {
+        if (access_level == JwtAccessLevel::None) {
+            return func(req);
+        }
+
         auto auth_header = req.get_header_value("Authorization");
         if (auth_header.empty() || auth_header.substr(0, 7) != "Bearer ") {
             return BaseApiStrategyUtils::make_error_response(401, "Unauthorized: Missing or invalid Authorization header");
@@ -50,7 +54,7 @@ auto JwtManager::jwt_protection_decorator(const std::function<crow::response(con
                 }
                 break;
             }
-            case JwtAccessLevel::Citizen: {
+            default: {
                 break;
             }
         }        

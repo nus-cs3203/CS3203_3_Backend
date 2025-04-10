@@ -13,7 +13,8 @@
 enum class JwtAccessLevel {
     Personal,
     Admin,
-    Citizen
+    Citizen,
+    None
 };
 
 class JwtManager {

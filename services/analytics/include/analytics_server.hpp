@@ -1,12 +1,13 @@
 #ifndef ANALYTICS_SERVER_H
 #define ANALYTICS_SERVER_H
 
+#include "analytics_api_handler.hpp"
 #include "base_server.hpp"
 #include "concurrency_manager.hpp"
 #include "constants.hpp"
 #include "cors.hpp"
 #include "database_manager.hpp"
-#include "analytics_api_handler.hpp"
+#include "jwt_manager.hpp"
 
 #include "crow.h"
 
