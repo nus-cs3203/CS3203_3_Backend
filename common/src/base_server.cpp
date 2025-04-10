@@ -8,11 +8,6 @@ void BaseServer::_register_handler_func(const std::string& route, const std::fun
     handler_funcs.push_back(handler_func);
 }
 
-void BaseServer::_define_handler_funcs() {
-
-}
-
-
 void BaseServer::_decorate_handler_funcs() {
     for (auto &handler_func: handler_funcs) {
         handler_func.func = handler_func.concurrency_protection_decorator(handler_func.func);
