@@ -24,6 +24,8 @@ namespace Constants {
     const std::string USERS_ROLE_SUPER_ADMIN = "SUPER_ADMIN";
 
     const std::string ENV_FILE_DEFAULT_PATH = "./.env";
+
+    const int DEFAULT_CONCURRENCY = 25;
 }
 
 #endif // CONSTANTS_HPP
