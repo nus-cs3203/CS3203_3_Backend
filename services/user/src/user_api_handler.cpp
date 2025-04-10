@@ -13,7 +13,8 @@ auto UserApiHandler::login(
     std::shared_ptr<DatabaseManager> db_manager, 
     const std::string& collection_name
 ) -> crow::response {
-    return find_one(req, db_manager, collection_name, UserApiStrategy::process_request_func_login, UserApiStrategy::process_response_func_login);
+    auto preprocessed_req = UserApiStrategy::preprocess_request_func_login(req, db_manager, collection_name);
+    return find_one(preprocessed_req, db_manager, collection_name, UserApiStrategy::process_request_func_login, UserApiStrategy::process_response_func_login);
 }
 
 auto UserApiHandler::get_one_profile_by_oid(
