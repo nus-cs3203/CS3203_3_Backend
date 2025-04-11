@@ -3,6 +3,7 @@
 
 #include "cors.hpp"
 #include "crow.h"
+#include "jwt_manager.hpp"
 
 #include <functional>
 #include <memory>
@@ -16,6 +17,8 @@ struct HandlerFunc {
     std::function<crow::response(const crow::request&)> func;
     crow::HTTPMethod method;
     std::function<handler_func_type(const handler_func_type&)> concurrency_protection_decorator;
+    JwtAccessLevel access_level;
+    std::function<handler_func_type(const handler_func_type&, const JwtAccessLevel& access_level)> jwt_protection_decorator;
 };
 
 class BaseServer {
@@ -31,7 +34,7 @@ protected:
     void _init_server();
     virtual void _define_handler_funcs() = 0;
     void _decorate_handler_funcs();
-    void _register_handler_func(const std::string& route, const std::function<crow::response(const crow::request&)>& func, const crow::HTTPMethod& method, const std::function<handler_func_type(const handler_func_type&)>& concurrency_protection_decorator);
+    void _register_handler_func(const std::string& route, const std::function<crow::response(const crow::request&)>& func, const crow::HTTPMethod& method, const std::function<handler_func_type(const handler_func_type&)>& concurrency_protection_decorator, const JwtAccessLevel& access_level, const std::function<handler_func_type(const handler_func_type&, const JwtAccessLevel& access_level)>& jwt_protection_decorator);
 };
 
 #endif
