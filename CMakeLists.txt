@@ -55,6 +55,5 @@ FetchContent_MakeAvailable(googletest)
 
 add_subdirectory(services/analytics)
 add_subdirectory(services/management)
-add_subdirectory(services/updater)
 add_subdirectory(services/user)
 add_subdirectory(tests)
