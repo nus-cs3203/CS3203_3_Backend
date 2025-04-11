@@ -2026,7 +2026,8 @@ curl -X POST "http://localhost:8085/create_admin_account" \
     "message": "Login successful",
     "success": true,
     "jwt": "string",
-    "oid": "string"
+    "oid": "string",
+    "role": "string"
 }
 ```
 
@@ -2046,7 +2047,8 @@ curl -X POST "http://localhost:8085/login" \
     "message": "Login successful",
     "success": true,
     "jwt": "eyJhbGciOiJIUzI1Ni...",
-    "oid": "67cc41c912d9edad01064ac4"
+    "oid": "67cc41c912d9edad01064ac4",
+    "role": "Citizen"
 }
 ```
 
