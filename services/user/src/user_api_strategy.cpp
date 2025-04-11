@@ -112,6 +112,7 @@ auto UserApiStrategy::process_response_func_login(const bsoncxx::document::value
     crow::json::wvalue response_data;
     response_data["oid"] = oid;
     response_data["jwt"] = jwt;
+    response_data["role"] = role;
 
     return response_data;
 }
