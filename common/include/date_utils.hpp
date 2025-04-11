@@ -17,6 +17,10 @@ namespace DateUtils {
     auto extract_year_from_timestamp_str(const std::string& timestamp) -> int;
     
     auto create_month_year_str(const int& month, const int& year) -> std::string;
+
+    auto utc_unix_timestamp_to_string(const long long int& utc_unix_timestamp, const std::string& format) -> std::string;
+
+    auto string_to_utc_unix_timestamp(const std::string& datetime, const std::string& format) -> long long int;
 }
 
 #endif

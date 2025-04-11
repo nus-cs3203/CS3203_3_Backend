@@ -1,6 +1,5 @@
 #include "base_api_strategy_utils.hpp"
 #include "management_api_strategy.hpp"
-#include "utils.hpp"
 
 #include <bsoncxx/json.hpp>
 #include "crow.h"
