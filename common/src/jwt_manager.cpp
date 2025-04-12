@@ -8,8 +8,9 @@
 #include <stdexcept>
 
 JwtManager::JwtManager(
-    const std::string& jwt_secret
-) : jwt_secret{jwt_secret} {}
+    const std::string& jwt_secret,
+    const int& jwt_duration_in_seconds
+) : jwt_secret{jwt_secret}, jwt_duration_in_seconds{jwt_duration_in_seconds} {}
 
 EnvManager JwtManager::env_manager = EnvManager();
 
@@ -19,7 +20,7 @@ std::string JwtManager::generate_token(const std::string &oid, const std::string
         .set_type("JWS")
         .set_payload_claim("oid", jwt::claim(oid))
         .set_payload_claim("role", jwt::claim(role))
-        .set_expires_at(std::chrono::system_clock::now() + std::chrono::hours(1))
+        .set_expires_at(std::chrono::system_clock::now() + std::chrono::seconds(jwt_duration_in_seconds))
         .sign(jwt::algorithm::hs256{jwt_secret});
     
     return token;

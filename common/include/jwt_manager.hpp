@@ -20,7 +20,8 @@ enum class JwtAccessLevel {
 class JwtManager {
 public:
     JwtManager(
-        const std::string& jwt_secret = env_manager.read_env("JWT_SECRET", "")
+        const std::string& jwt_secret = env_manager.read_env("JWT_SECRET", Constants::DEFAULT_JWT_SECRET),
+        const int& jwt_duration_in_seconds = stoi(env_manager.read_env("JWT_DURATION_IN_SECONDS", Constants::DEFAULT_JWT_DURATION_IN_SECONDS))
     );
 
     std::string generate_token(const std::string &oid, const std::string &role);
@@ -29,6 +30,7 @@ public:
 
 private:
     std::string jwt_secret;
+    int jwt_duration_in_seconds;
 
     std::string _get_from_token(const std::string &token, const std::string &key);
     
