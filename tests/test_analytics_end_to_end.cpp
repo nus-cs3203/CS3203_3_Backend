@@ -12,20 +12,16 @@
 class AnalyticsServerE2ETest : public ::testing::Test {
 protected:
     std::thread server_thread;
-    int port = Constants::ANALYTICS_SERVER_PORT_NUMBER; // e.g. 8082
+    int port = Constants::ANALYTICS_SERVER_PORT_NUMBER; 
 
-    // Set up the server in a background thread.
     void SetUp() override {
         server_thread = std::thread([this]() {
-            // Create and start the server. This call is blocking.
             AnalyticsServer server(port);
             server.serve();
         });
-        // Give the server some time to start.
         std::this_thread::sleep_for(std::chrono::seconds(1));
     }
 
-    // TearDown: In this simple example, we detach the server thread.
     void TearDown() override {
         if (server_thread.joinable()) {
             server_thread.detach();
