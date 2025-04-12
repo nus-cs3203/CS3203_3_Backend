@@ -29,16 +29,16 @@ services:
     env_file:
       - .docker.env
 
-  updater:
-    build:
-      context: .
-      dockerfile: ./services/updater/Dockerfile
-    depends_on:
-      - mongo
-    ports:
-      - "8084:8084"
-    env_file:
-      - .docker.env
+  # updater:
+  #   build:
+  #     context: .
+  #     dockerfile: ./services/updater/Dockerfile
+  #   depends_on:
+  #     - mongo
+  #   ports:
+  #     - "8084:8084"
+  #   env_file:
+  #     - .docker.env
 
   user:
     build:
