@@ -1,6 +1,9 @@
 file(GLOB TEST_SOURCES 
     ${COMMON_DIR}/src/*.cpp 
     ${CMAKE_CURRENT_SOURCE_DIR}/*.cpp 
+    ${CMAKE_SOURCE_DIR}/services/analytics/src/analytics_api_handler.cpp
+    ${CMAKE_SOURCE_DIR}/services/analytics/src/analytics_api_strategy.cpp
+    ${CMAKE_SOURCE_DIR}/services/analytics/src/analytics_server.cpp
     ${CMAKE_SOURCE_DIR}/services/management/src/management_api_handler.cpp
     ${CMAKE_SOURCE_DIR}/services/management/src/management_api_strategy.cpp
     ${CMAKE_SOURCE_DIR}/services/management/src/management_server.cpp
