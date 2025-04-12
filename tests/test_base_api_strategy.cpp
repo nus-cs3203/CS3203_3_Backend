@@ -1,13 +1,10 @@
-// test_base_api_strategy.cpp
-
 #include "base_api_strategy.hpp"
 #include "base_api_strategy_utils.hpp"
 
-#include <gtest/gtest.h>
 #include <bsoncxx/builder/basic/document.hpp>
-// #include <bsoncxx/types/value.hpp>
 #include <bsoncxx/json.hpp>
 #include "crow.h"
+#include <gtest/gtest.h>
 #include <mongocxx/options/find.hpp>
 #include <mongocxx/options/insert.hpp>
 #include <mongocxx/options/count.hpp>
@@ -65,7 +62,7 @@ TEST(BaseApiStrategyTest, ProcessRequestCountDocuments) {
 }
 
 //----------------------------------------------------------------------------
-// Tests for Response Processing functions that do not require complex result types.
+// Tests for Response Processing functions 
 //----------------------------------------------------------------------------
 
 TEST(BaseApiStrategyTest, ProcessResponseGetOne) {
@@ -91,121 +88,3 @@ TEST(BaseApiStrategyTest, ProcessResponseCountDocuments) {
     // The count field should equal 42.
     EXPECT_EQ(response["count"].i(), 42);
 }
-
-//----------------------------------------------------------------------------
-// Stub classes to simulate mongocxx result objects for testing response functions.
-// These stubs now construct valid BSON documents with the expected keys.
-//----------------------------------------------------------------------------
-
-// namespace {
-//     // Stub for mongocxx::result::insert_one.
-//     // Use a valid ObjectID string (24 hex digits).
-//     struct StubInsertOneResult {
-//         bsoncxx::types::bson_value::value stub_oid;
-    
-//         explicit StubInsertOneResult(const std::string& id_str)
-//             : stub_oid{bsoncxx::oid{id_str}} { }
-    
-//         // Mimic the interface expected by process_response_func_insert_one
-//         const bsoncxx::types::bson_value::value& inserted_id() const noexcept {
-//             return stub_oid;
-//         }
-//     };
-    
-
-//     // Stub for mongocxx::result::delete_result.
-//     struct StubDeleteResult {
-//         std::uint64_t count;
-//         bsoncxx::document::value result_doc;
-//         // Construct a valid BSON document with key "nRemoved".
-//         StubDeleteResult(std::uint64_t c)
-//             : count(c),
-//               result_doc(make_document(kvp("nRemoved", static_cast<int32_t>(c)))) { }
-//         std::uint64_t deleted_count() const {
-//             return count;
-//         }
-//         // Provide a view() method to allow the process function to read the document.
-//         bsoncxx::document::view view() const {
-//             return result_doc.view();
-//         }
-//     };
-
-//     // Stub for mongocxx::result::update.
-//     struct StubUpdateResult {
-//         std::uint64_t matched;
-//         std::uint64_t modified;
-//         std::uint64_t upserted;
-//         bsoncxx::document::value result_doc;
-//         // Construct a valid BSON document with keys "nMatched", "nModified", and "nUpserted".
-//         StubUpdateResult(std::uint64_t m, std::uint64_t mod, std::uint64_t up)
-//             : matched(m), modified(mod), upserted(up),
-//               result_doc(make_document(
-//                   kvp("nMatched", static_cast<int32_t>(m)),
-//                   kvp("nModified", static_cast<int32_t>(mod)),
-//                   kvp("nUpserted", static_cast<int32_t>(up))
-//               )) { }
-//         std::uint64_t matched_count() const { return matched; }
-//         std::uint64_t modified_count() const { return modified; }
-//         std::uint64_t upserted_count() const { return upserted; }
-//         bsoncxx::document::view view() const {
-//             return result_doc.view();
-//         }
-//     };
-// }
-
-//----------------------------------------------------------------------------
-// Tests for Response Processing functions that use mongocxx::result types.
-//----------------------------------------------------------------------------
-
-// TEST(BaseApiStrategyTest, ProcessResponseInsertOne) {
-//     // Create the stub with a valid ObjectID string.
-//     StubInsertOneResult stub_result("5f1d7f8603a1b70569a29fbc");
-
-//     // Modify your BaseApiStrategy or introduce an overload to accept your stub type.
-//     // For example, if you add an overload:
-//     // crow::json::wvalue process_response_func_insert_one(const StubInsertOneResult& result);
-//     crow::json::wvalue w_response = BaseApiStrategy::process_response_func_insert_one(stub_result);
-
-//     crow::json::rvalue response = crow::json::load(w_response.dump());
-//     EXPECT_TRUE(response.has("oid"));
-//     EXPECT_EQ(response["oid"].s(), std::string("5f1d7f8603a1b70569a29fbc"));
-// }
-// TEST(BaseApiStrategyTest, ProcessResponseDeleteOne) {
-//     // Create a stub delete result returning 5 deleted documents.
-//     StubDeleteResult stub_del(5);
-//     const mongocxx::result::delete_result& stub_delete =
-//         *reinterpret_cast<const mongocxx::result::delete_result*>(&stub_del);
-    
-//     crow::json::wvalue w_response = BaseApiStrategy::process_response_func_delete_one(stub_delete);
-//     crow::json::rvalue response = crow::json::load(w_response.dump());
-//     EXPECT_TRUE(response.has("deleted_count"));
-//     EXPECT_EQ(response["deleted_count"].i(), 5);
-// }
-
-// TEST(BaseApiStrategyTest, ProcessResponseDeleteMany) {
-//     // Process delete_many uses the same response function.
-//     StubDeleteResult stub_del(7);
-//     const mongocxx::result::delete_result& stub_delete =
-//         *reinterpret_cast<const mongocxx::result::delete_result*>(&stub_del);
-    
-//     crow::json::wvalue w_response = BaseApiStrategy::process_response_func_delete_many(stub_delete);
-//     crow::json::rvalue response = crow::json::load(w_response.dump());
-//     EXPECT_TRUE(response.has("deleted_count"));
-//     EXPECT_EQ(response["deleted_count"].i(), 7);
-// }
-
-// TEST(BaseApiStrategyTest, ProcessResponseUpdateOne) {
-//     // Create a stub update result.
-//     StubUpdateResult stub_update(5, 3, 1);
-//     const mongocxx::result::update& stub_upd =
-//         *reinterpret_cast<const mongocxx::result::update*>(&stub_update);
-    
-//     crow::json::wvalue w_response = BaseApiStrategy::process_response_func_update_one(stub_upd);
-//     crow::json::rvalue response = crow::json::load(w_response.dump());
-//     EXPECT_TRUE(response.has("matched_count"));
-//     EXPECT_TRUE(response.has("modified_count"));
-//     EXPECT_TRUE(response.has("upserted_count"));
-//     EXPECT_EQ(response["matched_count"].i(), 5);
-//     EXPECT_EQ(response["modified_count"].i(), 3);
-//     EXPECT_EQ(response["upserted_count"].i(), 1);
-// }
