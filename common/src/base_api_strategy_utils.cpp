@@ -1,7 +1,7 @@
 #include "base_api_strategy_utils.hpp"
 #include "constants.hpp"
 #include "database_manager.hpp"
-#include "utils.hpp"
+#include "date_utils.hpp"
 
 #include <bsoncxx/builder/basic/document.hpp>
 #include <bsoncxx/json.hpp>
@@ -32,7 +32,7 @@ auto BaseApiStrategyUtils::parse_database_json_to_response_json(const crow::json
         
         // convert document date to string
         if (value.t() == crow::json::type::Object and value.has("$date")) {
-            wval_json[key] = utc_unix_timestamp_to_string(value["$date"].i() / 1000, Constants::DATETIME_FORMAT);
+            wval_json[key] = DateUtils::utc_unix_timestamp_to_string(value["$date"].i() / 1000, Constants::DATETIME_FORMAT);
             continue;
         }
 
@@ -79,7 +79,7 @@ auto BaseApiStrategyUtils::_parse_request_json_to_database_bson_single_primitive
     switch (rval_json.t()) {
         case crow::json::type::String:
             if (DATE_FIELDS.find(key) != DATE_FIELDS.end()) {
-                auto unix_ts_val = string_to_utc_unix_timestamp(static_cast<std::string>(rval_json.s()), Constants::DATETIME_FORMAT) * 1000;
+                auto unix_ts_val = DateUtils::string_to_utc_unix_timestamp(static_cast<std::string>(rval_json.s()), Constants::DATETIME_FORMAT) * 1000;
                 return make_document(kvp(key, bsoncxx::types::b_date{std::chrono::milliseconds(unix_ts_val)}));
             }
             return make_document(kvp(key, rval_json.s()));
@@ -183,7 +183,7 @@ auto BaseApiStrategyUtils::parse_oid_str_to_oid_bson(const std::string& oid_str)
 }
 
 auto BaseApiStrategyUtils::parse_date_str_to_date_bson(const std::string& date_str) -> bsoncxx::types::b_date {
-    auto date_ts = string_to_utc_unix_timestamp(date_str, Constants::DATETIME_FORMAT) * 1000;
+    auto date_ts = DateUtils::string_to_utc_unix_timestamp(date_str, Constants::DATETIME_FORMAT) * 1000;
     bsoncxx::types::b_date date_bson{std::chrono::milliseconds(date_ts)};
     return date_bson;
 }
