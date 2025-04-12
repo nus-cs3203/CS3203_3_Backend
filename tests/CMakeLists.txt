@@ -22,6 +22,7 @@ target_link_libraries(runTests
     mongo::bsoncxx_shared
     cpr::cpr
     jwt-cpp
+    FakeIt::FakeIt-gtest
 )
 
 include(GoogleTest)

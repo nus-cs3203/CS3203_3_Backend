@@ -53,6 +53,14 @@ FetchContent_Declare(
 set(gtest_force_shared_crt ON CACHE BOOL "" FORCE)
 FetchContent_MakeAvailable(googletest)
 
+FetchContent_Declare(
+    FakeIt
+    GIT_REPOSITORY https://github.com/eranpeer/FakeIt
+    GIT_TAG 2.4.1
+)
+FetchContent_MakeAvailable(FakeIt)
+
+
 add_subdirectory(services/analytics)
 add_subdirectory(services/management)
 add_subdirectory(services/user)
