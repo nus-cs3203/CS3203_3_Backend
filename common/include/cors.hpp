@@ -23,4 +23,4 @@ struct CORS {
     }
 };
 
-#endif // CORS_HPP
+#endif  // CORS_HPP

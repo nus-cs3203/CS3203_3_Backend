@@ -1,40 +1,38 @@
-#include "base_api_strategy_utils.hpp"
 #include "analytics_api_strategy.hpp"
-#include "date_utils.hpp"
 
 #include <bsoncxx/json.hpp>
-#include "crow.h"
-
 #include <string>
 #include <tuple>
 #include <unordered_map>
 
+#include "base_api_strategy_utils.hpp"
+#include "crow.h"
+#include "date_utils.hpp"
+
 using bsoncxx::builder::basic::kvp;
 using bsoncxx::builder::basic::make_document;
 
-auto AnalyticsApiStrategy::process_request_func_get_one_by_name(const crow::request& req) -> std::tuple<bsoncxx::document::value, mongocxx::options::find> {
+auto AnalyticsApiStrategy::process_request_func_get_one_by_name(const crow::request& req)
+    -> std::tuple<bsoncxx::document::value, mongocxx::options::find> {
     BaseApiStrategyUtils::validate_fields(req, {"name"});
 
     auto body = crow::json::load(req.body);
-    auto filter = make_document(
-        kvp("name", body["name"].s())
-    );
+    auto filter = make_document(kvp("name", body["name"].s()));
 
     mongocxx::options::find option;
 
     return std::make_tuple(filter, option);
 }
 
-auto AnalyticsApiStrategy::process_request_func_get_complaints_statistics(const crow::request& req) -> std::tuple<std::vector<bsoncxx::document::value>, mongocxx::options::aggregate> {
+auto AnalyticsApiStrategy::process_request_func_get_complaints_statistics(const crow::request& req)
+    -> std::tuple<std::vector<bsoncxx::document::value>, mongocxx::options::aggregate> {
     BaseApiStrategyUtils::validate_fields(req, {"filter"});
-    
+
     auto body = crow::json::load(req.body);
     auto filter = BaseApiStrategyUtils::parse_request_json_to_database_bson(body["filter"]);
-    auto group = make_document(
-        kvp("_id", bsoncxx::types::b_null()),
-        kvp("count", make_document(kvp("$sum", 1))),
-        kvp("avg_sentiment", make_document(kvp("$avg", "$sentiment")))
-    );
+    auto group = make_document(kvp("_id", bsoncxx::types::b_null()),
+                               kvp("count", make_document(kvp("$sum", 1))),
+                               kvp("avg_sentiment", make_document(kvp("$avg", "$sentiment"))));
 
     std::vector<bsoncxx::document::value> documents = {filter, group};
 
@@ -43,9 +41,11 @@ auto AnalyticsApiStrategy::process_request_func_get_complaints_statistics(const 
     return std::make_tuple(documents, option);
 }
 
-auto AnalyticsApiStrategy::process_request_func_get_complaints_statistics_over_time(const crow::request& req) -> std::tuple<std::vector<bsoncxx::document::value>, mongocxx::options::aggregate> {
+auto AnalyticsApiStrategy::process_request_func_get_complaints_statistics_over_time(
+    const crow::request& req)
+    -> std::tuple<std::vector<bsoncxx::document::value>, mongocxx::options::aggregate> {
     BaseApiStrategyUtils::validate_fields(req, {"filter"});
-    
+
     auto body = crow::json::load(req.body);
     if (!body["filter"].has("_from_date")) {
         throw std::invalid_argument("Invalid request: missing _from_date field in filter");
@@ -56,13 +56,10 @@ auto AnalyticsApiStrategy::process_request_func_get_complaints_statistics_over_t
 
     auto filter = BaseApiStrategyUtils::parse_request_json_to_database_bson(body["filter"]);
     auto group = make_document(
-        kvp("_id", make_document(
-            kvp("year", make_document(kvp("$year", "$date"))),
-            kvp("month", make_document(kvp("$month", "$date")))
-        )),
+        kvp("_id", make_document(kvp("year", make_document(kvp("$year", "$date"))),
+                                 kvp("month", make_document(kvp("$month", "$date"))))),
         kvp("count", make_document(kvp("$sum", 1))),
-        kvp("avg_sentiment", make_document(kvp("$avg", "$sentiment")))
-    );
+        kvp("avg_sentiment", make_document(kvp("$avg", "$sentiment"))));
 
     std::vector<bsoncxx::document::value> documents = {filter, group};
 
@@ -71,26 +68,18 @@ auto AnalyticsApiStrategy::process_request_func_get_complaints_statistics_over_t
     return std::make_tuple(documents, option);
 }
 
-auto AnalyticsApiStrategy::process_request_func_get_complaints_statistics_grouped(const crow::request& req) -> std::tuple<std::vector<bsoncxx::document::value>, mongocxx::options::aggregate> {
+auto AnalyticsApiStrategy::process_request_func_get_complaints_statistics_grouped(
+    const crow::request& req)
+    -> std::tuple<std::vector<bsoncxx::document::value>, mongocxx::options::aggregate> {
     BaseApiStrategyUtils::validate_fields(req, {"group_by_field", "filter"});
-    
+
     auto body = crow::json::load(req.body);
     auto filter = BaseApiStrategyUtils::parse_request_json_to_database_bson(body["filter"]);
 
     auto group_by_field = static_cast<std::string>(body["group_by_field"].s());
-    auto group = make_document(
-        kvp("_id", "$" + group_by_field),
-        kvp("count",
-            make_document(
-                kvp("$sum", 1)
-            )
-        ),
-        kvp("avg_sentiment",
-            make_document(
-                kvp("$avg", "$sentiment")
-            )
-        )
-    );
+    auto group =
+        make_document(kvp("_id", "$" + group_by_field), kvp("count", make_document(kvp("$sum", 1))),
+                      kvp("avg_sentiment", make_document(kvp("$avg", "$sentiment"))));
 
     std::vector<bsoncxx::document::value> documents = {filter, group};
 
@@ -99,9 +88,11 @@ auto AnalyticsApiStrategy::process_request_func_get_complaints_statistics_groupe
     return std::make_tuple(documents, option);
 }
 
-auto AnalyticsApiStrategy::process_request_func_get_complaints_statistics_grouped_over_time(const crow::request& req) -> std::tuple<std::vector<bsoncxx::document::value>, mongocxx::options::aggregate> {
+auto AnalyticsApiStrategy::process_request_func_get_complaints_statistics_grouped_over_time(
+    const crow::request& req)
+    -> std::tuple<std::vector<bsoncxx::document::value>, mongocxx::options::aggregate> {
     BaseApiStrategyUtils::validate_fields(req, {"group_by_field", "filter"});
-    
+
     auto body = crow::json::load(req.body);
     if (!body["filter"].has("_from_date")) {
         throw std::invalid_argument("Invalid request: missing _from_date field in filter");
@@ -113,17 +104,12 @@ auto AnalyticsApiStrategy::process_request_func_get_complaints_statistics_groupe
     auto filter = BaseApiStrategyUtils::parse_request_json_to_database_bson(body["filter"]);
 
     auto group_by_field = static_cast<std::string>(body["group_by_field"].s());
-    auto group = make_document(
-        kvp("_id",
-            make_document(
-                kvp("year", make_document(kvp("$year", "$date"))),
-                kvp("month", make_document(kvp("$month", "$date"))),
-                kvp(group_by_field, "$" + group_by_field)
-            )
-        ),
-        kvp("count", make_document(kvp("$sum", 1))),
-        kvp("avg_sentiment", make_document(kvp("$avg", "$sentiment")))
-    );
+    auto group =
+        make_document(kvp("_id", make_document(kvp("year", make_document(kvp("$year", "$date"))),
+                                               kvp("month", make_document(kvp("$month", "$date"))),
+                                               kvp(group_by_field, "$" + group_by_field))),
+                      kvp("count", make_document(kvp("$sum", 1))),
+                      kvp("avg_sentiment", make_document(kvp("$avg", "$sentiment"))));
 
     std::vector<bsoncxx::document::value> documents = {filter, group};
 
@@ -132,9 +118,12 @@ auto AnalyticsApiStrategy::process_request_func_get_complaints_statistics_groupe
     return std::make_tuple(documents, option);
 }
 
-auto AnalyticsApiStrategy::process_request_func_get_complaints_statistics_grouped_by_sentiment_value(const crow::request& req) -> std::tuple<std::vector<bsoncxx::document::value>, mongocxx::options::aggregate> {
+auto AnalyticsApiStrategy::
+    process_request_func_get_complaints_statistics_grouped_by_sentiment_value(
+        const crow::request& req)
+        -> std::tuple<std::vector<bsoncxx::document::value>, mongocxx::options::aggregate> {
     BaseApiStrategyUtils::validate_fields(req, {"filter", "bucket_size"});
-    
+
     auto body = crow::json::load(req.body);
     if (!body["filter"].has("_from_date")) {
         throw std::invalid_argument("Invalid request: missing _from_date field in filter");
@@ -151,26 +140,22 @@ auto AnalyticsApiStrategy::process_request_func_get_complaints_statistics_groupe
     }
     double min_sentiment = -1.0;
     double max_sentiment = 1.01;
-    
+
     std::vector<double> boundaries;
     for (double val = min_sentiment; val < max_sentiment; val += bucket_size) {
         boundaries.push_back(val);
-    }   
+    }
     boundaries.push_back(max_sentiment);
 
     bsoncxx::builder::basic::array boundaries_array;
-    for (auto b: boundaries) {
+    for (auto b : boundaries) {
         boundaries_array.append(b);
     }
 
     auto bucket = make_document(
-        kvp("groupBy", std::string{"$sentiment"}),
-        kvp("boundaries", boundaries_array.extract()),
+        kvp("groupBy", std::string{"$sentiment"}), kvp("boundaries", boundaries_array.extract()),
         kvp("default", std::string{"OutOfRange"}),
-        kvp("output", make_document(
-            kvp("count", make_document(kvp("$sum", 1)))
-        ))
-    );
+        kvp("output", make_document(kvp("count", make_document(kvp("$sum", 1))))));
 
     std::vector<bsoncxx::document::value> documents = {filter, bucket};
 
@@ -179,11 +164,12 @@ auto AnalyticsApiStrategy::process_request_func_get_complaints_statistics_groupe
     return std::make_tuple(documents, option);
 }
 
-auto AnalyticsApiStrategy::create_pipeline_func_filter_and_group(const std::vector<bsoncxx::document::value>& documents) -> mongocxx::pipeline {
+auto AnalyticsApiStrategy::create_pipeline_func_filter_and_group(
+    const std::vector<bsoncxx::document::value>& documents) -> mongocxx::pipeline {
     mongocxx::pipeline pipeline{};
 
-    const auto &filter = documents[0];
-    const auto &group = documents[1];
+    const auto& filter = documents[0];
+    const auto& group = documents[1];
 
     pipeline.match(filter.view());
     pipeline.group(group.view());
@@ -191,11 +177,12 @@ auto AnalyticsApiStrategy::create_pipeline_func_filter_and_group(const std::vect
     return pipeline;
 }
 
-auto AnalyticsApiStrategy::create_pipeline_func_filter_and_bucket(const std::vector<bsoncxx::document::value>& documents) -> mongocxx::pipeline {
+auto AnalyticsApiStrategy::create_pipeline_func_filter_and_bucket(
+    const std::vector<bsoncxx::document::value>& documents) -> mongocxx::pipeline {
     mongocxx::pipeline pipeline{};
 
-    const auto &filter = documents[0];
-    const auto &bucket = documents[1];
+    const auto& filter = documents[0];
+    const auto& bucket = documents[1];
 
     pipeline.match(filter.view());
     pipeline.bucket(bucket.view());
@@ -203,11 +190,13 @@ auto AnalyticsApiStrategy::create_pipeline_func_filter_and_bucket(const std::vec
     return pipeline;
 }
 
-auto AnalyticsApiStrategy::process_response_func_get_complaints_statistics(const crow::request& req, mongocxx::cursor& cursor) -> crow::json::wvalue {
+auto AnalyticsApiStrategy::process_response_func_get_complaints_statistics(const crow::request& req,
+                                                                           mongocxx::cursor& cursor)
+    -> crow::json::wvalue {
     crow::json::wvalue response_data;
     response_data["statistics"]["count"] = 0;
     response_data["statistics"]["avg_sentiment"] = 0;
-    for (const auto& document: cursor) {
+    for (const auto& document : cursor) {
         auto document_json = bsoncxx::to_json(document);
         crow::json::rvalue rval_json = crow::json::load(document_json);
         response_data["statistics"]["count"] = rval_json["count"];
@@ -216,7 +205,8 @@ auto AnalyticsApiStrategy::process_response_func_get_complaints_statistics(const
     return response_data;
 }
 
-auto AnalyticsApiStrategy::process_response_func_get_complaints_statistics_over_time(const crow::request& req, mongocxx::cursor& cursor) -> crow::json::wvalue {
+auto AnalyticsApiStrategy::process_response_func_get_complaints_statistics_over_time(
+    const crow::request& req, mongocxx::cursor& cursor) -> crow::json::wvalue {
     auto body = crow::json::load(req.body);
 
     auto start_date = static_cast<std::string>(body["filter"]["_from_date"].s());
@@ -227,10 +217,10 @@ auto AnalyticsApiStrategy::process_response_func_get_complaints_statistics_over_
         int count;
         double avg_sentiment;
     };
-    
+
     std::map<std::pair<int, int>, Statistics> mapper;
 
-    for (auto&& document: cursor) {
+    for (auto&& document : cursor) {
         auto doc_json = bsoncxx::to_json(document);
         auto doc_rval_json = crow::json::load(doc_json);
 
@@ -244,7 +234,7 @@ auto AnalyticsApiStrategy::process_response_func_get_complaints_statistics_over_
     }
 
     std::vector<crow::json::wvalue> result;
-    for (const auto &[month, year]: month_range) {
+    for (const auto& [month, year] : month_range) {
         Statistics stat{0, 0};
         if (mapper.find({month, year}) != mapper.end()) {
             stat.count = mapper[{month, year}].count;
@@ -263,11 +253,12 @@ auto AnalyticsApiStrategy::process_response_func_get_complaints_statistics_over_
     return response_data;
 }
 
-auto AnalyticsApiStrategy::process_response_func_get_complaints_statistics_grouped(const crow::request& req, mongocxx::cursor& cursor) -> crow::json::wvalue {
+auto AnalyticsApiStrategy::process_response_func_get_complaints_statistics_grouped(
+    const crow::request& req, mongocxx::cursor& cursor) -> crow::json::wvalue {
     std::unordered_set<std::string> exists;
 
     crow::json::wvalue result;
-    for (auto&& document: cursor) {
+    for (auto&& document : cursor) {
         auto document_json = bsoncxx::to_json(document);
         crow::json::rvalue rval_json = crow::json::load(document_json);
 
@@ -282,7 +273,7 @@ auto AnalyticsApiStrategy::process_response_func_get_complaints_statistics_group
     auto body = crow::json::load(req.body);
     auto group_by_field = static_cast<std::string>(body["group_by_field"].s());
     auto group_by_field_values = AnalyticsApiStrategy::GROUP_BY_FIELD_VALUES_MAPPER[group_by_field];
-    for (const auto &group_by_field_value: group_by_field_values) {
+    for (const auto& group_by_field_value : group_by_field_values) {
         if (exists.find(group_by_field_value) != exists.end()) {
             continue;
         }
@@ -298,16 +289,17 @@ auto AnalyticsApiStrategy::process_response_func_get_complaints_statistics_group
     return response_data;
 }
 
-auto AnalyticsApiStrategy::process_response_func_get_complaints_statistics_grouped_over_time(const crow::request& req, mongocxx::cursor& cursor) -> crow::json::wvalue {
+auto AnalyticsApiStrategy::process_response_func_get_complaints_statistics_grouped_over_time(
+    const crow::request& req, mongocxx::cursor& cursor) -> crow::json::wvalue {
     auto body = crow::json::load(req.body);
-    
+
     auto group_by_field = static_cast<std::string>(body["group_by_field"].s());
     auto start_date = static_cast<std::string>(body["filter"]["_from_date"].s());
     auto end_date = static_cast<std::string>(body["filter"]["_to_date"].s());
     auto month_range = _create_month_range(start_date, end_date);
-    
-    std::map<std::pair<int, int>, crow::json::wvalue> mapper;    
-    
+
+    std::map<std::pair<int, int>, crow::json::wvalue> mapper;
+
     for (auto&& document : cursor) {
         auto doc_json = bsoncxx::to_json(document);
         auto rval_json = crow::json::load(doc_json);
@@ -315,7 +307,7 @@ auto AnalyticsApiStrategy::process_response_func_get_complaints_statistics_group
         std::string group_by_field_value = rval_json["_id"][group_by_field].s();
         int month = rval_json["_id"]["month"].i();
         int year = rval_json["_id"]["year"].i();
-        
+
         auto month_year = std::make_pair(month, year);
         if (mapper.find(month_year) == mapper.end()) {
             crow::json::wvalue data;
@@ -326,10 +318,11 @@ auto AnalyticsApiStrategy::process_response_func_get_complaints_statistics_group
         mapper[month_year][group_by_field_value]["avg_sentiment"] = rval_json["avg_sentiment"];
     }
 
-    const auto &group_by_field_values = AnalyticsApiStrategy::GROUP_BY_FIELD_VALUES_MAPPER[group_by_field];
+    const auto& group_by_field_values =
+        AnalyticsApiStrategy::GROUP_BY_FIELD_VALUES_MAPPER[group_by_field];
 
     std::vector<crow::json::wvalue> result;
-    for (const auto& month_year: month_range) {
+    for (const auto& month_year : month_range) {
         if (mapper.find(month_year) == mapper.end()) {
             mapper[month_year] = crow::json::wvalue{};
         }
@@ -338,18 +331,20 @@ auto AnalyticsApiStrategy::process_response_func_get_complaints_statistics_group
 
         int month = month_year.first;
         int year = month_year.second;
-        
+
         auto month_year_str = DateUtils::create_month_year_str(month, year);
 
         crow::json::wvalue sub_result;
-        for (const auto &group_by_field_value: group_by_field_values) {
+        for (const auto& group_by_field_value : group_by_field_values) {
             sub_result["date"] = month_year_str;
             sub_result["data"][group_by_field_value]["count"] = 0;
             sub_result["data"][group_by_field_value]["avg_sentiment"] = 0;
 
             if (rval_json.t() != crow::json::type::Null and rval_json.has(group_by_field_value)) {
-                sub_result["data"][group_by_field_value]["count"] = rval_json[group_by_field_value]["count"];
-                sub_result["data"][group_by_field_value]["avg_sentiment"] = rval_json[group_by_field_value]["avg_sentiment"];
+                sub_result["data"][group_by_field_value]["count"] =
+                    rval_json[group_by_field_value]["count"];
+                sub_result["data"][group_by_field_value]["avg_sentiment"] =
+                    rval_json[group_by_field_value]["avg_sentiment"];
             }
         }
         result.push_back(std::move(sub_result));
@@ -360,7 +355,9 @@ auto AnalyticsApiStrategy::process_response_func_get_complaints_statistics_group
     return response_data;
 }
 
-auto AnalyticsApiStrategy::process_response_func_get_complaints_statistics_grouped_by_sentiment_value(const crow::request& req, mongocxx::cursor& cursor) -> crow::json::wvalue {
+auto AnalyticsApiStrategy::
+    process_response_func_get_complaints_statistics_grouped_by_sentiment_value(
+        const crow::request& req, mongocxx::cursor& cursor) -> crow::json::wvalue {
     auto body = crow::json::load(req.body);
     double bucket_size = body["bucket_size"].d();
 
@@ -396,8 +393,9 @@ auto AnalyticsApiStrategy::process_response_func_get_complaints_statistics_group
     return response_data;
 }
 
-
-auto AnalyticsApiStrategy::_create_month_range(const std::string& start_date, const std::string& end_date) -> std::vector<std::pair<int, int>> {
+auto AnalyticsApiStrategy::_create_month_range(const std::string& start_date,
+                                               const std::string& end_date)
+    -> std::vector<std::pair<int, int>> {
     int start_month = DateUtils::extract_month_from_timestamp_str(start_date);
     int start_year = DateUtils::extract_year_from_timestamp_str(start_date);
 
@@ -431,7 +429,10 @@ auto AnalyticsApiStrategy::_create_month_range(const std::string& start_date, co
     return result;
 }
 
-std::unordered_map<std::string, std::vector<std::string>> AnalyticsApiStrategy::GROUP_BY_FIELD_VALUES_MAPPER = {
-    {"category", {"Housing", "Healthcare", "Public Safety", "Transport", "Education", "Environment", "Employment", "Public Health", "Legal", "Economy", "Politics", "Technology", "Infrastructure", "Others"}},
-    {"source", {"Reddit"}}
-};
+std::unordered_map<std::string, std::vector<std::string>>
+    AnalyticsApiStrategy::GROUP_BY_FIELD_VALUES_MAPPER = {
+        {"category",
+         {"Housing", "Healthcare", "Public Safety", "Transport", "Education", "Environment",
+          "Employment", "Public Health", "Legal", "Economy", "Politics", "Technology",
+          "Infrastructure", "Others"}},
+        {"source", {"Reddit"}}};

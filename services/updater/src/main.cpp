@@ -7,14 +7,18 @@
 
 #include <bsoncxx/builder/basic/document.hpp>
 #include <bsoncxx/json.hpp>
-#include "crow.h"
+#include <iostream>
+#include <memory>
 #include <mongocxx/client.hpp>
 #include <mongocxx/instance.hpp>
 #include <mongocxx/uri.hpp>
-
-#include <iostream>
 #include <vector>
-#include <memory>
+
+#include "api_handler.hpp"
+#include "constants.hpp"
+#include "cors.hpp"
+#include "crow.h"
+#include "reddit.hpp"
 
 int main() {
     auto db_manager = DatabaseManager::create_from_env();
