@@ -1,36 +1,37 @@
-#include "base_api_strategy_utils.hpp"
-#include "jwt_manager.hpp"
 #include "user_api_strategy.hpp"
 
 #include <bsoncxx/json.hpp>
-#include "crow.h"
-
 #include <string>
 #include <tuple>
+
+#include "base_api_strategy_utils.hpp"
+#include "crow.h"
+#include "jwt_manager.hpp"
 
 using bsoncxx::builder::basic::kvp;
 using bsoncxx::builder::basic::make_document;
 
-auto UserApiStrategy::process_request_func_login(const crow::request& req) -> std::tuple<bsoncxx::document::value, mongocxx::options::find> {
+auto UserApiStrategy::process_request_func_login(const crow::request& req)
+    -> std::tuple<bsoncxx::document::value, mongocxx::options::find> {
     BaseApiStrategyUtils::validate_fields(req, {"email", "password"});
 
     auto body = crow::json::load(req.body);
     auto email = body["email"].s();
 
-    auto filter = make_document(
-        kvp("email", email)
-    );
+    auto filter = make_document(kvp("email", email));
 
     mongocxx::options::find option;
 
     return std::make_tuple(filter, option);
 }
 
-auto UserApiStrategy::_process_request_func_create_account(const crow::request& req, const std::string& role) -> std::tuple<bsoncxx::document::value, mongocxx::options::insert> {
+auto UserApiStrategy::_process_request_func_create_account(const crow::request& req,
+                                                           const std::string& role)
+    -> std::tuple<bsoncxx::document::value, mongocxx::options::insert> {
     BaseApiStrategyUtils::validate_fields(req, {"document"});
 
     auto body = crow::json::load(req.body);
-    
+
     auto account_rval = body["document"];
     crow::json::wvalue account;
 
@@ -38,7 +39,7 @@ auto UserApiStrategy::_process_request_func_create_account(const crow::request& 
     account["email"] = account_rval["email"];
     account["collectibles"] = account_rval["collectibles"];
     account["role"] = role;
-    
+
     std::string password = account_rval["password"].s();
     auto salt = _generate_salt();
     auto salted_password = salt + password;
@@ -46,26 +47,29 @@ auto UserApiStrategy::_process_request_func_create_account(const crow::request& 
 
     account["salt"] = salt;
     account["hashed_password"] = hashed_password;
-    
-    auto document = BaseApiStrategyUtils::parse_request_json_to_database_bson(crow::json::load(account.dump()));
-    
+
+    auto document =
+        BaseApiStrategyUtils::parse_request_json_to_database_bson(crow::json::load(account.dump()));
+
     mongocxx::options::insert option;
 
     return std::make_tuple(document, option);
 }
 
-auto UserApiStrategy::process_request_func_create_account_admin(const crow::request& req) -> std::tuple<bsoncxx::document::value, mongocxx::options::insert> {
+auto UserApiStrategy::process_request_func_create_account_admin(const crow::request& req)
+    -> std::tuple<bsoncxx::document::value, mongocxx::options::insert> {
     return _process_request_func_create_account(req, Constants::USERS_ROLE_ADMIN);
 }
 
-auto UserApiStrategy::process_request_func_create_account_citizen(const crow::request& req) -> std::tuple<bsoncxx::document::value, mongocxx::options::insert> {
+auto UserApiStrategy::process_request_func_create_account_citizen(const crow::request& req)
+    -> std::tuple<bsoncxx::document::value, mongocxx::options::insert> {
     return _process_request_func_create_account(req, Constants::USERS_ROLE_CITIZEN);
 }
 
 auto UserApiStrategy::_generate_salt(size_t length) -> std::string {
     const char charset[] = "0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ";
-    const size_t max_index = sizeof(charset) - 2; // -1 for '\0'
-    std::random_device rd;   
+    const size_t max_index = sizeof(charset) - 2;  // -1 for '\0'
+    std::random_device rd;
     std::mt19937 engine(rd());
     std::uniform_int_distribution<> dist(0, max_index);
 
@@ -76,19 +80,20 @@ auto UserApiStrategy::_generate_salt(size_t length) -> std::string {
     return salt;
 }
 
-auto UserApiStrategy::_sha256(const std::string &input) -> std::string {
+auto UserApiStrategy::_sha256(const std::string& input) -> std::string {
     unsigned char hash[SHA256_DIGEST_LENGTH];
     SHA256(reinterpret_cast<const unsigned char*>(input.c_str()), input.size(), hash);
-    
+
     std::stringstream ss;
-    for(int i = 0; i < SHA256_DIGEST_LENGTH; ++i) {
+    for (int i = 0; i < SHA256_DIGEST_LENGTH; ++i) {
         ss << std::hex << std::setw(2) << std::setfill('0') << static_cast<int>(hash[i]);
     }
-        
+
     return ss.str();
 }
 
-auto UserApiStrategy::process_response_func_login(const bsoncxx::document::value& doc, const crow::request& req) -> crow::json::wvalue {
+auto UserApiStrategy::process_response_func_login(const bsoncxx::document::value& doc,
+                                                  const crow::request& req) -> crow::json::wvalue {
     auto body = crow::json::load(req.body);
     std::string password = body["password"].s();
 
@@ -117,7 +122,8 @@ auto UserApiStrategy::process_response_func_login(const bsoncxx::document::value
     return response_data;
 }
 
-auto UserApiStrategy::process_response_func_get_one_profile_by_oid(const bsoncxx::document::value& doc) -> crow::json::wvalue {
+auto UserApiStrategy::process_response_func_get_one_profile_by_oid(
+    const bsoncxx::document::value& doc) -> crow::json::wvalue {
     crow::json::wvalue profile;
     auto doc_json = bsoncxx::to_json(doc);
     auto doc_rval = crow::json::load(doc_json);
@@ -128,7 +134,7 @@ auto UserApiStrategy::process_response_func_get_one_profile_by_oid(const bsoncxx
     profile["email"] = parsed_doc_rval["email"];
     profile["role"] = parsed_doc_rval["role"];
     profile["collectibles"] = parsed_doc_rval["collectibles"];
-    
+
     crow::json::wvalue response_data;
     response_data["profile"] = std::move(profile);
     return response_data;

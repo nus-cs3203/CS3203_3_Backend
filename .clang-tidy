@@ -1,0 +1,11 @@
+Checks: >
+  clang-analyzer-*,
+  cppcoreguidelines-*,
+  modernize-*,
+  performance-*,
+  readability-*,
+  bugprone-*,
+  -clang-analyzer-cplusplus.NewDelete
+WarningsAsErrors: '*'
+HeaderFilterRegex: '.*'
+FormatStyle: file

@@ -1,6 +1,6 @@
 #include "user_server.hpp"
 
-int main(){
+int main() {
     UserServer user_server;
     user_server.serve();
 }

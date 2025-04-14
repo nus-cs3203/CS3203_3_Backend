@@ -1,12 +1,12 @@
 // #include "api_handler.hpp"
 // #include "constants.hpp"
-// #include "database.hpp" 
-// #include "reddit.hpp" 
+// #include "database.hpp"
+// #include "reddit.hpp"
 // #include "utils.hpp"
 
 // #include <bsoncxx/builder/basic/document.hpp>
 // #include <bsoncxx/json.hpp>
-// #include <cpr/cpr.h>  
+// #include <cpr/cpr.h>
 // #include "crow.h"
 // #include <mongocxx/client.hpp>
 // #include <mongocxx/instance.hpp>
@@ -21,7 +21,9 @@
 // #include <string>
 // #include <iostream>
 
-// auto ApiHandler::perform_realtime_update_complaints_analytics_from_reddit(const crow::request& req, std::shared_ptr<Database> db, std::shared_ptr<Reddit> reddit, const std::string& subreddit, const std::string& collection_name) -> crow::response {
+// auto ApiHandler::perform_realtime_update_complaints_analytics_from_reddit(const crow::request&
+// req, std::shared_ptr<Database> db, std::shared_ptr<Reddit> reddit, const std::string& subreddit,
+// const std::string& collection_name) -> crow::response {
 //     try {
 //         auto utc_ts_now = get_utc_timestamp_now();
 //         auto utc_ts_one_day_ago = get_utc_timestamp_one_day_ago();
@@ -36,7 +38,7 @@
 
 //         int success_count = 0;
 //         int failure_count = 0;
-        
+
 //         for (auto &complaint_doc : complaint_docs) {
 //             try {
 //                 auto result = db->insert_one(collection_name, complaint_doc);
