@@ -30,7 +30,7 @@ namespace Constants {
     const int ANALYTICS_SERVER_PORT_NUMBER = 8082;
     const int MANAGEMENT_SERVER_PORT_NUMBER = 8083;
     const int USER_SERVER_PORT_NUMBER = 8085;
-    const int DEFAULT_CONCURRENCY = 25;
+    const int DEFAULT_CONCURRENCY = 10;
 }
 
 #endif // CONSTANTS_HPP
