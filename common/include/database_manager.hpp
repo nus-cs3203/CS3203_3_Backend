@@ -57,7 +57,7 @@ class DatabaseManager {
                    const mongocxx::options::aggregate& option = {}) -> mongocxx::cursor;
 
    private:
-    mongocxx::instance instance;
+    static mongocxx::instance instance;
     mongocxx::client client;
     mongocxx::database db;
 };
