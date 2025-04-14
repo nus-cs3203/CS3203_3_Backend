@@ -1,11 +1,12 @@
-#include "constants.hpp"
 #include "date_utils.hpp"
 
 #include <chrono>
 #include <cstdlib>
-#include <iostream>
 #include <fstream>
+#include <iostream>
 #include <sstream>
+
+#include "constants.hpp"
 
 auto DateUtils::get_utc_timestamp_now() -> long long int {
     return std::chrono::duration_cast<std::chrono::seconds>(
@@ -36,20 +37,22 @@ auto DateUtils::create_month_year_str(const int& month, const int& year) -> std:
     }
     std::string year_str = std::to_string(year);
     return month_str + "-" + year_str;
-} 
+}
 
-auto DateUtils::utc_unix_timestamp_to_string(const long long int& utc_unix_timestamp, const std::string& format) -> std::string {
+auto DateUtils::utc_unix_timestamp_to_string(const long long int& utc_unix_timestamp,
+                                             const std::string& format) -> std::string {
     std::time_t time = static_cast<std::time_t>(utc_unix_timestamp);
-    
+
     std::tm utc_time = *std::gmtime(&time);
 
     std::ostringstream oss;
     oss << std::put_time(&utc_time, format.c_str());
-    
+
     return oss.str();
 }
 
-auto DateUtils::string_to_utc_unix_timestamp(const std::string& datetime, const std::string& format) -> long long int {
+auto DateUtils::string_to_utc_unix_timestamp(const std::string& datetime, const std::string& format)
+    -> long long int {
     std::tm tm = {};
     std::istringstream ss(datetime);
     ss >> std::get_time(&tm, format.c_str());
@@ -58,6 +61,6 @@ auto DateUtils::string_to_utc_unix_timestamp(const std::string& datetime, const 
         throw std::runtime_error("Failed to parse date/time string");
     }
 
-    std::time_t time = timegm(&tm); 
+    std::time_t time = timegm(&tm);
     return static_cast<long long int>(time);
 }

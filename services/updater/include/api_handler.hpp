@@ -15,7 +15,9 @@
 // public:
 //     ApiHandler() = default;
 
-//     auto perform_realtime_update_complaints_analytics_from_reddit(const crow::request& req, std::shared_ptr<Database> db, std::shared_ptr<Reddit> reddit, const std::string& subreddit, const std::string& collection_name) -> crow::response;
+//     auto perform_realtime_update_complaints_analytics_from_reddit(const crow::request& req,
+//     std::shared_ptr<Database> db, std::shared_ptr<Reddit> reddit, const std::string& subreddit,
+//     const std::string& collection_name) -> crow::response;
 // private:
 
 // };
