@@ -49,6 +49,7 @@ RUN mkdir build && cd build && \
         -DCMAKE_BUILD_TYPE=RelWithDebInfo \
         -DCMAKE_INSTALL_PREFIX=../release \
         -DCROW_INCLUDE_DIR="/app/libs/Crow/include/" \
+        -DENABLE_TESTING=OFF \
     && make -j3 && make install
 
 # Set the default command to run the application
