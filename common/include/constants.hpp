@@ -30,7 +30,7 @@ const std::string DEFAULT_JWT_DURATION_IN_SECONDS = "3600";
 const int ANALYTICS_SERVER_PORT_NUMBER = 8082;
 const int MANAGEMENT_SERVER_PORT_NUMBER = 8083;
 const int USER_SERVER_PORT_NUMBER = 8085;
-const int DEFAULT_CONCURRENCY = 25;
+const int DEFAULT_CONCURRENCY = 10;
 }  // namespace Constants
 
 #endif  // CONSTANTS_HPP
