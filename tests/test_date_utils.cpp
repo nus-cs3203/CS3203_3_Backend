@@ -1,10 +1,11 @@
-#include "date_utils.hpp"  
-
 #include <gtest/gtest.h>
+
 #include <chrono>
 #include <ctime>
 #include <stdexcept>
 #include <string>
+
+#include "date_utils.hpp"
 
 // ----- Test for get_utc_timestamp_now -----
 TEST(DateUtilsTest, GetUtcTimestampNow) {
@@ -33,8 +34,8 @@ TEST(DateUtilsTest, ExtractMonthFromTimestampStr) {
     // Example timestamp: "dd-mm-YYYY HH:MM:SS"
     std::string timestamp = "15-08-2025 10:20:30";
     int month = DateUtils::extract_month_from_timestamp_str(timestamp);
-    EXPECT_EQ(month, 8)
-        << "extract_month_from_timestamp_str should return 8 for the month \"08\" in the timestamp.";
+    EXPECT_EQ(month, 8) << "extract_month_from_timestamp_str should return 8 for the month \"08\" "
+                           "in the timestamp.";
 }
 
 // ----- Test for extract_year_from_timestamp_str -----
@@ -63,13 +64,15 @@ TEST(DateUtilsTest, UtcUnixTimestampToString) {
     // Unix epoch (0 seconds since Jan 1, 1970)
     std::string formatted = DateUtils::utc_unix_timestamp_to_string(0, "%d-%m-%Y %H:%M:%S");
     EXPECT_EQ(formatted, "01-01-1970 00:00:00")
-        << "utc_unix_timestamp_to_string should convert 0 to '01-01-1970 00:00:00' using the provided format.";
+        << "utc_unix_timestamp_to_string should convert 0 to '01-01-1970 00:00:00' using the "
+           "provided format.";
 }
 
 // ----- Test for string_to_utc_unix_timestamp (valid input) -----
 TEST(DateUtilsTest, StringToUtcUnixTimestampValid) {
     // Using the same format as above.
-    long long timestamp = DateUtils::string_to_utc_unix_timestamp("01-01-1970 00:00:00", "%d-%m-%Y %H:%M:%S");
+    long long timestamp =
+        DateUtils::string_to_utc_unix_timestamp("01-01-1970 00:00:00", "%d-%m-%Y %H:%M:%S");
     EXPECT_EQ(timestamp, 0)
         << "string_to_utc_unix_timestamp should convert '01-01-1970 00:00:00' to 0.";
 }
@@ -77,8 +80,8 @@ TEST(DateUtilsTest, StringToUtcUnixTimestampValid) {
 // ----- Test for string_to_utc_unix_timestamp (invalid input) -----
 TEST(DateUtilsTest, StringToUtcUnixTimestampInvalidThrows) {
     // The provided date string does not match the expected format.
-    EXPECT_THROW(
-        DateUtils::string_to_utc_unix_timestamp("invalid-date", "%d-%m-%Y %H:%M:%S"),
-        std::runtime_error
-    ) << "string_to_utc_unix_timestamp should throw a runtime_error for an improperly formatted date string.";
+    EXPECT_THROW(DateUtils::string_to_utc_unix_timestamp("invalid-date", "%d-%m-%Y %H:%M:%S"),
+                 std::runtime_error)
+        << "string_to_utc_unix_timestamp should throw a runtime_error for an improperly formatted "
+           "date string.";
 }

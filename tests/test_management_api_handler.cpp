@@ -1,22 +1,25 @@
-#include "management_api_handler.hpp"
-#include "database_manager.hpp"
-#include "crow.h"
 #include <gtest/gtest.h>
+
 #include <bsoncxx/builder/basic/document.hpp>
 #include <bsoncxx/json.hpp>
+#include <chrono>
 #include <mongocxx/client.hpp>
 #include <mongocxx/instance.hpp>
-#include <chrono>
-#include <thread>
 #include <string>
+#include <thread>
 #include <tuple>
 #include <vector>
+
+#include "crow.h"
+#include "database_manager.hpp"
+#include "management_api_handler.hpp"
 
 using bsoncxx::builder::basic::kvp;
 using bsoncxx::builder::basic::make_document;
 
 // Helper to clear all documents in a collection.
-static inline void cleanup_collection(DatabaseManager& dbManager, const std::string& collection_name) {
+static inline void cleanup_collection(DatabaseManager& dbManager,
+                                      const std::string& collection_name) {
     dbManager.delete_many(collection_name, make_document().view());
 }
 
@@ -53,8 +56,10 @@ TEST(ManagementApiHandlerTest, GetAll) {
     cleanup_collection(*db_ptr, collection);
 
     // Insert multiple documents.
-    db_ptr->insert_one(collection, make_document(kvp("get_all_test", true), kvp("value", 1)).view());
-    db_ptr->insert_one(collection, make_document(kvp("get_all_test", true), kvp("value", 2)).view());
+    db_ptr->insert_one(collection,
+                       make_document(kvp("get_all_test", true), kvp("value", 1)).view());
+    db_ptr->insert_one(collection,
+                       make_document(kvp("get_all_test", true), kvp("value", 2)).view());
 
     // Empty request body works for get_all.
     crow::request req;
@@ -75,11 +80,11 @@ TEST(ManagementApiHandlerTest, GetByDaterange) {
 
     // Insert a document with a date field.
     // Create a test date: February 1, 2020.
-    std::time_t time_raw = 1580515200; 
+    std::time_t time_raw = 1580515200;
     std::chrono::milliseconds time_ms{time_raw * 1000};
-    db_ptr->insert_one(collection, 
-        make_document(kvp("some_key", "some_value"), 
-                      kvp("date", bsoncxx::types::b_date{time_ms})).view());
+    db_ptr->insert_one(collection, make_document(kvp("some_key", "some_value"),
+                                                 kvp("date", bsoncxx::types::b_date{time_ms}))
+                                       .view());
 
     // Build request with start_date and end_date.
     crow::request req;
@@ -102,13 +107,18 @@ TEST(ManagementApiHandlerTest, GetMany) {
     cleanup_collection(*db_ptr, collection);
 
     // Insert multiple documents that match our filter.
-    db_ptr->insert_one(collection, make_document(kvp("get_many_test", true), kvp("value", 1)).view());
-    db_ptr->insert_one(collection, make_document(kvp("get_many_test", true), kvp("value", 2)).view());
-    db_ptr->insert_one(collection, make_document(kvp("get_many_test", true), kvp("value", 3)).view());
+    db_ptr->insert_one(collection,
+                       make_document(kvp("get_many_test", true), kvp("value", 1)).view());
+    db_ptr->insert_one(collection,
+                       make_document(kvp("get_many_test", true), kvp("value", 2)).view());
+    db_ptr->insert_one(collection,
+                       make_document(kvp("get_many_test", true), kvp("value", 3)).view());
 
     // Build request: filter, page_size, page_number and optional sort.
     crow::request req;
-    req.body = "{\"filter\": {\"get_many_test\": true}, \"page_size\": 2, \"page_number\": 1, \"sort\": {}}";
+    req.body =
+        "{\"filter\": {\"get_many_test\": true}, \"page_size\": 2, \"page_number\": 1, \"sort\": "
+        "{}}";
     auto response = handler.get_many(req, db_ptr, collection);
     EXPECT_EQ(response.code, 200);
     EXPECT_NE(response.body.find("\"documents\""), std::string::npos);
@@ -124,9 +134,12 @@ TEST(ManagementApiHandlerTest, GetStatisticsPollResponses) {
     cleanup_collection(*db_ptr, collection);
 
     // Insert documents for poll responses.
-    db_ptr->insert_one(collection, make_document(kvp("poll_test", true), kvp("response", "yes")).view());
-    db_ptr->insert_one(collection, make_document(kvp("poll_test", true), kvp("response", "no")).view());
-    db_ptr->insert_one(collection, make_document(kvp("poll_test", true), kvp("response", "yes")).view());
+    db_ptr->insert_one(collection,
+                       make_document(kvp("poll_test", true), kvp("response", "yes")).view());
+    db_ptr->insert_one(collection,
+                       make_document(kvp("poll_test", true), kvp("response", "no")).view());
+    db_ptr->insert_one(collection,
+                       make_document(kvp("poll_test", true), kvp("response", "yes")).view());
 
     // Build request with filter.
     crow::request req;
@@ -146,7 +159,8 @@ TEST(ManagementApiHandlerTest, DeleteOneByOid) {
     cleanup_collection(*db_ptr, collection);
 
     // Insert a document to be deleted.
-    auto insert_result = db_ptr->insert_one(collection, make_document(kvp("delete_one_test", true)).view());
+    auto insert_result =
+        db_ptr->insert_one(collection, make_document(kvp("delete_one_test", true)).view());
     ASSERT_TRUE(insert_result.has_value());
     std::string oid_str = insert_result->inserted_id().get_oid().value.to_string();
 
@@ -155,7 +169,8 @@ TEST(ManagementApiHandlerTest, DeleteOneByOid) {
     req.body = "{\"oid\": \"" + oid_str + "\"}";
     auto response = handler.delete_one_by_oid(req, db_ptr, collection);
     EXPECT_EQ(response.code, 200);
-    EXPECT_NE(response.body.find("Server processed delete request successfully"), std::string::npos);
+    EXPECT_NE(response.body.find("Server processed delete request successfully"),
+              std::string::npos);
 
     cleanup_collection(*db_ptr, collection);
 }
@@ -168,8 +183,10 @@ TEST(ManagementApiHandlerTest, DeleteManyByOids) {
     cleanup_collection(*db_ptr, collection);
 
     // Insert multiple documents.
-    auto insert_result1 = db_ptr->insert_one(collection, make_document(kvp("delete_many_test", true)).view());
-    auto insert_result2 = db_ptr->insert_one(collection, make_document(kvp("delete_many_test", true)).view());
+    auto insert_result1 =
+        db_ptr->insert_one(collection, make_document(kvp("delete_many_test", true)).view());
+    auto insert_result2 =
+        db_ptr->insert_one(collection, make_document(kvp("delete_many_test", true)).view());
     ASSERT_TRUE(insert_result1.has_value());
     ASSERT_TRUE(insert_result2.has_value());
     std::string oid_str1 = insert_result1->inserted_id().get_oid().value.to_string();
@@ -180,7 +197,8 @@ TEST(ManagementApiHandlerTest, DeleteManyByOids) {
     req.body = "{\"oids\": [\"" + oid_str1 + "\", \"" + oid_str2 + "\"]}";
     auto response = handler.delete_many_by_oids(req, db_ptr, collection);
     EXPECT_EQ(response.code, 200);
-    EXPECT_NE(response.body.find("Server processed delete request successfully"), std::string::npos);
+    EXPECT_NE(response.body.find("Server processed delete request successfully"),
+              std::string::npos);
 
     cleanup_collection(*db_ptr, collection);
 }
@@ -193,16 +211,19 @@ TEST(ManagementApiHandlerTest, UpdateOneByOid) {
     cleanup_collection(*db_ptr, collection);
 
     // Insert a document to update.
-    auto insert_result = db_ptr->insert_one(collection, make_document(kvp("update_test", true), kvp("status", "old")).view());
+    auto insert_result = db_ptr->insert_one(
+        collection, make_document(kvp("update_test", true), kvp("status", "old")).view());
     ASSERT_TRUE(insert_result.has_value());
     std::string oid_str = insert_result->inserted_id().get_oid().value.to_string();
 
     // Build request with the oid and the update document.
     crow::request req;
-    req.body = "{\"oid\": \"" + oid_str + "\", \"update_document\": {\"$set\": {\"status\": \"updated\"}}}";
+    req.body = "{\"oid\": \"" + oid_str +
+               "\", \"update_document\": {\"$set\": {\"status\": \"updated\"}}}";
     auto response = handler.update_one_by_oid(req, db_ptr, collection);
     EXPECT_EQ(response.code, 200);
-    EXPECT_NE(response.body.find("Server processed update request successfully"), std::string::npos);
+    EXPECT_NE(response.body.find("Server processed update request successfully"),
+              std::string::npos);
 
     // Optionally, verify the update by querying the document from the database.
 

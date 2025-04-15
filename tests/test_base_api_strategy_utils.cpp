@@ -1,15 +1,15 @@
-#include "base_api_strategy_utils.hpp"
-
-#include <gtest/gtest.h>
 #include <crow.h>
-#include <bsoncxx/builder/basic/document.hpp>
-#include <bsoncxx/builder/basic/array.hpp>
-#include <bsoncxx/json.hpp>
-#include <bsoncxx/types.hpp> 
+#include <gtest/gtest.h>
 
+#include <bsoncxx/builder/basic/array.hpp>
+#include <bsoncxx/builder/basic/document.hpp>
+#include <bsoncxx/json.hpp>
+#include <bsoncxx/types.hpp>
 #include <stdexcept>
 #include <string>
 #include <vector>
+
+#include "base_api_strategy_utils.hpp"
 
 using bsoncxx::builder::basic::kvp;
 using bsoncxx::builder::basic::make_document;
@@ -28,10 +28,7 @@ TEST(ValidateFieldsTest, ValidRequest) {
 TEST(ValidateFieldsTest, EmptyBodyThrows) {
     crow::request req;
     req.body = "";
-    EXPECT_THROW(
-        BaseApiStrategyUtils::validate_fields(req, {"username"}),
-        std::invalid_argument
-    );
+    EXPECT_THROW(BaseApiStrategyUtils::validate_fields(req, {"username"}), std::invalid_argument);
 }
 
 // Test that a body missing one required field throws an exception.
@@ -57,8 +54,8 @@ TEST(ParseDatabaseJsonToResponseJsonTest, ConvertsDateField) {
     // Create input JSON that includes a "$date" field.
     // For example: { "created": { "$date": 1609459200000 } }
     auto input = crow::json::load("{\"created\":{\"$date\":0}}");
-    ASSERT_TRUE(input); // Ensure JSON loaded successfully.
-    
+    ASSERT_TRUE(input);  // Ensure JSON loaded successfully.
+
     auto output = BaseApiStrategyUtils::parse_database_json_to_response_json(input);
     auto output_rval = crow::json::load(output.dump());
     // Check that the "created" field has been converted to a date string.
@@ -75,12 +72,9 @@ TEST(ParseRequestJsonToDatabaseBsonTest, ConvertsPrimitiveField) {
     // Input JSON: an object containing primitive types.
     auto input = crow::json::load("{\"username\":\"user1\", \"age\":30}");
     ASSERT_TRUE(input);
-    
+
     auto output_doc = BaseApiStrategyUtils::parse_request_json_to_database_bson(input);
-    auto expected_doc = make_document(
-        kvp("username", "user1"),
-        kvp("age", 30)
-    );
+    auto expected_doc = make_document(kvp("username", "user1"), kvp("age", 30));
 
     EXPECT_EQ(bsoncxx::to_json(output_doc), bsoncxx::to_json(expected_doc));
 }
@@ -94,13 +88,8 @@ TEST(ParseRequestJsonToDatabaseBsonTest, ConvertsNestedObject) {
     auto output_doc = BaseApiStrategyUtils::parse_request_json_to_database_bson(input);
 
     // Build the expected nested document.
-    auto nested_doc = make_document(
-         kvp("name", "user1"),
-         kvp("age", 30)
-    );
-    auto expected_doc = make_document(
-         kvp("user", nested_doc.view())
-    );
+    auto nested_doc = make_document(kvp("name", "user1"), kvp("age", 30));
+    auto expected_doc = make_document(kvp("user", nested_doc.view()));
 
     EXPECT_EQ(bsoncxx::to_json(output_doc), bsoncxx::to_json(expected_doc));
 }
@@ -120,9 +109,7 @@ TEST(ParseRequestJsonToDatabaseBsonTest, ConvertsArray) {
     arr_builder.append(3);
     bsoncxx::array::value arr_value = arr_builder.extract();
 
-    auto expected_doc = make_document(
-         kvp("values", bsoncxx::types::b_array{arr_value.view()})
-    );
+    auto expected_doc = make_document(kvp("values", bsoncxx::types::b_array{arr_value.view()}));
 
     EXPECT_EQ(bsoncxx::to_json(output_doc), bsoncxx::to_json(expected_doc));
 }
@@ -137,10 +124,8 @@ TEST(ParseRequestJsonToDatabaseBsonTest, ConvertsInequalityOperatorLTE) {
     auto output_doc = BaseApiStrategyUtils::parse_request_json_to_database_bson(input);
 
     // Expected: the key "age" mapped to a document with "$lte" operator.
-    auto expected_doc = make_document(
-         kvp("age", make_document(kvp("$lte", 30)))
-    );
-    
+    auto expected_doc = make_document(kvp("age", make_document(kvp("$lte", 30))));
+
     EXPECT_EQ(bsoncxx::to_json(output_doc), bsoncxx::to_json(expected_doc));
 }
 
@@ -154,10 +139,8 @@ TEST(ParseRequestJsonToDatabaseBsonTest, ConvertsInequalityOperatorGTE) {
     auto output_doc = BaseApiStrategyUtils::parse_request_json_to_database_bson(input);
 
     // Expected: the key "age" mapped to a document with "$gte" operator.
-    auto expected_doc = make_document(
-         kvp("age", make_document(kvp("$gte", 30)))
-    );
-    
+    auto expected_doc = make_document(kvp("age", make_document(kvp("$gte", 30))));
+
     EXPECT_EQ(bsoncxx::to_json(output_doc), bsoncxx::to_json(expected_doc));
 }
 
@@ -168,7 +151,7 @@ TEST(ParseOidStrToOidBsonTest, ConvertsOidString) {
     std::string oid_str = "507f1f77bcf86cd799439011";
     auto bson_doc = BaseApiStrategyUtils::parse_oid_str_to_oid_bson(oid_str);
     auto view = bson_doc.view();
-    
+
     auto elem = view["_id"];
     EXPECT_EQ(elem.type(), bsoncxx::type::k_oid);
     // Convert the bson oid back to a string to verify.
@@ -193,10 +176,10 @@ TEST(MakeErrorResponseTest, ReturnsErrorResponse) {
     int status_code = 400;
     std::string error_msg = "Bad Request";
     auto response = BaseApiStrategyUtils::make_error_response(status_code, error_msg);
-    
+
     // Check that the response uses the expected status code.
     EXPECT_EQ(response.code, status_code);
-    
+
     // Convert response body to a crow::json::rvalue.
     auto json_body = crow::json::load(response.body);
     ASSERT_TRUE(json_body);
@@ -212,14 +195,14 @@ TEST(MakeSuccessResponseTest, ReturnsSuccessResponse) {
     crow::json::wvalue data;
     data["data_field"] = "value1";
     std::string success_msg = "Operation successful";
-    
+
     auto response = BaseApiStrategyUtils::make_success_response(status_code, data, success_msg);
     EXPECT_EQ(response.code, status_code);
-    
+
     // Get the JSON from the response.
     auto json_body = crow::json::load(response.body);
     ASSERT_TRUE(json_body);
-    
+
     // Verify that "success" is true, "message" is set correctly,
     // and that the original data field remains.
     EXPECT_TRUE(json_body["success"].b());

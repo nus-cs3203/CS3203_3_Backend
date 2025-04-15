@@ -1,23 +1,24 @@
-#include "gtest/gtest.h"
-#include "analytics_api_strategy.hpp"
-#include "crow.h"
-#include <bsoncxx/builder/basic/document.hpp>
 #include <bsoncxx/builder/basic/array.hpp>
+#include <bsoncxx/builder/basic/document.hpp>
 #include <bsoncxx/json.hpp>
 #include <mongocxx/options/aggregate.hpp>
 #include <mongocxx/options/find.hpp>
 #include <mongocxx/pipeline.hpp>
+#include <sstream>
 #include <stdexcept>
 #include <string>
 #include <tuple>
-#include <vector>
 #include <utility>
-#include <sstream>
+#include <vector>
 
-using bsoncxx::builder::basic::kvp;
-using bsoncxx::builder::basic::make_document;
-using bsoncxx::builder::basic::make_array;
+#include "analytics_api_strategy.hpp"
+#include "crow.h"
+#include "gtest/gtest.h"
+
 using bsoncxx::to_json;
+using bsoncxx::builder::basic::kvp;
+using bsoncxx::builder::basic::make_array;
+using bsoncxx::builder::basic::make_document;
 
 // --------- Test for process_request_func_get_one_by_name ---------
 TEST(AnalyticsApiStrategyTest, ProcessRequestGetOneByName) {
@@ -56,9 +57,12 @@ TEST(AnalyticsApiStrategyTest, ProcessRequestGetComplaintsStatistics) {
 // --------- Test for process_request_func_get_complaints_statistics_over_time ---------
 TEST(AnalyticsApiStrategyTest, ProcessRequestGetComplaintsStatisticsOverTime) {
     crow::request req;
-    req.body = "{\"filter\": {\"_from_date\": \"01-01-2020 00:00:00\", \"_to_date\": \"31-12-2020 00:00:00\"}}";
+    req.body =
+        "{\"filter\": {\"_from_date\": \"01-01-2020 00:00:00\", \"_to_date\": \"31-12-2020 "
+        "00:00:00\"}}";
 
-    auto result = AnalyticsApiStrategy::process_request_func_get_complaints_statistics_over_time(req);
+    auto result =
+        AnalyticsApiStrategy::process_request_func_get_complaints_statistics_over_time(req);
     auto documents = std::get<0>(result);
     ASSERT_EQ(documents.size(), 2u);
 
@@ -73,7 +77,9 @@ TEST(AnalyticsApiStrategyTest, ProcessRequestGetComplaintsStatisticsOverTime) {
 // --------- Test for process_request_func_get_complaints_statistics_grouped ---------
 TEST(AnalyticsApiStrategyTest, ProcessRequestGetComplaintsStatisticsGrouped) {
     crow::request req;
-    req.body = "{\"group_by_field\": \"category\", \"filter\": {\"_from_date\": \"01-01-2020 00:00:00\", \"_to_date\": \"31-12-2020 00:00:00\"}}";
+    req.body =
+        "{\"group_by_field\": \"category\", \"filter\": {\"_from_date\": \"01-01-2020 00:00:00\", "
+        "\"_to_date\": \"31-12-2020 00:00:00\"}}";
 
     auto result = AnalyticsApiStrategy::process_request_func_get_complaints_statistics_grouped(req);
     auto documents = std::get<0>(result);
@@ -91,24 +97,34 @@ TEST(AnalyticsApiStrategyTest, ProcessRequestGetComplaintsStatisticsGrouped) {
 // --------- Test for process_request_func_get_complaints_statistics_grouped_over_time ---------
 TEST(AnalyticsApiStrategyTest, ProcessRequestGetComplaintsStatisticsGroupedOverTime) {
     crow::request req;
-    req.body = "{\"group_by_field\": \"category\", \"filter\": {\"_from_date\": \"01-01-2020 00:00:00\", \"_to_date\": \"31-12-2020 00:00:00\"}}";
+    req.body =
+        "{\"group_by_field\": \"category\", \"filter\": {\"_from_date\": \"01-01-2020 00:00:00\", "
+        "\"_to_date\": \"31-12-2020 00:00:00\"}}";
 
-    auto result = AnalyticsApiStrategy::process_request_func_get_complaints_statistics_grouped_over_time(req);
+    auto result =
+        AnalyticsApiStrategy::process_request_func_get_complaints_statistics_grouped_over_time(req);
     auto documents = std::get<0>(result);
     ASSERT_EQ(documents.size(), 2u);
 
     std::string group_json = to_json(documents[1].view());
     std::cout << group_json << std::endl;
     // Verify that the grouping is done on year, month, and category.
-    EXPECT_EQ(group_json, "{ \"_id\" : { \"year\" : { \"$year\" : \"$date\" }, \"month\" : { \"$month\" : \"$date\" }, \"category\" : \"$category\" }, \"count\" : { \"$sum\" : 1 }, \"avg_sentiment\" : { \"$avg\" : \"$sentiment\" } }");
+    EXPECT_EQ(group_json,
+              "{ \"_id\" : { \"year\" : { \"$year\" : \"$date\" }, \"month\" : { \"$month\" : "
+              "\"$date\" }, \"category\" : \"$category\" }, \"count\" : { \"$sum\" : 1 }, "
+              "\"avg_sentiment\" : { \"$avg\" : \"$sentiment\" } }");
 }
 
-// --------- Test for process_request_func_get_complaints_statistics_grouped_by_sentiment_value ---------
+// --------- Test for process_request_func_get_complaints_statistics_grouped_by_sentiment_value
+// ---------
 TEST(AnalyticsApiStrategyTest, ProcessRequestGetComplaintsStatisticsGroupedBySentimentValue) {
     crow::request req;
-    req.body = "{\"filter\": {\"_from_date\": \"01-01-2020 00:00:00\", \"_to_date\": \"31-12-2020 00:00:00\"}, \"bucket_size\": 0.5}";
+    req.body =
+        "{\"filter\": {\"_from_date\": \"01-01-2020 00:00:00\", \"_to_date\": \"31-12-2020 "
+        "00:00:00\"}, \"bucket_size\": 0.5}";
 
-    auto result = AnalyticsApiStrategy::process_request_func_get_complaints_statistics_grouped_by_sentiment_value(req);
+    auto result = AnalyticsApiStrategy::
+        process_request_func_get_complaints_statistics_grouped_by_sentiment_value(req);
     auto documents = std::get<0>(result);
     ASSERT_EQ(documents.size(), 2u);
 
@@ -123,9 +139,11 @@ TEST(AnalyticsApiStrategyTest, ProcessRequestGetComplaintsStatisticsGroupedBySen
 
 // --------- Test for _create_month_range ---------
 TEST(AnalyticsApiStrategyTest, CreateMonthRange) {
-    // Note: This function is declared in the header. We assume its implementation returns a vector of (year, month) pairs.
-    std::vector<std::pair<int, int>> monthRange = AnalyticsApiStrategy::_create_month_range("01-01-2022 00:00:00", "01-03-2022 00:00:00");
-    
+    // Note: This function is declared in the header. We assume its implementation returns a vector
+    // of (year, month) pairs.
+    std::vector<std::pair<int, int>> monthRange =
+        AnalyticsApiStrategy::_create_month_range("01-01-2022 00:00:00", "01-03-2022 00:00:00");
+
     // Expected result: January, February, and March of 2020.
     ASSERT_EQ(monthRange.size(), 3u);
     EXPECT_EQ(monthRange[0].first, 1);

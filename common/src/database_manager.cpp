@@ -99,4 +99,3 @@ auto DatabaseManager::aggregate(const std::string& collection_name,
     auto collection = db[collection_name];
     return collection.aggregate(pipeline, option);
 }
-
