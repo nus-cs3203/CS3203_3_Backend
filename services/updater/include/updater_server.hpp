@@ -17,8 +17,8 @@
 
 class UpdaterServer : public BaseServer {
    public:
-   UpdaterServer(int port = Constants::UPDATER_SERVER_PORT_NUMBER,
-                 int concurrency = Constants::DEFAULT_CONCURRENCY);
+    UpdaterServer(int port = Constants::UPDATER_SERVER_PORT_NUMBER,
+                  int concurrency = Constants::DEFAULT_CONCURRENCY);
 
    private:
     void _define_handler_funcs();

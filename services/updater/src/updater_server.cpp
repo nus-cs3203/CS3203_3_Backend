@@ -15,7 +15,7 @@ void UpdaterServer::_define_handler_funcs() {
     auto jwt_manager = std::make_shared<JwtManager>();
     auto jwt_protection_decorator =
         [jwt_manager](const std::function<crow::response(const crow::request&)> func,
-                        const JwtAccessLevel& access_level) {
+                      const JwtAccessLevel& access_level) {
             return jwt_manager->jwt_protection_decorator(func, access_level);
         };
 
@@ -77,5 +77,4 @@ void UpdaterServer::_define_handler_funcs() {
         },
         crow::HTTPMethod::Post, concurrency_protection_decorator, JwtAccessLevel::None,
         jwt_protection_decorator);
-
 }
