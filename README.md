@@ -79,9 +79,9 @@
    ```bash
    cd release/bin/
    ```
-2. Execute the application:
+2. Run the service (analytics, management, updater or user). For analytics service:
    ```bash
-   ./CS3203_BACKEND
+   ./analytics
    ```
 
 # API Contract
