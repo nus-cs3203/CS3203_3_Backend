@@ -2478,3 +2478,113 @@ We use JWT to protect our API endpoints. JWT can be obtained through `/login` AP
 | `/update_profile_by_oid`   | Personal       |
 
 ---
+
+## Collection: posts
+
+| Field            | Type      | Description                                                    |
+|------------------|-----------|----------------------------------------------------------------|
+| _id              | ObjectId  | MongoDB internal document ID                                   |
+| id               | string    | Unique source identifier (e.g. Reddit ID t3_xxx)                 |
+| source           | string    | Platform source (e.g. Reddit, Facebook)                         |
+| sub_source       | string    | Subcategory (e.g. subreddit, Facebook group name)               |
+| author_flair_text| string    | Flair text of the post's author                                  |
+| created_utc      | integer   | Creation timestamp (in UTC)                                      |
+| downs, ups       | integer   | Vote counts                                                     |
+| likes            | integer   | Number of likes                                                  |
+| num_comments     | integer   | Total comment count                                               |
+| score            | integer   | Score = upvotes - downvotes                                       |
+| selftext         | string    | Full body of the post                                             |
+| title            | string    | Title of the post                                                |
+| upvote_ratio     | float     | Ratio of upvotes to total votes                                   |
+| url              | string    | URL of embedded media                                             |
+| view_count       | integer   | Number of views                                                  |
+| comments         | string[]  | Array of comment contents                                         |
+
+## Collection: complaints
+
+| Field       | Type      | Description                                     |
+|-------------|-----------|-------------------------------------------------|
+| _id         | ObjectId  | MongoDB internal ID                             |
+| id          | string    | Source-specific post ID                         |
+| title       | string    | Title or caption of the complaint post          |
+| source      | string    | Originating platform                            |
+| category    | string    | Assigned topic category (e.g. Healthcare)       |
+| date        | DateTime  | When the post was uploaded                      |
+| sentiment   | float     | Sentiment score in range [-1.0, 1.0]              |
+| description | string    | Post body                                       |
+| url         | string    | Direct URL to the original post                 |
+
+## Collection: categories
+
+| Field  | Type     | Description                                        |
+|--------|----------|----------------------------------------------------|
+| _id    | ObjectId | MongoDB internal ID                                |
+| name   | string   | Category name (e.g. Environment, Housing)          |
+| colour | string   | Hex code for UI visualisation (e.g. #000000)        |
+
+## Collection: category_analytics
+
+| Field                 | Type      | Description                                                  |
+|-----------------------|-----------|--------------------------------------------------------------|
+| _id                   | ObjectId  | MongoDB internal ID                                          |
+| name                  | string    | Category name                                                |
+| summary               | string    | Summary of complaints within the category                    |
+| keywords              | string[]  | Trending keywords (e.g. ["Hawker centres", "Food cost"])     |
+| concerns              | string[]  | Key public concerns                                          |
+| suggestions           | string[]  | Suggested improvements                                       |
+| sentiment             | float     | Current average sentiment                                    |
+| forecasted_sentiment  | float     | Predicted sentiment one month ahead                          |
+| dates_with_shift      | —         | Field reserved for future use                                |
+| absa_result           | json[]    | Aspect-based sentiment analysis results                      |
+
+## Collection: users
+
+| Field        | Type      | Description                                   |
+|--------------|-----------|-----------------------------------------------|
+| _id          | ObjectId  | MongoDB internal ID                           |
+| email        | string    | Unique email used for login                    |
+| password     | string    | Encrypted password                            |
+| name         | string    | Display name                                  |
+| role         | string    | User role: CITIZEN or ADMIN                    |
+| collectibles | string[]  | Reserved field for future features             |
+
+## Collection: polls
+
+| Field         | Type      | Description                                                     |
+|---------------|-----------|-----------------------------------------------------------------|
+| _id           | ObjectId  | MongoDB internal ID                                             |
+| id            | integer   | Poll identifier (not strictly needed; _id suffices)              |
+| question      | string    | Poll question                                                   |
+| category      | string    | Related category (e.g. Housing)                                   |
+| question_type | string    | “MCQ” or “Open-Ended”                                             |
+| options       | string[]  | List of selectable options                                         |
+| date_created  | DateTime  | When the poll was created                                         |
+| date_published| DateTime  | When the poll went live                                          |
+| date_closed   | DateTime  | When the poll closed                                             |
+| status        | string    | Unpublished, Published, or Closed                                |
+
+## Collection: poll_templates
+
+| Field         | Type      | Description                                                    |
+|---------------|-----------|----------------------------------------------------------------|
+| _id           | ObjectId  | MongoDB internal ID                                             |
+| id            | integer   | Template identifier                                             |
+| question      | string    | AI or user-generated poll question                              |
+| category      | string    | Related category                                                |
+| reasoning     | string    | Explanation by AI on why the poll was generated                   |
+| question_type | string    | Type of question                                                |
+| options       | string[]  | List of options                                                 |
+| date_created  | DateTime  | Creation date                                                   |
+
+## Collection: poll_responses
+
+| Field          | Type      | Description                                                 |
+|----------------|-----------|-------------------------------------------------------------|
+| _id            | ObjectId  | MongoDB internal ID                                          |
+| id             | string    | Unique response identifier                                    |
+| poll_id        | string    | ID of the poll being responded to                             |
+| response       | string    | Response content                                              |
+| date_submitted | DateTime  | Submission timestamp                                          |
+| user_id        | string    | ID of the user who submitted the response                     |
+
+---
