@@ -1890,6 +1890,241 @@ curl -X POST http://localhost:8083/poll_responses/get_count \
 
 ---
 
+## Service: **updater**
+
+This service exposes API endpoints to perform real-time updates of posts and their analytics. This service is meant to be called by a cronjob. The cronjob intervals should depend on the average number of posts per day in the relevant subreddit (i.e. the amount of data to be processed).
+
+---
+
+### **Posts Update**
+
+#### **POST /update_posts**
+
+**Description:**  
+Fetches the latest 100 posts from Reddit API (the maximum allowable number in a single fetch from Reddit API) and attempts to insert each post into the posts collection of the database. Duplicate posts (error code 11000) are ignored, while other insertion errors are logged and counted.
+
+**Request:**
+```json
+{
+    "subreddit": "string"
+}
+```
+
+**Response:**
+```json
+{
+    "success": "bool",
+    "message": "string",
+    "successful_insertions": "int",
+    "ignored_insertions": "int",
+    "failed_insertions": "int"
+}
+```
+
+**Sample Request:**
+```sh
+curl -X POST http://localhost:8084/update_posts \
+     -H "Content-Type: application/json"
+```
+
+---
+
+### **Analytics Updater**
+
+The updater service provides endpoints that interact with an external analytics service. The analytics service URL is read from the environment variable `ANALYTICS_URL` (or defaults to a constant if not provided).
+
+There are 3 main processes:
+- run: Trigger an analytics background process, which may take a long time. A task_id corresponding to this process will be generated and stored in an internal database (a collection called: `analytics_task_ids`).
+- retrieve: Retrieve the result of an analytics process based on task_id. Once retrieved, task_id is removed from `analytics_task_ids`.
+- clear: Clear specified analytics result, used to remove outdated analytics.
+
+### **Complaint Analytics**
+
+#### **POST /complaint_analytics/run**
+
+**Description:**  
+Triggers the analytics process for complaints by sending a JSON request to the external analytics service at the `/process_complaints` endpoint. The returned `task_id` is then stored along with the collection name.
+
+**Request:**
+```json
+{
+    "start_date": "string",
+    "end_date": "string"
+}
+```
+
+**Response:**
+```json
+{
+    "success": "bool",
+    "message": "string",
+    "task_id": "string"
+}
+```
+
+**Sample Request:**
+```sh
+curl -X POST http://localhost:8083/complaint_analytics/run \
+     -H "Content-Type: application/json" \
+     -d '{
+           "start_date": "2025-01-01",
+           "end_date": "2025-01-31"
+         }'
+```
+
+---
+
+### **Category Analytics**
+
+#### **POST /category_analytics/run**
+
+**Description:**  
+Initiates the generation of category analytics by sending a request to the analytics service’s `/generate_category_analytics` endpoint. The endpoint returns a `task_id` that is saved to track processing.
+
+**Request:**
+```json
+{
+    "start_date": "string",
+    "end_date": "string"
+}
+```
+
+**Response:**
+```json
+{
+    "success": "bool",
+    "message": "string",
+    "task_id": "string"
+}
+```
+
+**Sample Request:**
+```sh
+curl -X POST http://localhost:8084/category_analytics/run \
+     -H "Content-Type: application/json" \
+     -d '{
+           "start_date": "2025-01-01",
+           "end_date": "2025-01-31"
+         }'
+```
+
+---
+
+#### **POST /category_analytics/clear**
+
+**Description:**  
+Clears all analytics data from the category analytics collection. This endpoint deletes all documents within the specified collection and returns the count of deleted records.
+
+**Request:**
+```json
+{}
+```
+
+**Response:**
+```json
+{
+    "success": "bool",
+    "message": "string",
+    "deleted_count": "int"
+}
+```
+
+**Sample Request:**
+```sh
+curl -X POST http://localhost:8084/category_analytics/clear \
+     -H "Content-Type: application/json"
+```
+
+---
+
+### **Poll Analytics**
+
+#### **POST /poll_analytics/run**
+
+**Description:**  
+Starts the poll analytics process by sending a JSON request containing a date range to the analytics service’s `/generate_poll_prompts` endpoint. The returned `task_id` is recorded in the database.
+
+**Request:**
+```json
+{
+    "start_date": "string",
+    "end_date": "string"
+}
+```
+
+**Response:**
+```json
+{
+    "success": "bool",
+    "message": "string",
+    "task_id": "string"
+}
+```
+
+**Sample Request:**
+```sh
+curl -X POST http://localhost:8084/poll_analytics/run \
+     -H "Content-Type: application/json" \
+     -d '{
+           "start_date": "2025-01-01",
+           "end_date": "2025-01-31"
+         }'
+```
+
+---
+
+#### **POST /poll_analytics/clear**
+
+**Description:**  
+Clears all analytics data from the poll analytics collection. This endpoint deletes all relevant documents from the collection and returns the number of records deleted.
+
+**Request:**
+```json
+{}
+```
+
+**Response:**
+```json
+{
+    "success": "bool",
+    "message": "string",
+    "deleted_count": "int"
+}
+```
+
+**Sample Request:**
+```sh
+curl -X POST http://localhost:8084/poll_analytics/clear \
+     -H "Content-Type: application/json"
+```
+---
+
+#### **POST /analytics/retrieve_all**
+
+**Description:**  
+After background analytics process is done, use this endpoint to retrieve the results and update the database. The lists of task_id to be retrieved is based on `analytics_task_ids` collection. Once a task_id is retrieved, it is also removed from the collection.
+
+**Request:**
+```json
+{}
+```
+
+**Response:**
+```json
+{
+    "success": "bool",
+    "message": "string"
+}
+```
+
+**Sample Request:**
+```sh
+curl -X POST http://localhost:8084/analytics/retrieve_all \
+     -H "Content-Type: application/json"
+```
+
+---
+
 ## Service: **user**
 
 This service provides user management endpoints, including account creation (`signup`), authentication (`login`), and profile retrieval.
@@ -2215,6 +2450,20 @@ We use JWT to protect our API endpoints. JWT can be obtained through `/login` AP
 | `/complaints/get_statistics_grouped`                     | None           |
 | `/complaints/get_statistics_grouped_over_time`           | None           |
 | `/complaints/get_statistics_grouped_by_sentiment_value`  | None           |
+
+---
+
+### Updater Service
+
+| Endpoint                      | JWT Protection |
+|-------------------------------|----------------|
+| `/update_posts`               | None           |
+| `/complaint_analytics/run`    | None           |
+| `/category_analytics/run`     | None           |
+| `/category_analytics/clear`   | None           |
+| `/poll_analytics/run`         | None           |
+| `/poll_analytics/clear`       | None           |
+| `/analytics/retrieve_all`     | None           |
 
 ---
 
