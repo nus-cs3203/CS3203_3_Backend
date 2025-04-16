@@ -23,6 +23,9 @@ set(EXECUTABLE_NAME "CS3203_BACKEND")
 
 set(COMMON_DIR ${CMAKE_SOURCE_DIR}/common)
 
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fprofile-arcs -ftest-coverage")
+set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -fprofile-arcs -ftest-coverage")
+
 find_package(Boost REQUIRED)
 find_package(Threads REQUIRED)
 find_package(mongocxx REQUIRED)
