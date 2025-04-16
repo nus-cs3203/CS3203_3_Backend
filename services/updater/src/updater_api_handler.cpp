@@ -22,7 +22,10 @@ auto UpdaterApiHandler::update_posts(
     std::shared_ptr<DatabaseManager> db_manager
 ) -> crow::response {
     try {
-        auto json_docs = reddit_manager->get_posts("singapore");
+        BaseApiStrategyUtils::validate_fields(req, {"subreddit"});
+        auto body = crow::json::load(req.body);
+        auto subreddit = body["subreddit"].s();    
+        auto json_docs = reddit_manager->get_posts(subreddit);
         std::vector<bsoncxx::document::value> bson_docs;
         for (auto &json_doc: json_docs) {
             auto json_doc_rval = crow::json::load(json_doc.dump());
@@ -58,7 +61,7 @@ auto UpdaterApiHandler::update_posts(
         response_data["successful_insertions"] = successful_insertions;
         response_data["ignored_insertions"] = ignored_insertions;
         response_data["failed_insertions"] = failed_insertions;
-        return BaseApiStrategyUtils::make_success_response(200, response_data, "Server processed update request successfully.");
+        return BaseApiStrategyUtils::make_success_response(200, response_data, "Server processed update post request successfully.");
     }
     catch (const std::exception& e) {
         return BaseApiStrategyUtils::make_error_response(500, std::string("Server error: ") + e.what());
@@ -98,7 +101,7 @@ auto UpdaterApiHandler::run_analytics(
 
         crow::json::wvalue response_data;
         response_data["task_id"] = analytics_resp_body["task_id"];
-        return BaseApiStrategyUtils::make_success_response(200, response_data, "Server processed update request successfully.");
+        return BaseApiStrategyUtils::make_success_response(200, response_data, "Server processed run analytics request successfully.");
     }
     catch (const std::exception& e) {
         return BaseApiStrategyUtils::make_error_response(500, std::string("Server error: ") + e.what());
@@ -141,7 +144,7 @@ auto UpdaterApiHandler::retrieve_analytics(
         }
 
         crow::json::wvalue response_data;
-        return BaseApiStrategyUtils::make_success_response(200, response_data, "Server processed update request successfully.");
+        return BaseApiStrategyUtils::make_success_response(200, response_data, "Server processed retrieve analytics request successfully.");
     }
     catch (const std::exception& e) {
         return BaseApiStrategyUtils::make_error_response(500, std::string("Server error: ") + e.what());
@@ -158,7 +161,7 @@ auto UpdaterApiHandler::clear_analytics(
         crow::json::wvalue response_data;
         auto deleted_count = result.value().deleted_count();
         response_data["deleted_count"] = deleted_count;
-        return BaseApiStrategyUtils::make_success_response(200, response_data, "Server processed update request successfully.");
+        return BaseApiStrategyUtils::make_success_response(200, response_data, "Server processed clear analytics request successfully.");
     }
     catch (const std::exception& e) {
         return BaseApiStrategyUtils::make_error_response(500, std::string("Server error: ") + e.what());
