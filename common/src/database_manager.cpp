@@ -10,8 +10,10 @@
 #include "crow.h"
 #include "env_manager.hpp"
 
+mongocxx::instance DatabaseManager::instance{};
+
 DatabaseManager::DatabaseManager(const std::string& uri, const std::string& db_name)
-    : instance{}, client{mongocxx::uri{uri}}, db{client[db_name]} {}
+    : client{mongocxx::uri{uri}}, db{client[db_name]} {}
 
 std::shared_ptr<DatabaseManager> DatabaseManager::create_from_env(EnvManager env_manager) {
     auto MONGO_URI = env_manager.read_env("MONGO_URI", Constants::MONGO_URI);

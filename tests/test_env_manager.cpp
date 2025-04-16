@@ -1,8 +1,10 @@
-#include "env_manager.hpp"
 #include <gtest/gtest.h>
+
+#include <cstdio>   // for remove()
+#include <cstdlib>  // for unsetenv()
 #include <fstream>
-#include <cstdio>    // for remove()
-#include <cstdlib>   // for unsetenv()
+
+#include "env_manager.hpp"
 
 // ----- Test for loading an environment file and reading variables -----
 TEST(EnvManagerTest, LoadsEnvFileAndReadsVariable) {
@@ -10,7 +12,7 @@ TEST(EnvManagerTest, LoadsEnvFileAndReadsVariable) {
     std::string temp_env_file = "temp.env";
     std::ofstream ofs(temp_env_file);
     ASSERT_TRUE(ofs.is_open()) << "Failed to open temporary env file.";
-    
+
     // Write environment variable definitions.
     ofs << "TEST_KEY=HelloWorld" << std::endl;
     // Add a comment and another variable.
@@ -30,7 +32,7 @@ TEST(EnvManagerTest, LoadsEnvFileAndReadsVariable) {
         << "EnvManager should load TEST_KEY from the .env file.";
     EXPECT_EQ(envManager.read_env("ANOTHER_KEY", "DefaultVal"), "42")
         << "EnvManager should load ANOTHER_KEY from the .env file.";
-    
+
     // Clean up: remove the temporary .env file.
     std::remove(temp_env_file.c_str());
 }

@@ -24,16 +24,6 @@ target_include_directories(runTests
                            ${Boost_INCLUDE_DIRS}
 )
 
-include(CTest)
-enable_testing()
-FetchContent_Declare(
-    googletest
-    GIT_REPOSITORY https://github.com/google/googletest.git
-    GIT_TAG v1.16.0
-)
-set(gtest_force_shared_crt ON CACHE BOOL "" FORCE)
-FetchContent_MakeAvailable(googletest)
-
 target_link_libraries(runTests
     gtest_main
     Threads::Threads
@@ -44,8 +34,6 @@ target_link_libraries(runTests
     mongo::bsoncxx_shared
     cpr::cpr
     jwt-cpp
-    FakeIt::FakeIt-gtest
 )
-
 include(GoogleTest)
 gtest_discover_tests(runTests)

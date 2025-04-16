@@ -1,19 +1,19 @@
-#include "base_api_strategy.hpp"
-#include "base_api_strategy_utils.hpp"
+#include <gtest/gtest.h>
 
 #include <bsoncxx/builder/basic/document.hpp>
 #include <bsoncxx/json.hpp>
-#include "crow.h"
-#include <gtest/gtest.h>
+#include <mongocxx/options/count.hpp>
+#include <mongocxx/options/delete.hpp>
 #include <mongocxx/options/find.hpp>
 #include <mongocxx/options/insert.hpp>
-#include <mongocxx/options/count.hpp>
 #include <mongocxx/options/update.hpp>
-#include <mongocxx/options/delete.hpp>
-
+#include <string>
 #include <tuple>
 #include <vector>
-#include <string>
+
+#include "base_api_strategy.hpp"
+#include "base_api_strategy_utils.hpp"
+#include "crow.h"
 
 using bsoncxx::builder::basic::kvp;
 using bsoncxx::builder::basic::make_document;
@@ -26,7 +26,7 @@ TEST(BaseApiStrategyTest, ProcessRequestGetOne) {
     // Create a request with a "filter" field.
     crow::request req;
     req.body = R"({"filter": {"key": "value"}})";
-    
+
     // This should pass validation and produce a BSON document from the given filter.
     auto result = BaseApiStrategy::process_request_func_get_one(req);
     auto filter_bson = std::get<0>(result);
@@ -40,7 +40,7 @@ TEST(BaseApiStrategyTest, ProcessRequestInsertOne) {
     // Create a request with a "document" field.
     crow::request req;
     req.body = R"({"document": {"key": "value"}})";
-    
+
     auto result = BaseApiStrategy::process_request_func_insert_one(req);
     auto document_bson = std::get<0>(result);
     std::string doc_json = bsoncxx::to_json(document_bson.view());
@@ -53,7 +53,7 @@ TEST(BaseApiStrategyTest, ProcessRequestCountDocuments) {
     // Create a request with a "filter" field.
     crow::request req;
     req.body = R"({"filter": {"key": "value"}})";
-    
+
     auto result = BaseApiStrategy::process_request_func_count_documents(req);
     auto filter_bson = std::get<0>(result);
     std::string filter_json = bsoncxx::to_json(filter_bson.view());
@@ -62,7 +62,7 @@ TEST(BaseApiStrategyTest, ProcessRequestCountDocuments) {
 }
 
 //----------------------------------------------------------------------------
-// Tests for Response Processing functions 
+// Tests for Response Processing functions
 //----------------------------------------------------------------------------
 
 TEST(BaseApiStrategyTest, ProcessResponseGetOne) {

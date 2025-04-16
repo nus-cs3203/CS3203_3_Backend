@@ -1,15 +1,16 @@
-#include "database_manager.hpp"
-#include "env_manager.hpp"
-#include "constants.hpp"
-
 #include <gtest/gtest.h>
+
 #include <bsoncxx/builder/basic/document.hpp>
 #include <bsoncxx/json.hpp>
-#include "crow.h"
+#include <cstdlib>
 #include <mongocxx/client.hpp>
 #include <mongocxx/instance.hpp>
-#include <cstdlib>
 #include <vector>
+
+#include "constants.hpp"
+#include "crow.h"
+#include "database_manager.hpp"
+#include "env_manager.hpp"
 
 using bsoncxx::builder::basic::kvp;
 using bsoncxx::builder::basic::make_document;
@@ -35,7 +36,7 @@ TEST(DatabaseManagerTest, InsertOneAndFindOne) {
     auto filter = make_document(kvp("name", "Alice"));
     auto found = dbManager.find_one(collection_name, filter.view());
     ASSERT_TRUE(found.has_value()) << "find_one should locate the inserted document.";
-    
+
     std::string found_json = bsoncxx::to_json(found->view());
     EXPECT_NE(found_json.find("Alice"), std::string::npos)
         << "Inserted document should contain 'Alice'.";
@@ -81,7 +82,8 @@ TEST(DatabaseManagerTest, UpdateOne) {
     ASSERT_TRUE(update_result.has_value()) << "update_one should return a valid result.";
 
     // Verify that a document with status "complete" exists.
-    auto found = dbManager.find_one(collection_name, make_document(kvp("status", "complete")).view());
+    auto found =
+        dbManager.find_one(collection_name, make_document(kvp("status", "complete")).view());
     ASSERT_TRUE(found.has_value()) << "Updated document should be found.";
 
     cleanup_collection(dbManager, collection_name);
@@ -112,7 +114,8 @@ TEST(DatabaseManagerTest, UpdateMany) {
     EXPECT_EQ(count, 2);
 
     // Optionally, check that one document now has "value" equal to 15.
-    auto found = dbManager.find_one(collection_name, make_document(kvp("category", "A"), kvp("value", 15)).view());
+    auto found = dbManager.find_one(collection_name,
+                                    make_document(kvp("category", "A"), kvp("value", 15)).view());
     ASSERT_TRUE(found.has_value());
 
     cleanup_collection(dbManager, collection_name);
@@ -195,10 +198,9 @@ TEST(DatabaseManagerTest, Aggregate) {
     // Build an aggregation pipeline: match category "X", then group by category and sum scores.
     mongocxx::pipeline pipeline{};
     pipeline.match(make_document(kvp("category", "X")).view());
-    pipeline.group(make_document(
-        kvp("_id", "$category"),
-        kvp("total", make_document(kvp("$sum", "$score")))
-    ).view());
+    pipeline.group(
+        make_document(kvp("_id", "$category"), kvp("total", make_document(kvp("$sum", "$score"))))
+            .view());
 
     auto cursor = dbManager.aggregate(collection_name, pipeline);
     int groupCount = 0;
@@ -229,7 +231,8 @@ TEST(DatabaseManagerTest, CreateFromEnv) {
     auto insert_result = dbManagerPtr->insert_one(collection_name, doc.view());
     ASSERT_TRUE(insert_result.has_value());
 
-    auto found = dbManagerPtr->find_one(collection_name, make_document(kvp("env_test", "value")).view());
+    auto found =
+        dbManagerPtr->find_one(collection_name, make_document(kvp("env_test", "value")).view());
     ASSERT_TRUE(found.has_value());
 
     cleanup_collection(*dbManagerPtr, collection_name);
