@@ -1,6 +1,6 @@
 # CS3203 Backend
 
-# For Users (i.e. not Albert)
+# For Users
 
 ## Requirements:
 
@@ -13,9 +13,9 @@
    docker compose build
    docker compose up
    ```
-3. Initialize the database (run /services/db/initializer/script.ipynb)
+3. Initialize the database (run /services/initializer/script.ipynb)
 
-# For Developers (i.e. Albert)
+# For Developers
 
 ## Requirements:
 
