@@ -15,7 +15,7 @@ using bsoncxx::builder::basic::kvp;
 using bsoncxx::builder::basic::make_document;
 
 UpdaterApiHandler::UpdaterApiHandler()
-: reddit_manager(RedditManager::create_from_env()) {}
+: reddit_manager(RedditManager::create_from_env()), env_manager(EnvManager()), analytics_url(env_manager.read_env("ANALYTICS_URL", Constants::DEFAULT_ANALYTICS_URL)) {}
 
 auto UpdaterApiHandler::update_posts(
     const crow::request& req, 
@@ -74,9 +74,9 @@ auto UpdaterApiHandler::run_analytics(
         BaseApiStrategyUtils::validate_fields(req, {"start_date", "end_date"});
 
         std::unordered_map<std::string, std::string> URL_MAPPER = {
-            {Constants::COLLECTION_COMPLAINTS, Constants::ANALYTICS_URL + "/process_complaints"},
-            {Constants::COLLECTION_CATEGORY_ANALYTICS, Constants::ANALYTICS_URL + "https://cs3203-ai-84a031329df8.herokuapp.com/generate_category_analytics"},
-            {Constants::COLLECTION_POLL_TEMPLATES, Constants::ANALYTICS_URL + "https://cs3203-ai-84a031329df8.herokuapp.com/generate_poll_prompts"},
+            {Constants::COLLECTION_COMPLAINTS, analytics_url + "/process_complaints"},
+            {Constants::COLLECTION_CATEGORY_ANALYTICS, analytics_url + "/generate_category_analytics"},
+            {Constants::COLLECTION_POLL_TEMPLATES, analytics_url + "/generate_poll_prompts"},
         };
 
         auto url = URL_MAPPER[collection_name];
@@ -113,9 +113,9 @@ auto UpdaterApiHandler::retrieve_analytics(
         auto task_id_cursor = db_manager->find(Constants::COLLECTION_ANALYTICS_TASK_IDS);
 
         std::unordered_map<std::string, std::string> BASE_URL_MAPPER = {
-            {Constants::COLLECTION_COMPLAINTS, Constants::ANALYTICS_URL + "/task_status"},
-            {Constants::COLLECTION_CATEGORY_ANALYTICS, Constants::ANALYTICS_URL + "/poll_generation_status"},
-            {Constants::COLLECTION_POLL_TEMPLATES, Constants::ANALYTICS_URL + "/category_analytics_status"},
+            {Constants::COLLECTION_COMPLAINTS, analytics_url + "/task_status"},
+            {Constants::COLLECTION_CATEGORY_ANALYTICS, analytics_url + "/poll_generation_status"},
+            {Constants::COLLECTION_POLL_TEMPLATES, analytics_url + "/category_analytics_status"},
         };
 
         for (auto&& doc: task_id_cursor) {

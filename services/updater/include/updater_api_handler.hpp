@@ -37,6 +37,8 @@ public:
 
 private:
     std::shared_ptr<RedditManager> reddit_manager;
+    EnvManager env_manager;
+    std::string analytics_url;
 };
 
 #endif

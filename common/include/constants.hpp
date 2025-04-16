@@ -40,7 +40,7 @@ const int UPDATER_SERVER_PORT_NUMBER = 8084;
 const int USER_SERVER_PORT_NUMBER = 8085;
 const int DEFAULT_CONCURRENCY = 10;
 
-const std::string ANALYTICS_URL = "";
+const std::string DEFAULT_ANALYTICS_URL = "";
 }  // namespace Constants
 
 #endif  // CONSTANTS_HPP

@@ -27,7 +27,7 @@ void UpdaterServer::_define_handler_funcs() {
         crow::HTTPMethod::Post, concurrency_protection_decorator, JwtAccessLevel::None,
         jwt_protection_decorator);
     _register_handler_func(
-        "/update_posts",
+        "/analytics/retrieve_all",
         [api_handler, db_manager](const crow::request& req) {
             return api_handler->update_posts(req, db_manager);
         },
