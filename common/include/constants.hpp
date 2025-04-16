@@ -18,6 +18,13 @@ const std::string COLLECTION_USERS = "users";
 const std::string COLLECTION_POLLS = "polls";
 const std::string COLLECTION_POLL_TEMPLATES = "poll_templates";
 const std::string COLLECTION_POLL_RESPONSES = "poll_responses";
+const std::string COLLECTION_ANALYTICS_TASK_IDS = "analytics_task_ids";
+
+const std::string REDDIT_API_ID = "";
+const std::string REDDIT_API_SECRET = "";
+const std::string REDDIT_USERNAME = "";
+const std::string REDDIT_PASSWORD = "";
+const std::string USER_AGENT = "";
 
 const std::string USERS_ROLE_CITIZEN = "Citizen";
 const std::string USERS_ROLE_ADMIN = "Admin";
@@ -29,8 +36,11 @@ const std::string DEFAULT_JWT_DURATION_IN_SECONDS = "3600";
 
 const int ANALYTICS_SERVER_PORT_NUMBER = 8082;
 const int MANAGEMENT_SERVER_PORT_NUMBER = 8083;
+const int UPDATER_SERVER_PORT_NUMBER = 8084;
 const int USER_SERVER_PORT_NUMBER = 8085;
 const int DEFAULT_CONCURRENCY = 10;
+
+const std::string DEFAULT_ANALYTICS_URL = "";
 }  // namespace Constants
 
 #endif  // CONSTANTS_HPP
